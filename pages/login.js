@@ -11,7 +11,6 @@ export default function Login() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Check if already logged in
   useEffect(() => {
     const userSession = localStorage.getItem('userSession');
     if (userSession) {
@@ -44,10 +43,7 @@ export default function Login() {
       const data = await response.json();
 
       if (response.ok) {
-        // Store user session in localStorage
         localStorage.setItem('userSession', JSON.stringify(data.user));
-        
-        // Redirect to dashboard
         router.push('/dashboard');
       } else {
         setError(data.error || 'Login failed. Please check your credentials.');
