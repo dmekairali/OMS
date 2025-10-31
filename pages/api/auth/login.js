@@ -1,6 +1,7 @@
 /**
  * Login API Endpoint
  * Handles user authentication against Users sheet in Google Sheets
+ * Uses SETUPSHEET for Users and Configuration data
  */
 
 export default async function handler(req, res) {
@@ -24,17 +25,17 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Username and password required' });
     }
 
-    // Get spreadsheet ID from environment
-    const spreadsheetId = process.env.GOOGLE_SHEETS_SPREADSHEET_ID;
+    // Get SETUPSHEET spreadsheet ID from environment (contains Users & Configuration)
+    const setupSheetId = process.env.GOOGLE_SHEETS_SPREADSHEET_ID_SETUPSHEET;
     
-    if (!spreadsheetId) {
-      return res.status(500).json({ error: 'Spreadsheet configuration missing' });
+    if (!setupSheetId) {
+      return res.status(500).json({ error: 'Setup spreadsheet configuration missing' });
     }
 
     // Read Users sheet using the sheets API
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
     const sheetsResponse = await fetch(
-      `${apiUrl}/api/sheets?sheetId=${spreadsheetId}&sheetName=Users&range=A:H`,
+      `${apiUrl}/api/sheets?sheetId=${setupSheetId}&sheetName=Users&range=A:H`,
       {
         method: 'GET',
         headers: {
@@ -110,7 +111,7 @@ export default async function handler(req, res) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          spreadsheetId: spreadsheetId,
+          spreadsheetId: setupSheetId,
           range: `Users!G${userIndex + 2}`, // +2 because of header row and 0-based index
           values: [[now]]
         }),
