@@ -167,16 +167,16 @@ export default function Dashboard() {
                   {orders.slice(0, 10).map((order, index) => (
                     <tr key={index}>
                       <td>
-                        <span className={styles.orderId}>{order['Order ID']}</span>
+                        <span className={styles.orderId}>{order['Oder ID']}</span>
                       </td>
-                      <td>{order['Customer Name'] || order.Customer}</td>
+                      <td>{order['Name of Client'] || order.Customer}</td>
                       <td>
                         <span className={`${styles.statusBadge} ${styles[`status${order.Status}`]}`}>
                           {order.Status}
                         </span>
                       </td>
-                      <td>{order['Order Date'] ? new Date(order['Order Date']).toLocaleDateString() : '-'}</td>
-                      <td>₹{order['Total Amount'] || order.Total || '0'}</td>
+                      <td>{order['Timestamp'] ? new Date(order['Order Date']).toLocaleDateString() : '-'}</td>
+                      <td>₹{order['Invoice Amount'] || order.Total || '0'}</td>
                     </tr>
                   ))}
                 </tbody>
