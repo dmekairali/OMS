@@ -18,9 +18,9 @@ export default function NewOrders() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   
-  // Key columns to display (updated to include Planned and Actual columns)
+  // Key columns to display (using actual field names from API)
   const displayColumns = [
-    'Order ID',
+    'Oder ID', // Note: This is the actual field name from API (typo)
     'Name of Client',
     'Mobile',
     'Email',
@@ -64,7 +64,7 @@ export default function NewOrders() {
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
       filtered = filtered.filter(order => 
-        (order['Order ID'] && order['Order ID'].toLowerCase().includes(term)) ||
+        (order['Oder ID'] && order['Oder ID'].toLowerCase().includes(term)) ||
         (order['Name of Client'] && order['Name of Client'].toLowerCase().includes(term)) ||
         (order['Mobile'] && order['Mobile'].toLowerCase().includes(term)) ||
         (order['Email'] && order['Email'].toLowerCase().includes(term))
@@ -97,17 +97,30 @@ export default function NewOrders() {
     try {
       setLoading(true);
       setError('');
+      console.log('Fetching orders from API...');
       
       const response = await fetch('/api/orders');
+      console.log('API Response status:', response.status);
       
       if (response.ok) {
         const data = await response.json();
-        setOrders(data.orders || []);
-        setHeaders(data.headers || []);
-        setFilteredOrders(data.orders || []);
+        console.log('API Response data:', data);
+        
+        // Check if the API returned success and has orders
+        if (data.success) {
+          console.log('Orders found:', data.orders?.length);
+          console.log('Sample order:', data.orders?.[0]);
+          
+          setOrders(data.orders || []);
+          setHeaders(data.headers || []);
+          setFilteredOrders(data.orders || []);
+        } else {
+          setError('API returned unsuccessful response');
+        }
       } else {
         const errorData = await response.json();
-        setError(errorData.error || 'Failed to load orders');
+        console.error('API Error:', errorData);
+        setError(errorData.error || `Failed to load orders (HTTP ${response.status})`);
       }
     } catch (error) {
       console.error('Error loading orders:', error);
@@ -147,7 +160,7 @@ export default function NewOrders() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          orderId: selectedOrder['Order ID'],
+          orderId: selectedOrder['Oder ID'], // Use correct field name
           rowIndex: selectedOrder._rowIndex,
           updates: updates
         }),
@@ -234,6 +247,15 @@ export default function NewOrders() {
 
       {/* Main Content */}
       <main className={styles.main}>
+        {/* Debug Info - Remove in production */}
+        <div style={{background: '#f0f0f0', padding: '10px', margin: '10px', fontSize: '12px', borderRadius: '5px'}}>
+          <strong>Debug Info:</strong>
+          <div>Loading: {loading.toString()}</div>
+          <div>Orders Count: {orders.length}</div>
+          <div>Filtered Count: {filteredOrders.length}</div>
+          <div>Error: {error || 'None'}</div>
+        </div>
+
         {/* Filters and Actions */}
         <div className={styles.controlsSection}>
           <div className={styles.filters}>
@@ -301,11 +323,16 @@ export default function NewOrders() {
             <div className={styles.emptyState}>
               <p>📦</p>
               <p>No orders found</p>
+              <small>API returned {orders.length} total orders</small>
               {searchTerm || statusFilter !== 'All' ? (
                 <button onClick={() => { setSearchTerm(''); setStatusFilter('All'); }} className={styles.clearButton}>
                   Clear Filters
                 </button>
-              ) : null}
+              ) : (
+                <button onClick={loadOrders} className={styles.refreshButton}>
+                  Refresh Data
+                </button>
+              )}
             </div>
           ) : (
             <div className={styles.tableWrapper}>
@@ -359,7 +386,7 @@ export default function NewOrders() {
         <div className={styles.modalOverlay} onClick={() => !saving && setShowEditModal(false)}>
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
             <div className={styles.modalHeader}>
-              <h2>Edit Order - {selectedOrder['Order ID']}</h2>
+              <h2>Edit Order - {selectedOrder['Oder ID']}</h2> {/* Fixed field name */}
               <button
                 onClick={() => !saving && setShowEditModal(false)}
                 className={styles.closeButton}
@@ -375,7 +402,7 @@ export default function NewOrders() {
                   <label>Order ID</label>
                   <input
                     type="text"
-                    value={selectedOrder['Order ID'] || ''}
+                    value={selectedOrder['Oder ID'] || ''} {/* Fixed field name */}
                     disabled
                     className={styles.inputDisabled}
                   />
@@ -487,7 +514,7 @@ export default function NewOrders() {
 
             <div className={styles.modalFooter}>
               <button
-                onClick={() => setShowEditModal(false)}
+                onClick={() => setShowModal(false)}
                 className={styles.cancelButton}
                 disabled={saving}
               >
