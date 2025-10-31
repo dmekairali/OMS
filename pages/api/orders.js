@@ -22,33 +22,28 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'Order spreadsheet configuration missing' });
     }
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
+    const { google } = require('googleapis');
+    
+    const auth = new google.auth.GoogleAuth({
+      credentials: {
+        client_email: process.env.GOOGLE_CLIENT_EMAIL,
+        private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+      },
+      scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+    });
+
+    const sheets = google.sheets({ version: 'v4', auth });
 
     // GET - Read all orders
     if (req.method === 'GET') {
       const { orderId } = req.query;
 
-      const sheetsResponse = await fetch(
-        `${apiUrl}/api/sheets?sheetId=${orderSheetId}&sheetName=NewOrders&range=A:Z`,
-        {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        }
-      );
+      const sheetsResponse = await sheets.spreadsheets.values.get({
+        spreadsheetId: orderSheetId,
+        range: 'NewOrders!A:Z',
+      });
 
-      if (!sheetsResponse.ok) {
-        const errorData = await sheetsResponse.json();
-        console.error('Failed to read NewOrders sheet:', errorData);
-        return res.status(500).json({ 
-          error: 'Failed to fetch orders',
-          details: 'Could not connect to orders database'
-        });
-      }
-
-      const sheetsData = await sheetsResponse.json();
-      const ordersData = sheetsData.values;
+      const ordersData = sheetsResponse.data.values;
       
       if (!ordersData || ordersData.length === 0) {
         return res.status(200).json({ 
@@ -99,34 +94,20 @@ export default async function handler(req, res) {
       }
 
       // Append to sheet
-      const sheetsResponse = await fetch(`${apiUrl}/api/sheets`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          spreadsheetId: orderSheetId,
-          sheetName: 'NewOrders',
-          values: [orderData] // Array of row values
-        }),
+      const result = await sheets.spreadsheets.values.append({
+        spreadsheetId: orderSheetId,
+        range: 'NewOrders!A:Z',
+        valueInputOption: 'USER_ENTERED',
+        requestBody: {
+          values: [orderData]
+        }
       });
-
-      if (!sheetsResponse.ok) {
-        const errorData = await sheetsResponse.json();
-        console.error('Failed to create order:', errorData);
-        return res.status(500).json({ 
-          error: 'Failed to create order',
-          details: errorData.error
-        });
-      }
-
-      const result = await sheetsResponse.json();
 
       return res.status(201).json({
         success: true,
         message: 'Order created successfully',
-        updatedRange: result.updatedRange,
-        updatedRows: result.updatedRows
+        updatedRange: result.data.updates.updatedRange,
+        updatedRows: result.data.updates.updatedRows
       });
     }
 
@@ -139,67 +120,43 @@ export default async function handler(req, res) {
       }
 
       // First, get current data to find column indices
-      const getResponse = await fetch(
-        `${apiUrl}/api/sheets?sheetId=${orderSheetId}&sheetName=NewOrders&range=A1:Z1`,
-        {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        }
-      );
+      const headersResponse = await sheets.spreadsheets.values.get({
+        spreadsheetId: orderSheetId,
+        range: 'NewOrders!A1:Z1',
+      });
 
-      if (!getResponse.ok) {
-        return res.status(500).json({ error: 'Failed to fetch headers' });
-      }
-
-      const headersData = await getResponse.json();
-      const headers = headersData.values[0];
+      const headers = headersResponse.data.values[0];
 
       // Build update requests for each field
-      const updateRequests = [];
+      const updateData = [];
       Object.keys(updates).forEach(fieldName => {
         const colIndex = headers.indexOf(fieldName);
         if (colIndex !== -1) {
           const colLetter = String.fromCharCode(65 + colIndex); // A=65
-          updateRequests.push({
+          updateData.push({
             range: `NewOrders!${colLetter}${rowIndex}`,
             values: [[updates[fieldName]]]
           });
         }
       });
 
-      if (updateRequests.length === 0) {
+      if (updateData.length === 0) {
         return res.status(400).json({ error: 'No valid fields to update' });
       }
 
       // Batch update
-      const sheetsResponse = await fetch(`${apiUrl}/api/sheets`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          spreadsheetId: orderSheetId,
-          data: updateRequests
-        }),
+      const result = await sheets.spreadsheets.values.batchUpdate({
+        spreadsheetId: orderSheetId,
+        requestBody: {
+          valueInputOption: 'USER_ENTERED',
+          data: updateData
+        }
       });
-
-      if (!sheetsResponse.ok) {
-        const errorData = await sheetsResponse.json();
-        console.error('Failed to update order:', errorData);
-        return res.status(500).json({ 
-          error: 'Failed to update order',
-          details: errorData.error
-        });
-      }
-
-      const result = await sheetsResponse.json();
 
       return res.status(200).json({
         success: true,
         message: 'Order updated successfully',
-        updatedCells: result.totalUpdatedCells
+        updatedCells: result.data.totalUpdatedCells
       });
     }
 
