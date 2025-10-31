@@ -18,7 +18,7 @@ export default function NewOrders() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   
-  // Key columns to display (based on actual sheet structure)
+  // Key columns to display (updated to include Planned and Actual columns)
   const displayColumns = [
     'Order ID',
     'Name of Client',
@@ -26,6 +26,8 @@ export default function NewOrders() {
     'Email',
     'Invoice Amount',
     'Order Status',
+    'Planned',
+    'Actual',
     'Delivery Required Date',
     'Order Taken By',
     'Timestamp'
@@ -71,11 +73,25 @@ export default function NewOrders() {
 
     // Status filter
     if (statusFilter !== 'All') {
-      filtered = filtered.filter(order => order['Order Status'] === statusFilter);
+      if (statusFilter === 'Pending') {
+        // Pending: Planned is not blank AND Actual is blank
+        filtered = filtered.filter(order => 
+          order['Planned'] && order['Planned'].trim() !== '' && 
+          (!order['Actual'] || order['Actual'].trim() === '')
+        );
+      } else {
+        filtered = filtered.filter(order => order['Order Status'] === statusFilter);
+      }
     }
 
     setFilteredOrders(filtered);
   }, [orders, searchTerm, statusFilter]);
+
+  // Function to determine if an order is pending based on Planned/Actual
+  const isOrderPending = (order) => {
+    return order['Planned'] && order['Planned'].trim() !== '' && 
+           (!order['Actual'] || order['Actual'].trim() === '');
+  };
 
   const loadOrders = async () => {
     try {
@@ -154,10 +170,14 @@ export default function NewOrders() {
     }
   };
 
-  const getStatusBadgeClass = (status) => {
-    switch (status) {
-      case 'Pending':
-        return styles.statusPending;
+  const getStatusBadgeClass = (order) => {
+    // Use the new pending logic
+    if (isOrderPending(order)) {
+      return styles.statusPending;
+    }
+    
+    // Fall back to Order Status for other cases
+    switch (order['Order Status']) {
       case 'Order Confirmed':
         return styles.statusConfirmed;
       case 'Cancelled':
@@ -169,8 +189,23 @@ export default function NewOrders() {
     }
   };
 
+  const getStatusDisplayText = (order) => {
+    // Use the new pending logic
+    if (isOrderPending(order)) {
+      return 'Pending';
+    }
+    
+    // Fall back to Order Status for other cases
+    return order['Order Status'] || 'Unknown';
+  };
+
   const getStatusOptions = () => {
-    return ['Pending', 'Order Confirmed', 'Cancelled', 'False Order'];
+    return ['All', 'Pending', 'Order Confirmed', 'Cancelled', 'False Order'];
+  };
+
+  // Count pending orders based on new logic
+  const countPendingOrders = (ordersList) => {
+    return ordersList.filter(order => isOrderPending(order)).length;
   };
 
   if (!user) {
@@ -214,11 +249,9 @@ export default function NewOrders() {
               onChange={(e) => setStatusFilter(e.target.value)}
               className={styles.statusFilter}
             >
-              <option value="All">All Status</option>
-              <option value="Pending">Pending</option>
-              <option value="Order Confirmed">Order Confirmed</option>
-              <option value="Cancelled">Cancelled</option>
-              <option value="False Order">False Order</option>
+              {getStatusOptions().map((status, idx) => (
+                <option key={idx} value={status}>{status}</option>
+              ))}
             </select>
           </div>
           <div className={styles.actions}>
@@ -246,7 +279,7 @@ export default function NewOrders() {
           <div className={styles.statItem}>
             <span className={styles.statLabel}>Pending:</span>
             <span className={styles.statValue}>
-              {filteredOrders.filter(o => o['Order Status'] === 'Pending').length}
+              {countPendingOrders(filteredOrders)}
             </span>
           </div>
           <div className={styles.statItem}>
@@ -291,8 +324,8 @@ export default function NewOrders() {
                       {displayColumns.map((col, colIndex) => (
                         <td key={colIndex}>
                           {col === 'Order Status' ? (
-                            <span className={`${styles.statusBadge} ${getStatusBadgeClass(order[col])}`}>
-                              {order[col]}
+                            <span className={`${styles.statusBadge} ${getStatusBadgeClass(order)}`}>
+                              {getStatusDisplayText(order)}
                             </span>
                           ) : col === 'Invoice Amount' ? (
                             `₹${order[col] || '0'}`
@@ -389,15 +422,38 @@ export default function NewOrders() {
                 </div>
 
                 <div className={styles.formGroup}>
-                  <label>Order Status *</label>
+                  <label>Planned</label>
+                  <input
+                    type="text"
+                    value={selectedOrder['Planned'] || ''}
+                    onChange={(e) => setSelectedOrder({...selectedOrder, 'Planned': e.target.value})}
+                    disabled={saving}
+                    placeholder="Enter planned details"
+                  />
+                </div>
+
+                <div className={styles.formGroup}>
+                  <label>Actual</label>
+                  <input
+                    type="text"
+                    value={selectedOrder['Actual'] || ''}
+                    onChange={(e) => setSelectedOrder({...selectedOrder, 'Actual': e.target.value})}
+                    disabled={saving}
+                    placeholder="Enter actual details"
+                  />
+                </div>
+
+                <div className={styles.formGroup}>
+                  <label>Order Status</label>
                   <select
                     value={selectedOrder['Order Status'] || ''}
                     onChange={(e) => setSelectedOrder({...selectedOrder, 'Order Status': e.target.value})}
                     disabled={saving}
                   >
-                    {getStatusOptions().map((status, idx) => (
-                      <option key={idx} value={status}>{status}</option>
-                    ))}
+                    <option value="">Select Status</option>
+                    <option value="Order Confirmed">Order Confirmed</option>
+                    <option value="Cancelled">Cancelled</option>
+                    <option value="False Order">False Order</option>
                   </select>
                 </div>
 
