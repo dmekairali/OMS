@@ -32,29 +32,25 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'Setup spreadsheet configuration missing' });
     }
 
-    // Read Users sheet using the sheets API
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
-    const sheetsResponse = await fetch(
-      `${apiUrl}/api/sheets?sheetId=${setupSheetId}&sheetName=Users&range=A:H`,
-      {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      }
-    );
+    // Read Users sheet directly using Google Sheets API
+    const { google } = require('googleapis');
+    
+    const auth = new google.auth.GoogleAuth({
+      credentials: {
+        client_email: process.env.GOOGLE_CLIENT_EMAIL,
+        private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+      },
+      scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+    });
 
-    if (!sheetsResponse.ok) {
-      const errorData = await sheetsResponse.json();
-      console.error('Failed to read Users sheet:', errorData);
-      return res.status(500).json({ 
-        error: 'Failed to authenticate',
-        details: 'Could not connect to user database'
-      });
-    }
+    const sheets = google.sheets({ version: 'v4', auth });
+    
+    const sheetsResponse = await sheets.spreadsheets.values.get({
+      spreadsheetId: setupSheetId,
+      range: 'Users!A:H',
+    });
 
-    const sheetsData = await sheetsResponse.json();
-    const usersData = sheetsData.values;
+    const usersData = sheetsResponse.data.values;
     
     if (!usersData || usersData.length === 0) {
       return res.status(500).json({ error: 'No users found in system' });
@@ -105,16 +101,13 @@ export default async function handler(req, res) {
     
     // Update last login (optional - can be done asynchronously)
     try {
-      await fetch(`${apiUrl}/api/sheets`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          spreadsheetId: setupSheetId,
-          range: `Users!G${userIndex + 2}`, // +2 because of header row and 0-based index
+      await sheets.spreadsheets.values.update({
+        spreadsheetId: setupSheetId,
+        range: `Users!G${userIndex + 2}`, // +2 because of header row and 0-based index
+        valueInputOption: 'USER_ENTERED',
+        requestBody: {
           values: [[now]]
-        }),
+        }
       });
     } catch (updateError) {
       console.error('Failed to update last login:', updateError);
