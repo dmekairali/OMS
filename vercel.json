@@ -1,6 +1,7 @@
+
 {
   "functions": {
-    "api/sheets.js": {
+    "pages/api/sheets.js": {
       "maxDuration": 180
     }
   }
