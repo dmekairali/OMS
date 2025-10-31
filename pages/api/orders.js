@@ -2,6 +2,12 @@
  * Orders API Endpoint
  * Handles CRUD operations for NewOrders sheet
  * Uses ORDERSHEET spreadsheet
+ * 
+ * IMPORTANT: NewOrders sheet has:
+ * - Header row at row 8
+ * - Data starts at row 9
+ * - 84 columns total (A to CF)
+ * - Order Status in column 45 (AS)
  */
 
 export default async function handler(req, res) {
@@ -38,9 +44,11 @@ export default async function handler(req, res) {
     if (req.method === 'GET') {
       const { orderId } = req.query;
 
+      // NewOrders has header at row 8, data starts at row 9
+      // 84 columns total (A to CF)
       const sheetsResponse = await sheets.spreadsheets.values.get({
         spreadsheetId: orderSheetId,
-        range: 'NewOrders!A:Z',
+        range: 'NewOrders!A8:CF1000', // Header at row 8, read up to row 1000
       });
 
       const ordersData = sheetsResponse.data.values;
@@ -49,21 +57,26 @@ export default async function handler(req, res) {
         return res.status(200).json({ 
           success: true,
           orders: [],
-          count: 0
+          count: 0,
+          headers: []
         });
       }
 
-      // Convert to objects
+      // First row (index 0) is the header from row 8
       const headers = ordersData[0];
+      // Data rows start from index 1 (which is row 9 in the sheet)
       const rows = ordersData.slice(1);
       
       const orders = rows.map((row, index) => {
-        const obj = { _rowIndex: index + 2 }; // +2 for header and 1-based index
+        const obj = { 
+          _rowIndex: index + 9, // Actual row number in sheet (data starts at row 9)
+          _arrayIndex: index  // Index in the data array
+        };
         headers.forEach((header, colIndex) => {
           obj[header] = row[colIndex] || '';
         });
         return obj;
-      });
+      }).filter(order => order['Order ID'] && order['Order ID'].toString().trim() !== ''); // Filter out empty rows
 
       // If specific order requested, filter
       if (orderId) {
@@ -89,14 +102,14 @@ export default async function handler(req, res) {
     if (req.method === 'POST') {
       const orderData = req.body;
 
-      if (!orderData) {
-        return res.status(400).json({ error: 'Order data required' });
+      if (!orderData || !Array.isArray(orderData)) {
+        return res.status(400).json({ error: 'Order data must be an array' });
       }
 
-      // Append to sheet
+      // Append to sheet (will add after last row with data)
       const result = await sheets.spreadsheets.values.append({
         spreadsheetId: orderSheetId,
-        range: 'NewOrders!A:Z',
+        range: 'NewOrders!A9', // Start appending from row 9 (data row)
         valueInputOption: 'USER_ENTERED',
         requestBody: {
           values: [orderData]
@@ -119,10 +132,10 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'rowIndex and updates required' });
       }
 
-      // First, get current data to find column indices
+      // Get headers from row 8
       const headersResponse = await sheets.spreadsheets.values.get({
         spreadsheetId: orderSheetId,
-        range: 'NewOrders!A1:Z1',
+        range: 'NewOrders!A8:CF8',
       });
 
       const headers = headersResponse.data.values[0];
@@ -132,7 +145,8 @@ export default async function handler(req, res) {
       Object.keys(updates).forEach(fieldName => {
         const colIndex = headers.indexOf(fieldName);
         if (colIndex !== -1) {
-          const colLetter = String.fromCharCode(65 + colIndex); // A=65
+          // Convert column index to letter (0=A, 1=B, etc.)
+          const colLetter = columnIndexToLetter(colIndex);
           updateData.push({
             range: `NewOrders!${colLetter}${rowIndex}`,
             values: [[updates[fieldName]]]
@@ -160,6 +174,31 @@ export default async function handler(req, res) {
       });
     }
 
+    // DELETE - Soft delete (mark as cancelled/deleted)
+    if (req.method === 'DELETE') {
+      const { orderId, rowIndex } = req.body;
+
+      if (!rowIndex) {
+        return res.status(400).json({ error: 'rowIndex required' });
+      }
+
+      // Get the column index for "Order Status" (column 45 = AS)
+      const result = await sheets.spreadsheets.values.update({
+        spreadsheetId: orderSheetId,
+        range: `NewOrders!AS${rowIndex}`, // Order Status column
+        valueInputOption: 'USER_ENTERED',
+        requestBody: {
+          values: [['Cancelled']]
+        }
+      });
+
+      return res.status(200).json({
+        success: true,
+        message: 'Order marked as cancelled',
+        updatedCells: result.data.updatedCells
+      });
+    }
+
     return res.status(405).json({ error: 'Method not allowed' });
 
   } catch (error) {
@@ -169,4 +208,17 @@ export default async function handler(req, res) {
       details: error.message 
     });
   }
+}
+
+/**
+ * Convert column index (0-based) to Excel-style letter
+ * 0 = A, 1 = B, ..., 25 = Z, 26 = AA, etc.
+ */
+function columnIndexToLetter(index) {
+  let letter = '';
+  while (index >= 0) {
+    letter = String.fromCharCode(65 + (index % 26)) + letter;
+    index = Math.floor(index / 26) - 1;
+  }
+  return letter;
 }
