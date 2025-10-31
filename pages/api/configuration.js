@@ -26,29 +26,25 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'Setup spreadsheet configuration missing' });
     }
 
-    // Read Configuration sheet using the sheets API
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
-    const sheetsResponse = await fetch(
-      `${apiUrl}/api/sheets?sheetId=${setupSheetId}&sheetName=Configuration&range=A:H`,
-      {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      }
-    );
+    // Read Configuration sheet directly using Google Sheets API
+    const { google } = require('googleapis');
+    
+    const auth = new google.auth.GoogleAuth({
+      credentials: {
+        client_email: process.env.GOOGLE_CLIENT_EMAIL,
+        private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+      },
+      scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+    });
 
-    if (!sheetsResponse.ok) {
-      const errorData = await sheetsResponse.json();
-      console.error('Failed to read Configuration sheet:', errorData);
-      return res.status(500).json({ 
-        error: 'Failed to load configuration',
-        details: 'Could not connect to configuration database'
-      });
-    }
+    const sheets = google.sheets({ version: 'v4', auth });
+    
+    const sheetsResponse = await sheets.spreadsheets.values.get({
+      spreadsheetId: setupSheetId,
+      range: 'Configuration!A:H',
+    });
 
-    const sheetsData = await sheetsResponse.json();
-    const configData = sheetsData.values;
+    const configData = sheetsResponse.data.values;
     
     if (!configData || configData.length === 0) {
       return res.status(404).json({ error: 'Configuration not found' });
