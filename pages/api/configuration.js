@@ -1,6 +1,7 @@
 /**
  * Configuration API Endpoint
  * Reads and returns configuration from Configuration sheet
+ * Uses SETUPSHEET for Configuration data
  */
 
 export default async function handler(req, res) {
@@ -18,17 +19,17 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Get spreadsheet ID from environment
-    const spreadsheetId = process.env.GOOGLE_SHEETS_SPREADSHEET_ID;
+    // Get SETUPSHEET spreadsheet ID from environment (contains Users & Configuration)
+    const setupSheetId = process.env.GOOGLE_SHEETS_SPREADSHEET_ID_SETUPSHEET;
     
-    if (!spreadsheetId) {
-      return res.status(500).json({ error: 'Spreadsheet configuration missing' });
+    if (!setupSheetId) {
+      return res.status(500).json({ error: 'Setup spreadsheet configuration missing' });
     }
 
     // Read Configuration sheet using the sheets API
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
     const sheetsResponse = await fetch(
-      `${apiUrl}/api/sheets?sheetId=${spreadsheetId}&sheetName=Configuration&range=A:H`,
+      `${apiUrl}/api/sheets?sheetId=${setupSheetId}&sheetName=Configuration&range=A:H`,
       {
         method: 'GET',
         headers: {
