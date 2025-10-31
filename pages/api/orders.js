@@ -76,11 +76,11 @@ export default async function handler(req, res) {
           obj[header] = row[colIndex] || '';
         });
         return obj;
-      }).filter(order => order['Order ID'] && order['Order ID'].toString().trim() !== ''); // Filter out empty rows
+      }).filter(order => order['Oder ID'] && order['Oder ID'].toString().trim() !== ''); // Filter out empty rows
 
       // If specific order requested, filter
       if (orderId) {
-        const order = orders.find(o => o['Order ID'] === orderId);
+        const order = orders.find(o => o['Oder ID'] === orderId);
         if (!order) {
           return res.status(404).json({ error: 'Order not found' });
         }
