@@ -18,9 +18,9 @@ export default function NewOrders() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   
-  // Key columns to display (using actual field names from API)
+  // Key columns to display (updated to include Planned and Actual columns)
   const displayColumns = [
-    'Oder ID', // Note: This is the actual field name from API (typo)
+    'Oder ID',
     'Name of Client',
     'Mobile',
     'Email',
@@ -97,30 +97,17 @@ export default function NewOrders() {
     try {
       setLoading(true);
       setError('');
-      console.log('Fetching orders from API...');
       
       const response = await fetch('/api/orders');
-      console.log('API Response status:', response.status);
       
       if (response.ok) {
         const data = await response.json();
-        console.log('API Response data:', data);
-        
-        // Check if the API returned success and has orders
-        if (data.success) {
-          console.log('Orders found:', data.orders?.length);
-          console.log('Sample order:', data.orders?.[0]);
-          
-          setOrders(data.orders || []);
-          setHeaders(data.headers || []);
-          setFilteredOrders(data.orders || []);
-        } else {
-          setError('API returned unsuccessful response');
-        }
+        setOrders(data.orders || []);
+        setHeaders(data.headers || []);
+        setFilteredOrders(data.orders || []);
       } else {
         const errorData = await response.json();
-        console.error('API Error:', errorData);
-        setError(errorData.error || `Failed to load orders (HTTP ${response.status})`);
+        setError(errorData.error || 'Failed to load orders');
       }
     } catch (error) {
       console.error('Error loading orders:', error);
@@ -160,7 +147,7 @@ export default function NewOrders() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          orderId: selectedOrder['Oder ID'], // Use correct field name
+          orderId: selectedOrder['Oder ID'],
           rowIndex: selectedOrder._rowIndex,
           updates: updates
         }),
@@ -247,15 +234,6 @@ export default function NewOrders() {
 
       {/* Main Content */}
       <main className={styles.main}>
-        {/* Debug Info - Remove in production */}
-        <div style={{background: '#f0f0f0', padding: '10px', margin: '10px', fontSize: '12px', borderRadius: '5px'}}>
-          <strong>Debug Info:</strong>
-          <div>Loading: {loading.toString()}</div>
-          <div>Orders Count: {orders.length}</div>
-          <div>Filtered Count: {filteredOrders.length}</div>
-          <div>Error: {error || 'None'}</div>
-        </div>
-
         {/* Filters and Actions */}
         <div className={styles.controlsSection}>
           <div className={styles.filters}>
@@ -323,16 +301,11 @@ export default function NewOrders() {
             <div className={styles.emptyState}>
               <p>📦</p>
               <p>No orders found</p>
-              <small>API returned {orders.length} total orders</small>
               {searchTerm || statusFilter !== 'All' ? (
                 <button onClick={() => { setSearchTerm(''); setStatusFilter('All'); }} className={styles.clearButton}>
                   Clear Filters
                 </button>
-              ) : (
-                <button onClick={loadOrders} className={styles.refreshButton}>
-                  Refresh Data
-                </button>
-              )}
+              ) : null}
             </div>
           ) : (
             <div className={styles.tableWrapper}>
@@ -386,7 +359,7 @@ export default function NewOrders() {
         <div className={styles.modalOverlay} onClick={() => !saving && setShowEditModal(false)}>
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
             <div className={styles.modalHeader}>
-              <h2>Edit Order - {selectedOrder['Oder ID']}</h2> {/* Fixed field name */}
+              <h2>Edit Order - {selectedOrder['Oder ID']}</h2>
               <button
                 onClick={() => !saving && setShowEditModal(false)}
                 className={styles.closeButton}
@@ -399,10 +372,10 @@ export default function NewOrders() {
             <div className={styles.modalBody}>
               <div className={styles.formGrid}>
                 <div className={styles.formGroup}>
-                  <label>Order ID</label>
+                  <label>Oder ID</label>
                   <input
                     type="text"
-                    value={selectedOrder['Oder ID'] || ''} {/* Fixed field name */}
+                    value={selectedOrder['Oder ID'] || ''}
                     disabled
                     className={styles.inputDisabled}
                   />
@@ -514,7 +487,7 @@ export default function NewOrders() {
 
             <div className={styles.modalFooter}>
               <button
-                onClick={() => setShowModal(false)}
+                onClick={() => setShowEditModal(false)}
                 className={styles.cancelButton}
                 disabled={saving}
               >
