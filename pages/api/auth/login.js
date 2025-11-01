@@ -72,12 +72,20 @@ export default async function handler(req, res) {
       return res.status(401).json({ error: 'Invalid username or password' });
     }
 
-    // Parse module access
+    // Parse module access with DEFAULT access if empty
     let moduleAccess = {};
     try {
-      moduleAccess = JSON.parse(user['Module Access'] || '{}');
+      const moduleAccessStr = user['Module Access'] || '';
+      if (moduleAccessStr.trim()) {
+        moduleAccess = JSON.parse(moduleAccessStr);
+      }
     } catch (e) {
       console.error('Error parsing module access:', e);
+    }
+
+    // If moduleAccess is empty or invalid, grant DEFAULT full access
+    if (!moduleAccess || Object.keys(moduleAccess).length === 0) {
+      console.log('No module access found, granting default full access');
       moduleAccess = {
         dashboard: true,
         newOrders: true,
@@ -122,6 +130,8 @@ export default async function handler(req, res) {
       showAllData: user['Show All Data'] === 'TRUE',
       lastLogin: now,
     };
+
+    console.log('User session created:', JSON.stringify(userSession, null, 2));
 
     return res.status(200).json({
       success: true,
