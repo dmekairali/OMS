@@ -18,28 +18,38 @@ export default function Dashboard() {
   const [recentActivity, setRecentActivity] = useState([]);
 
   useEffect(() => {
-    const userSession = localStorage.getItem('userSession');
-    if (!userSession) {
+  const userSession = localStorage.getItem('userSession');
+  if (!userSession) {
+    router.push('/login');
+    return;
+  }
+
+  try {
+    const userData = JSON.parse(userSession);
+    
+    // Check if moduleAccess exists, if not, clear session and force re-login
+    if (!userData.moduleAccess) {
+      console.log('Invalid session detected, clearing...');
+      localStorage.removeItem('userSession');
+      router.push('/login');
+      return;
+    }
+    
+    if (!userData.moduleAccess?.dashboard) {
+      alert('You do not have access to Dashboard');
+      localStorage.removeItem('userSession');
       router.push('/login');
       return;
     }
 
-    try {
-      const userData = JSON.parse(userSession);
-      
-      if (!userData.moduleAccess?.dashboard) {
-        alert('You do not have access to Dashboard');
-        router.push('/login');
-        return;
-      }
-
-      setUser(userData);
-      loadDashboardData();
-    } catch (error) {
-      console.error('Error parsing user session:', error);
-      router.push('/login');
-    }
-  }, [router]);
+    setUser(userData);
+    loadDashboardData();
+  } catch (error) {
+    console.error('Error parsing user session:', error);
+    localStorage.removeItem('userSession');
+    router.push('/login');
+  }
+}, [router]);
 
   const loadDashboardData = async () => {
     try {
