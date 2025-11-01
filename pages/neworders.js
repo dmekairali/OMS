@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import styles from '../styles/NewOrders.module.css';
 
-// Hardcoded field configuration for New Orders
+// Non-editable display fields for order cards
 const DISPLAY_FIELDS = [
   { name: 'Oder ID', type: 'text' },
   { name: 'Name of Client', type: 'text' },
@@ -11,36 +11,111 @@ const DISPLAY_FIELDS = [
   { name: 'Invoice Amount', type: 'currency' },
 ];
 
+// All non-editable fields for detail view
+const NON_EDITABLE_FIELDS = [
+  { name: 'Timestamp', type: 'datetime' },
+  { name: 'Buyer ID', type: 'text' },
+  { name: 'Oder ID', type: 'text' },
+  { name: 'Name of Client', type: 'text' },
+  { name: 'Mobile', type: 'text' },
+  { name: 'Email', type: 'text' },
+  { name: 'Client Category', type: 'text' },
+  { name: 'Client Type', type: 'text' },
+  { name: 'Billing Address', type: 'text' },
+  { name: 'Shipping Address', type: 'text' },
+  { name: 'Pin code', type: 'text' },
+  { name: 'Invoice Amount', type: 'currency' },
+  { name: 'Order Taken By', type: 'text' },
+  { name: 'Delivery Required Date', type: 'date' },
+  { name: 'Delivery Party From', type: 'text' },
+  { name: 'Payment Terms', type: 'text' },
+  { name: 'Payment Date (to be paid)', type: 'date' },
+  { name: 'Preffered Call time', type: 'text' },
+  { name: 'Discount %', type: 'text' },
+  { name: 'Planned', type: 'datetime' },
+  { name: 'Actual', type: 'datetime' },
+  { name: 'POB No', type: 'text' },
+  { name: 'POB URL', type: 'url' },
+  { name: 'Doer Name', type: 'text' },
+  { name: 'CAPA Link', type: 'url' },
+  { name: 'Feedback Collection Link', type: 'url' },
+];
+
+// Order Status options
+const ORDER_STATUS_OPTIONS = [
+  'Order Confirmed',
+  'Cancel Order',
+  'False Order',
+  'Hold',
+  'Stock Transfer',
+  // 'Edit Order', // Disabled for now
+  // 'Edit and Split', // Disabled for now
+];
+
+// Dispatch Party options
+const DISPATCH_PARTY_OPTIONS = [
+  'Kairali Ayurvedic Products-642001-Stockist-1234567890',
+  'Mumbai Warehouse-400001-Main-9876543210',
+  'Delhi Distribution-110001-Branch-8765432109',
+  'Chennai Hub-600001-Regional-7654321098',
+  'Bangalore Center-560001-Main-6543210987'
+];
+
+// Payment Confirmation Type options
+const PAYMENT_TYPE_OPTIONS = [
+  'UPI',
+  'Cash',
+  'Card',
+  'Net Banking',
+  'Cheque',
+  'COD',
+  'Credit'
+];
+
+// Action field configurations based on Order Status
 const ACTION_FIELDS = {
-  confirm: [
-    { name: 'Order Status', type: 'text', defaultValue: 'Order Confirmed', readOnly: true },
-    { name: 'Dispatch Party From', type: 'dropdown', required: true, options: [
-      'Kairali Ayurvedic Products-642001-Stockist-1234567890',
-      'Mumbai Warehouse-400001-Main-9876543210',
-      'Delhi Distribution-110001-Branch-8765432109'
-    ]},
+  'Order Confirmed': [
+    { name: 'Order Status', type: 'dropdown', defaultValue: 'Order Confirmed', readOnly: true, required: true, options: ORDER_STATUS_OPTIONS },
+    { name: 'Dispatch Party From', type: 'dropdown', required: true, options: DISPATCH_PARTY_OPTIONS },
     { name: 'Remarks', type: 'textarea', required: true, fullWidth: true },
-    { name: 'Inform Client', type: 'checkbox' },
-    { name: 'Inform Dispatch', type: 'checkbox' },
-    { name: 'Expected Dispatch Date', type: 'datetime-local' },
-    { name: 'Actual Invoice Amount', type: 'number', step: '0.01' },
+    { name: 'Inform to Client by call', type: 'checkbox' },
+    { name: 'Inform to Dispatch Party From by call', type: 'checkbox' },
+    { name: 'Payment Date', type: 'date' },
+    { name: 'Payment Confirmation Type', type: 'dropdown', options: PAYMENT_TYPE_OPTIONS },
+    { name: 'Expected Date and time of the Dispatch', type: 'datetime-local' },
+    { name: 'Enter Actual Invoice Amount of Dispatch Party', type: 'number', step: '0.01' },
   ],
-  cancel: [
-    { name: 'Order Status', type: 'text', defaultValue: 'Cancelled', readOnly: true },
-    { name: 'Cancellation Reason', type: 'dropdown', required: true, options: [
-      'Customer Request', 'Out of Stock', 'Payment Issue', 'Delivery Issue', 'Duplicate Order', 'Other'
-    ]},
-    { name: 'Cancellation Notes', type: 'textarea', required: true, fullWidth: true },
-    { name: 'Refund Initiated', type: 'checkbox' },
+  'Cancel Order': [
+    { name: 'Order Status', type: 'dropdown', defaultValue: 'Cancel Order', readOnly: true, required: true, options: ORDER_STATUS_OPTIONS },
+    { name: 'Remarks', type: 'textarea', required: true, fullWidth: true },
+    { name: 'Is order in full-Yes/No', type: 'dropdown', options: ['Yes', 'No'] },
+    { name: 'Reason(If No)', type: 'textarea', fullWidth: true },
+    { name: 'Inform to Client by call', type: 'checkbox' },
+    { name: 'Inform to Dispatch Party From by call', type: 'checkbox' },
   ],
-  false: [
-    { name: 'Order Status', type: 'text', defaultValue: 'False Order', readOnly: true },
-    { name: 'False Order Reason', type: 'dropdown', required: true, options: [
-      'Fake Contact Details', 'Fraudulent Payment', 'Test Order', 'Spam', 'Invalid Address', 'Other'
-    ]},
-    { name: 'Additional Details', type: 'textarea', required: true, fullWidth: true },
-    { name: 'Block Customer', type: 'checkbox' },
-  ]
+  'False Order': [
+    { name: 'Order Status', type: 'dropdown', defaultValue: 'False Order', readOnly: true, required: true, options: ORDER_STATUS_OPTIONS },
+    { name: 'Remarks', type: 'textarea', required: true, fullWidth: true },
+    { name: 'Is order in full-Yes/No', type: 'dropdown', options: ['Yes', 'No'] },
+    { name: 'Reason(If No)', type: 'textarea', fullWidth: true },
+    { name: 'Inform to Client by call', type: 'checkbox' },
+    { name: 'Inform to Dispatch Party From by call', type: 'checkbox' },
+  ],
+  'Hold': [
+    { name: 'Order Status', type: 'dropdown', defaultValue: 'Hold', readOnly: true, required: true, options: ORDER_STATUS_OPTIONS },
+    { name: 'Remarks', type: 'textarea', required: true, fullWidth: true },
+  ],
+  'Stock Transfer': [
+    { name: 'Order Status', type: 'dropdown', defaultValue: 'Stock Transfer', readOnly: true, required: true, options: ORDER_STATUS_OPTIONS },
+    { name: 'Dispatch Party From', type: 'dropdown', required: true, options: DISPATCH_PARTY_OPTIONS },
+    { name: 'Remarks', type: 'textarea', required: true, fullWidth: true },
+    { name: 'Inform to Client by call', type: 'checkbox' },
+    { name: 'Inform to Dispatch Party From by call', type: 'checkbox' },
+    { name: 'Payment Date', type: 'date' },
+    { name: 'Payment Confirmation Type', type: 'dropdown', options: PAYMENT_TYPE_OPTIONS },
+    { name: 'Expected Date and time of the Dispatch', type: 'datetime-local' },
+    { name: 'Enter Actual Invoice Amount of Dispatch Party', type: 'number', step: '0.01' },
+  ],
 };
 
 export default function NewOrders() {
@@ -52,7 +127,7 @@ export default function NewOrders() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showDetailView, setShowDetailView] = useState(false);
-  const [activeAction, setActiveAction] = useState(null);
+  const [selectedStatus, setSelectedStatus] = useState('');
 
   useEffect(() => {
     const userSession = localStorage.getItem('userSession');
@@ -64,6 +139,14 @@ export default function NewOrders() {
     try {
       const userData = JSON.parse(userSession);
       
+      // Check if moduleAccess exists, if not, clear and force re-login
+      if (!userData.moduleAccess) {
+        console.log('Invalid session detected, clearing...');
+        localStorage.removeItem('userSession');
+        router.push('/login');
+        return;
+      }
+      
       if (!userData.moduleAccess?.newOrders) {
         alert('You do not have access to New Orders module');
         router.push('/dashboard');
@@ -74,6 +157,7 @@ export default function NewOrders() {
       loadOrders();
     } catch (error) {
       console.error('Error parsing user session:', error);
+      localStorage.removeItem('userSession');
       router.push('/login');
     }
   }, [router]);
@@ -119,17 +203,17 @@ export default function NewOrders() {
   const handleOrderClick = (order) => {
     setSelectedOrder(order);
     setShowDetailView(true);
-    setActiveAction(null);
+    setSelectedStatus('');
   };
 
   const handleBackToDashboard = () => {
     setSelectedOrder(null);
     setShowDetailView(false);
-    setActiveAction(null);
+    setSelectedStatus('');
   };
 
-  const handleActionClick = (action) => {
-    setActiveAction(action);
+  const handleStatusSelect = (status) => {
+    setSelectedStatus(status);
   };
 
   const handleFormSubmit = async (e) => {
@@ -216,6 +300,8 @@ export default function NewOrders() {
         return value ? new Date(value).toLocaleDateString() : '-';
       case 'datetime':
         return value ? new Date(value).toLocaleString() : '-';
+      case 'url':
+        return value ? <a href={value} target="_blank" rel="noopener noreferrer" style={{color: '#3b82f6', textDecoration: 'underline'}}>View Link</a> : '-';
       default:
         return value || '-';
     }
@@ -247,6 +333,16 @@ export default function NewOrders() {
             name={field.name}
             defaultValue={field.defaultValue || ''}
             step={field.step || '1'}
+            required={field.required}
+            readOnly={field.readOnly}
+          />
+        )}
+        
+        {field.type === 'date' && (
+          <input
+            type="date"
+            name={field.name}
+            defaultValue={field.defaultValue || ''}
             required={field.required}
             readOnly={field.readOnly}
           />
@@ -310,7 +406,7 @@ export default function NewOrders() {
     );
   }
 
-  const actionFieldsConfig = ACTION_FIELDS[activeAction] || [];
+  const actionFieldsConfig = ACTION_FIELDS[selectedStatus] || [];
 
   return (
     <div className={styles.pageContainer}>
@@ -458,11 +554,11 @@ export default function NewOrders() {
                 ← Back to Orders
               </button>
 
-              {/* Order Details Card */}
+              {/* Order Details Card - Non Editable Fields */}
               <div className={styles.detailCard}>
-                <h3 className={styles.cardTitle}>Order Details</h3>
+                <h3 className={styles.cardTitle}>Order Information</h3>
                 <div className={styles.detailGrid}>
-                  {DISPLAY_FIELDS.map((field, idx) => (
+                  {NON_EDITABLE_FIELDS.map((field, idx) => (
                     <div key={idx} className={styles.detailItem}>
                       <span className={styles.detailLabel}>{field.name}</span>
                       <span className={styles.detailValue}>
@@ -470,33 +566,60 @@ export default function NewOrders() {
                       </span>
                     </div>
                   ))}
-                  <div className={styles.detailItem}>
-                    <span className={styles.detailLabel}>Address</span>
-                    <span className={styles.detailValue}>{selectedOrder['Address'] || '-'}</span>
-                  </div>
-                  <div className={styles.detailItem}>
-                    <span className={styles.detailLabel}>Order Status</span>
-                    <span className={styles.detailValue}>{selectedOrder['Order Status'] || 'Pending'}</span>
-                  </div>
-                  <div className={styles.detailItem}>
-                    <span className={styles.detailLabel}>Timestamp</span>
-                    <span className={styles.detailValue}>{selectedOrder['Timestamp'] || '-'}</span>
-                  </div>
                 </div>
               </div>
 
-              {/* Editable Fields Card */}
-              {activeAction && actionFieldsConfig.length > 0 && (
+              {/* Order Status Selection */}
+              {!selectedStatus && (
                 <div className={styles.detailCard}>
-                  <h3 className={styles.cardTitle}>✏️ Update Order Information</h3>
-                  <div className={`${styles.infoBox} ${styles[`info${activeAction}`]}`}>
+                  <h3 className={styles.cardTitle}>Select Action</h3>
+                  <p className={styles.actionDescription}>Choose an action to update this order:</p>
+                  <div className={styles.statusButtonsGrid}>
+                    {ORDER_STATUS_OPTIONS.map((status, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => handleStatusSelect(status)}
+                        className={`${styles.statusButton} ${
+                          status === 'Order Confirmed' || status === 'Stock Transfer' ? styles.statusSuccess :
+                          status === 'Cancel Order' ? styles.statusDanger :
+                          status === 'False Order' ? styles.statusWarning :
+                          status === 'Hold' ? styles.statusInfo :
+                          styles.statusDisabled
+                        }`}
+                        disabled={status === 'Edit Order' || status === 'Edit and Split'}
+                      >
+                        {status === 'Order Confirmed' && '✓ '}
+                        {status === 'Cancel Order' && '✕ '}
+                        {status === 'False Order' && '⚠️ '}
+                        {status === 'Hold' && '⏸ '}
+                        {status === 'Stock Transfer' && '🔄 '}
+                        {status}
+                        {(status === 'Edit Order' || status === 'Edit and Split') && ' (Coming Soon)'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Editable Fields Card */}
+              {selectedStatus && actionFieldsConfig.length > 0 && (
+                <div className={styles.detailCard}>
+                  <h3 className={styles.cardTitle}>✏️ Update Order - {selectedStatus}</h3>
+                  <div className={`${styles.infoBox} ${
+                    selectedStatus === 'Order Confirmed' || selectedStatus === 'Stock Transfer' ? styles.infoconfirm :
+                    selectedStatus === 'Cancel Order' ? styles.infocancel :
+                    selectedStatus === 'False Order' ? styles.infofalse :
+                    styles.infohold
+                  }`}>
                     <span className={styles.infoIcon}>
-                      {activeAction === 'confirm' ? 'ℹ️' : '⚠️'}
+                      {selectedStatus === 'Order Confirmed' || selectedStatus === 'Stock Transfer' ? 'ℹ️' : '⚠️'}
                     </span>
                     <span className={styles.infoText}>
-                      {activeAction === 'confirm' && 'Fill in the required information to confirm this order'}
-                      {activeAction === 'cancel' && 'Please provide cancellation details'}
-                      {activeAction === 'false' && 'Mark this order as false/fraudulent'}
+                      {selectedStatus === 'Order Confirmed' && 'Fill in the required information to confirm this order'}
+                      {selectedStatus === 'Cancel Order' && 'Please provide cancellation details'}
+                      {selectedStatus === 'False Order' && 'Mark this order as false/fraudulent'}
+                      {selectedStatus === 'Hold' && 'Put this order on hold'}
+                      {selectedStatus === 'Stock Transfer' && 'Process stock transfer for this order'}
                     </span>
                   </div>
                   
@@ -505,47 +628,26 @@ export default function NewOrders() {
                       {actionFieldsConfig.map((field, idx) => renderFormField(field, idx))}
                     </div>
                     <div className={styles.formActions}>
-                      <button type="button" onClick={() => setActiveAction(null)} className={styles.btnSecondary}>
+                      <button type="button" onClick={() => setSelectedStatus('')} className={styles.btnSecondary}>
                         Cancel
                       </button>
                       <button 
                         type="submit" 
                         className={
-                          activeAction === 'confirm' ? styles.btnSuccess :
-                          activeAction === 'cancel' ? styles.btnDanger :
-                          styles.btnGray
+                          selectedStatus === 'Order Confirmed' || selectedStatus === 'Stock Transfer' ? styles.btnSuccess :
+                          selectedStatus === 'Cancel Order' ? styles.btnDanger :
+                          selectedStatus === 'False Order' ? styles.btnWarning :
+                          styles.btnInfo
                         }
                       >
-                        {activeAction === 'confirm' && '✓ Confirm Order'}
-                        {activeAction === 'cancel' && '✕ Cancel Order'}
-                        {activeAction === 'false' && '⚠️ Mark as False Order'}
+                        {selectedStatus === 'Order Confirmed' && '✓ Confirm Order'}
+                        {selectedStatus === 'Cancel Order' && '✕ Cancel Order'}
+                        {selectedStatus === 'False Order' && '⚠️ Mark as False Order'}
+                        {selectedStatus === 'Hold' && '⏸ Put on Hold'}
+                        {selectedStatus === 'Stock Transfer' && '🔄 Process Stock Transfer'}
                       </button>
                     </div>
                   </form>
-                </div>
-              )}
-
-              {/* Action Buttons */}
-              {!activeAction && (
-                <div className={styles.actionButtons}>
-                  <button 
-                    onClick={() => handleActionClick('cancel')} 
-                    className={`${styles.actionBtn} ${styles.btnDanger}`}
-                  >
-                    ✕ Cancel Order
-                  </button>
-                  <button 
-                    onClick={() => handleActionClick('false')} 
-                    className={`${styles.actionBtn} ${styles.btnGray}`}
-                  >
-                    ⚠️ False Order
-                  </button>
-                  <button 
-                    onClick={() => handleActionClick('confirm')} 
-                    className={`${styles.actionBtn} ${styles.btnSuccess}`}
-                  >
-                    ✓ Confirm Order
-                  </button>
                 </div>
               )}
             </div>
