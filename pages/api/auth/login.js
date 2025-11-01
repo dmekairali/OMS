@@ -1,11 +1,4 @@
-/**
- * Login API Endpoint
- * Handles user authentication against Users sheet in Google Sheets
- * Uses SETUPSHEET for Users and Configuration data
- */
-
 export default async function handler(req, res) {
-  // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
@@ -25,14 +18,12 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Username and password required' });
     }
 
-    // Get SETUPSHEET spreadsheet ID from environment (contains Users & Configuration)
     const setupSheetId = process.env.GOOGLE_SHEETS_SPREADSHEET_ID_SETUPSHEET;
     
     if (!setupSheetId) {
       return res.status(500).json({ error: 'Setup spreadsheet configuration missing' });
     }
 
-    // Read Users sheet directly using Google Sheets API
     const { google } = require('googleapis');
     
     const auth = new google.auth.GoogleAuth({
@@ -47,7 +38,7 @@ export default async function handler(req, res) {
     
     const sheetsResponse = await sheets.spreadsheets.values.get({
       spreadsheetId: setupSheetId,
-      range: 'Users!A:H',
+      range: 'Users!A:I',
     });
 
     const usersData = sheetsResponse.data.values;
@@ -56,7 +47,6 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'No users found in system' });
     }
 
-    // Convert to objects
     const headers = usersData[0];
     const rows = usersData.slice(1);
     
@@ -68,25 +58,37 @@ export default async function handler(req, res) {
       return obj;
     });
 
-    // Find user
     const user = users.find(u => u.Username === username);
 
     if (!user) {
       return res.status(401).json({ error: 'Invalid username or password' });
     }
 
-    // Check if user is active
     if (user.Active !== 'TRUE') {
       return res.status(403).json({ error: 'Account is deactivated. Please contact administrator.' });
     }
 
-    // Verify password (in production, use bcrypt.compare)
-    // For demo: simple comparison
     if (user['Password Hash'] !== password) {
       return res.status(401).json({ error: 'Invalid username or password' });
     }
 
-    // Parse visible columns JSON
+    // Parse module access
+    let moduleAccess = {};
+    try {
+      moduleAccess = JSON.parse(user['Module Access'] || '{}');
+    } catch (e) {
+      console.error('Error parsing module access:', e);
+      // Default access for backward compatibility
+      moduleAccess = {
+        dashboard: true,
+        newOrders: true,
+        dispatch: true,
+        delivery: true,
+        payment: true
+      };
+    }
+
+    // Parse visible columns
     let visibleColumns = {};
     try {
       visibleColumns = JSON.parse(user['Visible Columns'] || '{}');
@@ -95,15 +97,14 @@ export default async function handler(req, res) {
       visibleColumns = {};
     }
 
-    // Update last login time
+    // Update last login
     const userIndex = users.findIndex(u => u.Username === username);
     const now = new Date().toISOString();
     
-    // Update last login (optional - can be done asynchronously)
     try {
       await sheets.spreadsheets.values.update({
         spreadsheetId: setupSheetId,
-        range: `Users!G${userIndex + 2}`, // +2 because of header row and 0-based index
+        range: `Users!H${userIndex + 2}`,
         valueInputOption: 'USER_ENTERED',
         requestBody: {
           values: [[now]]
@@ -111,14 +112,13 @@ export default async function handler(req, res) {
       });
     } catch (updateError) {
       console.error('Failed to update last login:', updateError);
-      // Don't fail login if timestamp update fails
     }
 
-    // Return user session data (without password)
     const userSession = {
       userId: user['User ID'],
       username: user.Username,
       role: user.Role,
+      moduleAccess: moduleAccess,
       visibleColumns: visibleColumns,
       showAllData: user['Show All Data'] === 'TRUE',
       lastLogin: now,
