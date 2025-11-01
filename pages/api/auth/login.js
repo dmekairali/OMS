@@ -78,7 +78,6 @@ export default async function handler(req, res) {
       moduleAccess = JSON.parse(user['Module Access'] || '{}');
     } catch (e) {
       console.error('Error parsing module access:', e);
-      // Default access for backward compatibility
       moduleAccess = {
         dashboard: true,
         newOrders: true,
