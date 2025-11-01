@@ -1,15 +1,53 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import styles from '../styles/NewOrders.module.css';
-import configService from '../lib/configService';
+
+// Hardcoded field configuration for New Orders
+const DISPLAY_FIELDS = [
+  { name: 'Oder ID', type: 'text' },
+  { name: 'Name of Client', type: 'text' },
+  { name: 'Mobile', type: 'text' },
+  { name: 'Email', type: 'text' },
+  { name: 'Invoice Amount', type: 'currency' },
+];
+
+const ACTION_FIELDS = {
+  confirm: [
+    { name: 'Order Status', type: 'text', defaultValue: 'Order Confirmed', readOnly: true },
+    { name: 'Dispatch Party From', type: 'dropdown', required: true, options: [
+      'Kairali Ayurvedic Products-642001-Stockist-1234567890',
+      'Mumbai Warehouse-400001-Main-9876543210',
+      'Delhi Distribution-110001-Branch-8765432109'
+    ]},
+    { name: 'Remarks', type: 'textarea', required: true, fullWidth: true },
+    { name: 'Inform Client', type: 'checkbox' },
+    { name: 'Inform Dispatch', type: 'checkbox' },
+    { name: 'Expected Dispatch Date', type: 'datetime-local' },
+    { name: 'Actual Invoice Amount', type: 'number', step: '0.01' },
+  ],
+  cancel: [
+    { name: 'Order Status', type: 'text', defaultValue: 'Cancelled', readOnly: true },
+    { name: 'Cancellation Reason', type: 'dropdown', required: true, options: [
+      'Customer Request', 'Out of Stock', 'Payment Issue', 'Delivery Issue', 'Duplicate Order', 'Other'
+    ]},
+    { name: 'Cancellation Notes', type: 'textarea', required: true, fullWidth: true },
+    { name: 'Refund Initiated', type: 'checkbox' },
+  ],
+  false: [
+    { name: 'Order Status', type: 'text', defaultValue: 'False Order', readOnly: true },
+    { name: 'False Order Reason', type: 'dropdown', required: true, options: [
+      'Fake Contact Details', 'Fraudulent Payment', 'Test Order', 'Spam', 'Invalid Address', 'Other'
+    ]},
+    { name: 'Additional Details', type: 'textarea', required: true, fullWidth: true },
+    { name: 'Block Customer', type: 'checkbox' },
+  ]
+};
 
 export default function NewOrders() {
   const router = useRouter();
   const [user, setUser] = useState(null);
   const [orders, setOrders] = useState([]);
   const [filteredOrders, setFilteredOrders] = useState([]);
-  const [displayFields, setDisplayFields] = useState([]);
-  const [actionFields, setActionFields] = useState({});
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedOrder, setSelectedOrder] = useState(null);
@@ -26,7 +64,6 @@ export default function NewOrders() {
     try {
       const userData = JSON.parse(userSession);
       
-      // Check module access
       if (!userData.moduleAccess?.newOrders) {
         alert('You do not have access to New Orders module');
         router.push('/dashboard');
@@ -34,38 +71,16 @@ export default function NewOrders() {
       }
 
       setUser(userData);
-      initializeModule();
+      loadOrders();
     } catch (error) {
       console.error('Error parsing user session:', error);
       router.push('/login');
     }
   }, [router]);
 
-  const initializeModule = async () => {
-    try {
-      setLoading(true);
-      
-      // Get display fields from configuration
-      const fields = configService.getDisplayFieldsForStage('New Orders');
-      setDisplayFields(fields);
-      
-      // Get action fields
-      setActionFields({
-        confirm: configService.getEditableFieldsForStatus('NewOrders', 'confirm'),
-        cancel: configService.getEditableFieldsForStatus('NewOrders', 'cancel'),
-        false: configService.getEditableFieldsForStatus('NewOrders', 'false')
-      });
-      
-      await loadOrders();
-    } catch (error) {
-      console.error('Error initializing module:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const loadOrders = async () => {
     try {
+      setLoading(true);
       const response = await fetch('/api/orders');
       if (response.ok) {
         const data = await response.json();
@@ -75,6 +90,8 @@ export default function NewOrders() {
       }
     } catch (error) {
       console.error('Error loading orders:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -89,15 +106,15 @@ export default function NewOrders() {
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
       filtered = filtered.filter(order => {
-        return displayFields.some(field => {
-          const value = order[field.fieldName];
+        return DISPLAY_FIELDS.some(field => {
+          const value = order[field.name];
           return value && value.toString().toLowerCase().includes(term);
         });
       });
     }
 
     setFilteredOrders(filtered);
-  }, [orders, searchTerm, displayFields]);
+  }, [orders, searchTerm]);
 
   const handleOrderClick = (order) => {
     setSelectedOrder(order);
@@ -122,7 +139,11 @@ export default function NewOrders() {
     const updates = {};
     
     for (let [key, value] of formData.entries()) {
-      updates[key] = value;
+      if (e.target.elements[key].type === 'checkbox') {
+        updates[key] = e.target.elements[key].checked ? 'TRUE' : 'FALSE';
+      } else {
+        updates[key] = value;
+      }
     }
 
     updates['Last Edited By'] = user.username;
@@ -188,7 +209,7 @@ export default function NewOrders() {
   };
 
   const renderField = (field, value) => {
-    switch (field.fieldType) {
+    switch (field.type) {
       case 'currency':
         return `₹${value || '0'}`;
       case 'date':
@@ -201,58 +222,79 @@ export default function NewOrders() {
   };
 
   const renderFormField = (field, index) => {
-    const isFullWidth = field.fieldType === 'textarea';
+    const isFullWidth = field.fullWidth || field.type === 'textarea';
     
     return (
       <div key={index} className={`${styles.formField} ${isFullWidth ? styles.fullWidth : ''}`}>
         <label>
-          {field.fieldName}
+          {field.name}
           {field.required && <span className={styles.required}>*</span>}
         </label>
         
-        {field.fieldType === 'text' && (
+        {field.type === 'text' && (
           <input
             type="text"
-            name={field.fieldName}
-            defaultValue={field.defaultValue}
+            name={field.name}
+            defaultValue={field.defaultValue || ''}
             required={field.required}
-            readOnly={!field.editable}
+            readOnly={field.readOnly}
           />
         )}
         
-        {field.fieldType === 'dropdown' && field.options && (
-          <select
-            name={field.fieldName}
-            defaultValue={field.defaultValue}
+        {field.type === 'number' && (
+          <input
+            type="number"
+            name={field.name}
+            defaultValue={field.defaultValue || ''}
+            step={field.step || '1'}
             required={field.required}
-            disabled={!field.editable}
+            readOnly={field.readOnly}
+          />
+        )}
+        
+        {field.type === 'datetime-local' && (
+          <input
+            type="datetime-local"
+            name={field.name}
+            defaultValue={field.defaultValue || ''}
+            required={field.required}
+            readOnly={field.readOnly}
+          />
+        )}
+        
+        {field.type === 'dropdown' && field.options && (
+          <select
+            name={field.name}
+            defaultValue={field.defaultValue || ''}
+            required={field.required}
+            disabled={field.readOnly}
           >
-            <option value="">Select {field.fieldName}</option>
+            <option value="">Select {field.name}</option>
             {field.options.map((opt, i) => (
               <option key={i} value={opt}>{opt}</option>
             ))}
           </select>
         )}
         
-        {field.fieldType === 'textarea' && (
+        {field.type === 'textarea' && (
           <textarea
-            name={field.fieldName}
-            defaultValue={field.defaultValue}
+            name={field.name}
+            defaultValue={field.defaultValue || ''}
             required={field.required}
-            readOnly={!field.editable}
+            readOnly={field.readOnly}
             rows="3"
           />
         )}
         
-        {field.fieldType === 'checkbox' && (
+        {field.type === 'checkbox' && (
           <label className={styles.checkboxLabel}>
             <input
               type="checkbox"
-              name={field.fieldName}
-              defaultChecked={field.defaultValue === 'TRUE'}
-              disabled={!field.editable}
+              name={field.name}
+              defaultChecked={field.defaultValue === true}
+              disabled={field.readOnly}
             />
-            <span>{field.fieldName}</span>
+            <span>{field.name}</span>
           </label>
         )}
       </div>
@@ -268,7 +310,7 @@ export default function NewOrders() {
     );
   }
 
-  const actionFieldsConfig = actionFields[activeAction] || [];
+  const actionFieldsConfig = ACTION_FIELDS[activeAction] || [];
 
   return (
     <div className={styles.pageContainer}>
@@ -378,7 +420,7 @@ export default function NewOrders() {
                     >
                       <div className={styles.orderCardHeader}>
                         <span className={styles.orderId}>
-                          {order[displayFields[0]?.fieldName] || order['Oder ID']}
+                          {order[DISPLAY_FIELDS[0].name]}
                         </span>
                         <span className={styles.orderTime}>
                           🕐 {getTimeAgo(order['Timestamp'])}
@@ -386,17 +428,17 @@ export default function NewOrders() {
                       </div>
                       <div className={styles.orderCardBody}>
                         <div className={styles.orderInfo}>
-                          {displayFields.slice(1, 4).map((field, idx) => (
+                          {DISPLAY_FIELDS.slice(1, 3).map((field, idx) => (
                             <div key={idx} className={styles.infoItem}>
-                              <strong>{field.fieldName}:</strong> {renderField(field, order[field.fieldName])}
+                              <strong>{field.name}:</strong> {renderField(field, order[field.name])}
                             </div>
                           ))}
                         </div>
                         <div className={styles.orderMeta}>
-                          {displayFields.slice(4, 7).map((field, idx) => (
+                          {DISPLAY_FIELDS.slice(3).map((field, idx) => (
                             <div key={idx} className={styles.metaItem}>
-                              <strong>{field.fieldName}</strong>
-                              {renderField(field, order[field.fieldName])}
+                              <strong>{field.name}</strong>
+                              {renderField(field, order[field.name])}
                             </div>
                           ))}
                         </div>
@@ -420,14 +462,26 @@ export default function NewOrders() {
               <div className={styles.detailCard}>
                 <h3 className={styles.cardTitle}>Order Details</h3>
                 <div className={styles.detailGrid}>
-                  {displayFields.map((field, idx) => (
+                  {DISPLAY_FIELDS.map((field, idx) => (
                     <div key={idx} className={styles.detailItem}>
-                      <span className={styles.detailLabel}>{field.fieldName}</span>
+                      <span className={styles.detailLabel}>{field.name}</span>
                       <span className={styles.detailValue}>
-                        {renderField(field, selectedOrder[field.fieldName])}
+                        {renderField(field, selectedOrder[field.name])}
                       </span>
                     </div>
                   ))}
+                  <div className={styles.detailItem}>
+                    <span className={styles.detailLabel}>Address</span>
+                    <span className={styles.detailValue}>{selectedOrder['Address'] || '-'}</span>
+                  </div>
+                  <div className={styles.detailItem}>
+                    <span className={styles.detailLabel}>Order Status</span>
+                    <span className={styles.detailValue}>{selectedOrder['Order Status'] || 'Pending'}</span>
+                  </div>
+                  <div className={styles.detailItem}>
+                    <span className={styles.detailLabel}>Timestamp</span>
+                    <span className={styles.detailValue}>{selectedOrder['Timestamp'] || '-'}</span>
+                  </div>
                 </div>
               </div>
 
