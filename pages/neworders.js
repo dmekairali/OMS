@@ -1,40 +1,22 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import styles from '../styles/NewOrders.module.css';
+import configService from '../lib/configService';
 
 export default function NewOrders() {
   const router = useRouter();
   const [user, setUser] = useState(null);
   const [orders, setOrders] = useState([]);
   const [filteredOrders, setFilteredOrders] = useState([]);
-  const [headers, setHeaders] = useState([]);
+  const [displayFields, setDisplayFields] = useState([]);
+  const [actionFields, setActionFields] = useState({});
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [selectedOrder, setSelectedOrder] = useState(null);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [saving, setSaving] = useState(false);
-  
-  // Filters
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('All');
-  
-  // Key columns to display (using actual field names from API)
-  const displayColumns = [
-    'Oder ID', // Note: This is the actual field name from API (typo)
-    'Name of Client',
-    'Mobile',
-    'Email',
-    'Invoice Amount',
-    'Order Status',
-    'Planned',
-    'Actual',
-    'Delivery Required Date',
-    'Order Taken By',
-    'Timestamp'
-  ];
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [showDetailView, setShowDetailView] = useState(false);
+  const [activeAction, setActiveAction] = useState(null);
 
   useEffect(() => {
-    // Check if user is logged in
     const userSession = localStorage.getItem('userSession');
     if (!userSession) {
       router.push('/login');
@@ -43,16 +25,60 @@ export default function NewOrders() {
 
     try {
       const userData = JSON.parse(userSession);
+      
+      // Check module access
+      if (!userData.moduleAccess?.newOrders) {
+        alert('You do not have access to New Orders module');
+        router.push('/dashboard');
+        return;
+      }
+
       setUser(userData);
-      loadOrders();
+      initializeModule();
     } catch (error) {
       console.error('Error parsing user session:', error);
       router.push('/login');
     }
   }, [router]);
 
+  const initializeModule = async () => {
+    try {
+      setLoading(true);
+      
+      // Get display fields from configuration
+      const fields = configService.getDisplayFieldsForStage('New Orders');
+      setDisplayFields(fields);
+      
+      // Get action fields
+      setActionFields({
+        confirm: configService.getEditableFieldsForStatus('NewOrders', 'confirm'),
+        cancel: configService.getEditableFieldsForStatus('NewOrders', 'cancel'),
+        false: configService.getEditableFieldsForStatus('NewOrders', 'false')
+      });
+      
+      await loadOrders();
+    } catch (error) {
+      console.error('Error initializing module:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadOrders = async () => {
+    try {
+      const response = await fetch('/api/orders');
+      if (response.ok) {
+        const data = await response.json();
+        const ordersList = data.orders || [];
+        setOrders(ordersList);
+        setFilteredOrders(ordersList);
+      }
+    } catch (error) {
+      console.error('Error loading orders:', error);
+    }
+  };
+
   useEffect(() => {
-    // Apply filters
     if (!orders.length) {
       setFilteredOrders([]);
       return;
@@ -60,168 +86,180 @@ export default function NewOrders() {
 
     let filtered = [...orders];
 
-    // Search filter
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
-      filtered = filtered.filter(order => 
-        (order['Oder ID'] && order['Oder ID'].toLowerCase().includes(term)) ||
-        (order['Name of Client'] && order['Name of Client'].toLowerCase().includes(term)) ||
-        (order['Mobile'] && order['Mobile'].toLowerCase().includes(term)) ||
-        (order['Email'] && order['Email'].toLowerCase().includes(term))
-      );
-    }
-
-    // Status filter
-    if (statusFilter !== 'All') {
-      if (statusFilter === 'Pending') {
-        // Pending: Planned is not blank AND Actual is blank
-        filtered = filtered.filter(order => 
-          order['Planned'] && order['Planned'].trim() !== '' && 
-          (!order['Actual'] || order['Actual'].trim() === '')
-        );
-      } else {
-        filtered = filtered.filter(order => order['Order Status'] === statusFilter);
-      }
+      filtered = filtered.filter(order => {
+        return displayFields.some(field => {
+          const value = order[field.fieldName];
+          return value && value.toString().toLowerCase().includes(term);
+        });
+      });
     }
 
     setFilteredOrders(filtered);
-  }, [orders, searchTerm, statusFilter]);
+  }, [orders, searchTerm, displayFields]);
 
-  // Function to determine if an order is pending based on Planned/Actual
-  const isOrderPending = (order) => {
-    return order['Planned'] && order['Planned'].trim() !== '' && 
-           (!order['Actual'] || order['Actual'].trim() === '');
+  const handleOrderClick = (order) => {
+    setSelectedOrder(order);
+    setShowDetailView(true);
+    setActiveAction(null);
   };
 
-  const loadOrders = async () => {
-    try {
-      setLoading(true);
-      setError('');
-      console.log('Fetching orders from API...');
-      
-      const response = await fetch('/api/orders');
-      console.log('API Response status:', response.status);
-      
-      if (response.ok) {
-        const data = await response.json();
-        console.log('API Response data:', data);
-        
-        // Check if the API returned success and has orders
-        if (data.success) {
-          console.log('Orders found:', data.orders?.length);
-          console.log('Sample order:', data.orders?.[0]);
-          
-          setOrders(data.orders || []);
-          setHeaders(data.headers || []);
-          setFilteredOrders(data.orders || []);
-        } else {
-          setError('API returned unsuccessful response');
-        }
-      } else {
-        const errorData = await response.json();
-        console.error('API Error:', errorData);
-        setError(errorData.error || `Failed to load orders (HTTP ${response.status})`);
-      }
-    } catch (error) {
-      console.error('Error loading orders:', error);
-      setError('Failed to load orders. Please try again.');
-    } finally {
-      setLoading(false);
+  const handleBackToDashboard = () => {
+    setSelectedOrder(null);
+    setShowDetailView(false);
+    setActiveAction(null);
+  };
+
+  const handleActionClick = (action) => {
+    setActiveAction(action);
+  };
+
+  const handleFormSubmit = async (e) => {
+    e.preventDefault();
+    
+    const formData = new FormData(e.target);
+    const updates = {};
+    
+    for (let [key, value] of formData.entries()) {
+      updates[key] = value;
     }
-  };
 
-  const handleEditOrder = (order) => {
-    setSelectedOrder({...order});
-    setShowEditModal(true);
-  };
-
-  const handleSaveOrder = async () => {
-    if (!selectedOrder) return;
+    updates['Last Edited By'] = user.username;
+    updates['Last Edited At'] = new Date().toISOString();
 
     try {
-      setSaving(true);
-      setError('');
-
-      // Prepare updates object with only changed fields
-      const updates = {};
-      displayColumns.forEach(col => {
-        if (selectedOrder[col] !== undefined) {
-          updates[col] = selectedOrder[col];
-        }
-      });
-
-      // Add audit fields
-      updates['Last Edited By'] = user.username;
-      updates['Last Edited At'] = new Date().toISOString();
-
       const response = await fetch('/api/orders', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          orderId: selectedOrder['Oder ID'], // Use correct field name
+          orderId: selectedOrder['Oder ID'],
           rowIndex: selectedOrder._rowIndex,
           updates: updates
         }),
       });
 
       if (response.ok) {
-        // Reload orders
+        alert('Order updated successfully!');
         await loadOrders();
-        setShowEditModal(false);
-        setSelectedOrder(null);
+        handleBackToDashboard();
       } else {
         const errorData = await response.json();
-        setError(errorData.error || 'Failed to save order');
+        alert('Failed to update order: ' + (errorData.error || 'Unknown error'));
       }
     } catch (error) {
-      console.error('Error saving order:', error);
-      setError('Failed to save order. Please try again.');
-    } finally {
-      setSaving(false);
+      console.error('Error updating order:', error);
+      alert('Failed to update order. Please try again.');
     }
   };
 
-  const getStatusBadgeClass = (order) => {
-    // Use the new pending logic
-    if (isOrderPending(order)) {
-      return styles.statusPending;
-    }
+  const handleLogout = () => {
+    localStorage.removeItem('userSession');
+    router.push('/login');
+  };
+
+  const navigateToModule = (module) => {
+    const routes = {
+      dashboard: '/dashboard',
+      dispatch: '/dispatch',
+      delivery: '/delivery',
+      payment: '/payment'
+    };
     
-    // Fall back to Order Status for other cases
-    switch (order['Order Status']) {
-      case 'Order Confirmed':
-        return styles.statusConfirmed;
-      case 'Cancelled':
-        return styles.statusCancelled;
-      case 'False Order':
-        return styles.statusFalse;
+    if (routes[module]) {
+      router.push(routes[module]);
+    }
+  };
+
+  const getTimeAgo = (timestamp) => {
+    if (!timestamp) return '';
+    const now = new Date();
+    const orderTime = new Date(timestamp);
+    const diffMs = now - orderTime;
+    const diffMins = Math.floor(diffMs / 60000);
+    
+    if (diffMins < 60) return `${diffMins} mins ago`;
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) return `${diffHours} hours ago`;
+    const diffDays = Math.floor(diffHours / 24);
+    return `${diffDays} days ago`;
+  };
+
+  const renderField = (field, value) => {
+    switch (field.fieldType) {
+      case 'currency':
+        return `₹${value || '0'}`;
+      case 'date':
+        return value ? new Date(value).toLocaleDateString() : '-';
+      case 'datetime':
+        return value ? new Date(value).toLocaleString() : '-';
       default:
-        return styles.statusDefault;
+        return value || '-';
     }
   };
 
-  const getStatusDisplayText = (order) => {
-    // Use the new pending logic
-    if (isOrderPending(order)) {
-      return 'Pending';
-    }
+  const renderFormField = (field, index) => {
+    const isFullWidth = field.fieldType === 'textarea';
     
-    // Fall back to Order Status for other cases
-    return order['Order Status'] || 'Unknown';
+    return (
+      <div key={index} className={`${styles.formField} ${isFullWidth ? styles.fullWidth : ''}`}>
+        <label>
+          {field.fieldName}
+          {field.required && <span className={styles.required}>*</span>}
+        </label>
+        
+        {field.fieldType === 'text' && (
+          <input
+            type="text"
+            name={field.fieldName}
+            defaultValue={field.defaultValue}
+            required={field.required}
+            readOnly={!field.editable}
+          />
+        )}
+        
+        {field.fieldType === 'dropdown' && field.options && (
+          <select
+            name={field.fieldName}
+            defaultValue={field.defaultValue}
+            required={field.required}
+            disabled={!field.editable}
+          >
+            <option value="">Select {field.fieldName}</option>
+            {field.options.map((opt, i) => (
+              <option key={i} value={opt}>{opt}</option>
+            ))}
+          </select>
+        )}
+        
+        {field.fieldType === 'textarea' && (
+          <textarea
+            name={field.fieldName}
+            defaultValue={field.defaultValue}
+            required={field.required}
+            readOnly={!field.editable}
+            rows="3"
+          />
+        )}
+        
+        {field.fieldType === 'checkbox' && (
+          <label className={styles.checkboxLabel}>
+            <input
+              type="checkbox"
+              name={field.fieldName}
+              defaultChecked={field.defaultValue === 'TRUE'}
+              disabled={!field.editable}
+            />
+            <span>{field.fieldName}</span>
+          </label>
+        )}
+      </div>
+    );
   };
 
-  const getStatusOptions = () => {
-    return ['All', 'Pending', 'Order Confirmed', 'Cancelled', 'False Order'];
-  };
-
-  // Count pending orders based on new logic
-  const countPendingOrders = (ordersList) => {
-    return ordersList.filter(order => isOrderPending(order)).length;
-  };
-
-  if (!user) {
+  if (!user || loading) {
     return (
       <div className={styles.loadingContainer}>
         <div className="spinner"></div>
@@ -230,307 +268,236 @@ export default function NewOrders() {
     );
   }
 
+  const actionFieldsConfig = actionFields[activeAction] || [];
+
   return (
-    <div className={styles.container}>
-      {/* Header */}
-      <header className={styles.header}>
-        <div className={styles.headerLeft}>
-          <button onClick={() => router.push('/dashboard')} className={styles.backButton}>
-            ← Back
-          </button>
-          <h1>New Orders Management</h1>
-        </div>
-        <div className={styles.headerRight}>
-          <span className={styles.userName}>{user.username}</span>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className={styles.main}>
-        {/* Debug Info - Remove in production */}
-        <div style={{background: '#f0f0f0', padding: '10px', margin: '10px', fontSize: '12px', borderRadius: '5px'}}>
-          <strong>Debug Info:</strong>
-          <div>Loading: {loading.toString()}</div>
-          <div>Orders Count: {orders.length}</div>
-          <div>Filtered Count: {filteredOrders.length}</div>
-          <div>Error: {error || 'None'}</div>
+    <div className={styles.pageContainer}>
+      {/* Sidebar */}
+      <aside className={styles.sidebar}>
+        <div className={styles.logoSection}>
+          <span className={styles.logoIcon}>📦</span>
+          <span className={styles.logoText}>OrderFlow</span>
         </div>
 
-        {/* Filters and Actions */}
-        <div className={styles.controlsSection}>
-          <div className={styles.filters}>
-            <input
-              type="text"
-              placeholder="Search by Order ID, Name, Mobile, Email..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className={styles.searchInput}
-            />
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className={styles.statusFilter}
-            >
-              {getStatusOptions().map((status, idx) => (
-                <option key={idx} value={status}>{status}</option>
-              ))}
-            </select>
-          </div>
-          <div className={styles.actions}>
-            <button onClick={loadOrders} className={styles.refreshButton} disabled={loading}>
-              🔄 Refresh
-            </button>
-          </div>
-        </div>
-
-        {/* Error Message */}
-        {error && (
-          <div className={styles.errorMessage}>
-            <span>⚠️</span>
-            <span>{error}</span>
-            <button onClick={() => setError('')}>×</button>
-          </div>
-        )}
-
-        {/* Stats */}
-        <div className={styles.stats}>
-          <div className={styles.statItem}>
-            <span className={styles.statLabel}>Total Orders:</span>
-            <span className={styles.statValue}>{filteredOrders.length}</span>
-          </div>
-          <div className={styles.statItem}>
-            <span className={styles.statLabel}>Pending:</span>
-            <span className={styles.statValue}>
-              {countPendingOrders(filteredOrders)}
-            </span>
-          </div>
-          <div className={styles.statItem}>
-            <span className={styles.statLabel}>Confirmed:</span>
-            <span className={styles.statValue}>
-              {filteredOrders.filter(o => o['Order Status'] === 'Order Confirmed').length}
-            </span>
-          </div>
-        </div>
-
-        {/* Orders Table */}
-        <div className={styles.tableSection}>
-          {loading ? (
-            <div className={styles.loadingOrders}>
-              <div className="spinner"></div>
-              <p>Loading orders...</p>
-            </div>
-          ) : filteredOrders.length === 0 ? (
-            <div className={styles.emptyState}>
-              <p>📦</p>
-              <p>No orders found</p>
-              <small>API returned {orders.length} total orders</small>
-              {searchTerm || statusFilter !== 'All' ? (
-                <button onClick={() => { setSearchTerm(''); setStatusFilter('All'); }} className={styles.clearButton}>
-                  Clear Filters
-                </button>
-              ) : (
-                <button onClick={loadOrders} className={styles.refreshButton}>
-                  Refresh Data
-                </button>
-              )}
-            </div>
-          ) : (
-            <div className={styles.tableWrapper}>
-              <table className={styles.table}>
-                <thead>
-                  <tr>
-                    {displayColumns.map((col, index) => (
-                      <th key={index}>{col}</th>
-                    ))}
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredOrders.map((order, index) => (
-                    <tr key={index} onClick={() => handleEditOrder(order)}>
-                      {displayColumns.map((col, colIndex) => (
-                        <td key={colIndex}>
-                          {col === 'Order Status' ? (
-                            <span className={`${styles.statusBadge} ${getStatusBadgeClass(order)}`}>
-                              {getStatusDisplayText(order)}
-                            </span>
-                          ) : col === 'Invoice Amount' ? (
-                            `₹${order[col] || '0'}`
-                          ) : (
-                            order[col] || '-'
-                          )}
-                        </td>
-                      ))}
-                      <td>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleEditOrder(order);
-                          }}
-                          className={styles.editButton}
-                        >
-                          ✏️ Edit
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+        <nav className={styles.navMenu}>
+          {user.moduleAccess?.dashboard && (
+            <div className={styles.navItem} onClick={() => navigateToModule('dashboard')}>
+              <span className={styles.navIcon}>📊</span>
+              <span className={styles.navText}>Dashboard</span>
             </div>
           )}
-        </div>
-      </main>
-
-      {/* Edit Modal */}
-      {showEditModal && selectedOrder && (
-        <div className={styles.modalOverlay} onClick={() => !saving && setShowEditModal(false)}>
-          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <div className={styles.modalHeader}>
-              <h2>Edit Order - {selectedOrder['Oder ID']}</h2>
-              <button
-                onClick={() => !saving && setShowEditModal(false)}
-                className={styles.closeButton}
-                disabled={saving}
-              >
-                ×
-              </button>
+          
+          <div className={`${styles.navItem} ${styles.active}`}>
+            <span className={styles.navIcon}>📋</span>
+            <span className={styles.navText}>New Orders</span>
+            <span className={styles.badge}>{filteredOrders.length}</span>
+          </div>
+          
+          {user.moduleAccess?.dispatch && (
+            <div className={styles.navItem} onClick={() => navigateToModule('dispatch')}>
+              <span className={styles.navIcon}>🚚</span>
+              <span className={styles.navText}>Dispatch</span>
             </div>
+          )}
+          
+          {user.moduleAccess?.delivery && (
+            <div className={styles.navItem} onClick={() => navigateToModule('delivery')}>
+              <span className={styles.navIcon}>📦</span>
+              <span className={styles.navText}>Delivery</span>
+            </div>
+          )}
+          
+          {user.moduleAccess?.payment && (
+            <div className={styles.navItem} onClick={() => navigateToModule('payment')}>
+              <span className={styles.navIcon}>💰</span>
+              <span className={styles.navText}>Payment</span>
+            </div>
+          )}
+        </nav>
+      </aside>
 
-            <div className={styles.modalBody}>
-              <div className={styles.formGrid}>
-                <div className={styles.formGroup}>
-                  <label>Order ID</label>
-                  <input
-                    type="text"
-                    value={selectedOrder['Oder ID'] || ''}
-                    disabled
-                    className={styles.inputDisabled}
-                  />
+      {/* Main Content */}
+      <div className={styles.mainContent}>
+        {/* Header */}
+        <header className={styles.header}>
+          <h1 className={styles.pageTitle}>
+            {showDetailView ? 'Order Details' : 'New Orders'}
+          </h1>
+          <div className={styles.headerActions}>
+            <div className={styles.searchBox}>
+              <span className={styles.searchIcon}>🔍</span>
+              <input
+                type="text"
+                placeholder="Search orders..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className={styles.searchInput}
+              />
+            </div>
+            <button className={styles.notificationBtn}>
+              <span>🔔</span>
+              <span className={styles.notificationDot}></span>
+            </button>
+            <div className={styles.userProfile}>
+              <div className={styles.userAvatar}>{user.username.charAt(0).toUpperCase()}</div>
+              <div className={styles.userInfo}>
+                <div className={styles.userName}>{user.username}</div>
+                <div className={styles.userRole}>{user.role}</div>
+              </div>
+            </div>
+            <button onClick={handleLogout} className={styles.logoutBtn}>Logout</button>
+          </div>
+        </header>
+
+        {/* Content */}
+        <div className={styles.content}>
+          {!showDetailView ? (
+            <>
+              {/* Section Header */}
+              <div className={styles.sectionHeader}>
+                <h2>🔍 Pending Review ({filteredOrders.length})</h2>
+                <button onClick={loadOrders} className={styles.refreshBtn}>
+                  🔄 Refresh
+                </button>
+              </div>
+
+              {/* Orders List */}
+              {filteredOrders.length === 0 ? (
+                <div className={styles.emptyState}>
+                  <p className={styles.emptyIcon}>📦</p>
+                  <p className={styles.emptyText}>No orders found</p>
+                  <button onClick={loadOrders} className={styles.refreshBtn}>Refresh</button>
                 </div>
-
-                <div className={styles.formGroup}>
-                  <label>Name of Client *</label>
-                  <input
-                    type="text"
-                    value={selectedOrder['Name of Client'] || ''}
-                    onChange={(e) => setSelectedOrder({...selectedOrder, 'Name of Client': e.target.value})}
-                    disabled={saving}
-                  />
+              ) : (
+                <div className={styles.ordersList}>
+                  {filteredOrders.map((order, index) => (
+                    <div 
+                      key={index} 
+                      className={styles.orderCard}
+                      onClick={() => handleOrderClick(order)}
+                    >
+                      <div className={styles.orderCardHeader}>
+                        <span className={styles.orderId}>
+                          {order[displayFields[0]?.fieldName] || order['Oder ID']}
+                        </span>
+                        <span className={styles.orderTime}>
+                          🕐 {getTimeAgo(order['Timestamp'])}
+                        </span>
+                      </div>
+                      <div className={styles.orderCardBody}>
+                        <div className={styles.orderInfo}>
+                          {displayFields.slice(1, 4).map((field, idx) => (
+                            <div key={idx} className={styles.infoItem}>
+                              <strong>{field.fieldName}:</strong> {renderField(field, order[field.fieldName])}
+                            </div>
+                          ))}
+                        </div>
+                        <div className={styles.orderMeta}>
+                          {displayFields.slice(4, 7).map((field, idx) => (
+                            <div key={idx} className={styles.metaItem}>
+                              <strong>{field.fieldName}</strong>
+                              {renderField(field, order[field.fieldName])}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      <div className={styles.orderCardFooter}>
+                        <button className={styles.reviewBtn}>Review Now →</button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
+              )}
+            </>
+          ) : (
+            /* Order Detail View */
+            <div className={styles.detailView}>
+              <button onClick={handleBackToDashboard} className={styles.backBtn}>
+                ← Back to Orders
+              </button>
 
-                <div className={styles.formGroup}>
-                  <label>Mobile *</label>
-                  <input
-                    type="text"
-                    value={selectedOrder['Mobile'] || ''}
-                    onChange={(e) => setSelectedOrder({...selectedOrder, 'Mobile': e.target.value})}
-                    disabled={saving}
-                  />
-                </div>
-
-                <div className={styles.formGroup}>
-                  <label>Email</label>
-                  <input
-                    type="email"
-                    value={selectedOrder['Email'] || ''}
-                    onChange={(e) => setSelectedOrder({...selectedOrder, 'Email': e.target.value})}
-                    disabled={saving}
-                  />
-                </div>
-
-                <div className={styles.formGroup}>
-                  <label>Invoice Amount *</label>
-                  <input
-                    type="number"
-                    value={selectedOrder['Invoice Amount'] || ''}
-                    onChange={(e) => setSelectedOrder({...selectedOrder, 'Invoice Amount': e.target.value})}
-                    disabled={saving}
-                  />
-                </div>
-
-                <div className={styles.formGroup}>
-                  <label>Planned</label>
-                  <input
-                    type="text"
-                    value={selectedOrder['Planned'] || ''}
-                    onChange={(e) => setSelectedOrder({...selectedOrder, 'Planned': e.target.value})}
-                    disabled={saving}
-                    placeholder="Enter planned details"
-                  />
-                </div>
-
-                <div className={styles.formGroup}>
-                  <label>Actual</label>
-                  <input
-                    type="text"
-                    value={selectedOrder['Actual'] || ''}
-                    onChange={(e) => setSelectedOrder({...selectedOrder, 'Actual': e.target.value})}
-                    disabled={saving}
-                    placeholder="Enter actual details"
-                  />
-                </div>
-
-                <div className={styles.formGroup}>
-                  <label>Order Status</label>
-                  <select
-                    value={selectedOrder['Order Status'] || ''}
-                    onChange={(e) => setSelectedOrder({...selectedOrder, 'Order Status': e.target.value})}
-                    disabled={saving}
-                  >
-                    <option value="">Select Status</option>
-                    <option value="Order Confirmed">Order Confirmed</option>
-                    <option value="Cancelled">Cancelled</option>
-                    <option value="False Order">False Order</option>
-                  </select>
-                </div>
-
-                <div className={styles.formGroup}>
-                  <label>Delivery Required Date</label>
-                  <input
-                    type="date"
-                    value={selectedOrder['Delivery Required Date'] || ''}
-                    onChange={(e) => setSelectedOrder({...selectedOrder, 'Delivery Required Date': e.target.value})}
-                    disabled={saving}
-                  />
-                </div>
-
-                <div className={styles.formGroup}>
-                  <label>Order Taken By</label>
-                  <input
-                    type="text"
-                    value={selectedOrder['Order Taken By'] || ''}
-                    onChange={(e) => setSelectedOrder({...selectedOrder, 'Order Taken By': e.target.value})}
-                    disabled={saving}
-                  />
+              {/* Order Details Card */}
+              <div className={styles.detailCard}>
+                <h3 className={styles.cardTitle}>Order Details</h3>
+                <div className={styles.detailGrid}>
+                  {displayFields.map((field, idx) => (
+                    <div key={idx} className={styles.detailItem}>
+                      <span className={styles.detailLabel}>{field.fieldName}</span>
+                      <span className={styles.detailValue}>
+                        {renderField(field, selectedOrder[field.fieldName])}
+                      </span>
+                    </div>
+                  ))}
                 </div>
               </div>
 
-              {error && (
-                <div className={styles.modalError}>
-                  ⚠️ {error}
+              {/* Editable Fields Card */}
+              {activeAction && actionFieldsConfig.length > 0 && (
+                <div className={styles.detailCard}>
+                  <h3 className={styles.cardTitle}>✏️ Update Order Information</h3>
+                  <div className={`${styles.infoBox} ${styles[`info${activeAction}`]}`}>
+                    <span className={styles.infoIcon}>
+                      {activeAction === 'confirm' ? 'ℹ️' : '⚠️'}
+                    </span>
+                    <span className={styles.infoText}>
+                      {activeAction === 'confirm' && 'Fill in the required information to confirm this order'}
+                      {activeAction === 'cancel' && 'Please provide cancellation details'}
+                      {activeAction === 'false' && 'Mark this order as false/fraudulent'}
+                    </span>
+                  </div>
+                  
+                  <form className={styles.editableForm} onSubmit={handleFormSubmit}>
+                    <div className={styles.formGrid}>
+                      {actionFieldsConfig.map((field, idx) => renderFormField(field, idx))}
+                    </div>
+                    <div className={styles.formActions}>
+                      <button type="button" onClick={() => setActiveAction(null)} className={styles.btnSecondary}>
+                        Cancel
+                      </button>
+                      <button 
+                        type="submit" 
+                        className={
+                          activeAction === 'confirm' ? styles.btnSuccess :
+                          activeAction === 'cancel' ? styles.btnDanger :
+                          styles.btnGray
+                        }
+                      >
+                        {activeAction === 'confirm' && '✓ Confirm Order'}
+                        {activeAction === 'cancel' && '✕ Cancel Order'}
+                        {activeAction === 'false' && '⚠️ Mark as False Order'}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              {!activeAction && (
+                <div className={styles.actionButtons}>
+                  <button 
+                    onClick={() => handleActionClick('cancel')} 
+                    className={`${styles.actionBtn} ${styles.btnDanger}`}
+                  >
+                    ✕ Cancel Order
+                  </button>
+                  <button 
+                    onClick={() => handleActionClick('false')} 
+                    className={`${styles.actionBtn} ${styles.btnGray}`}
+                  >
+                    ⚠️ False Order
+                  </button>
+                  <button 
+                    onClick={() => handleActionClick('confirm')} 
+                    className={`${styles.actionBtn} ${styles.btnSuccess}`}
+                  >
+                    ✓ Confirm Order
+                  </button>
                 </div>
               )}
             </div>
-
-            <div className={styles.modalFooter}>
-              <button
-                onClick={() => setShowEditModal(false)}
-                className={styles.cancelButton}
-                disabled={saving}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSaveOrder}
-                className={styles.saveButton}
-                disabled={saving}
-              >
-                {saving ? 'Saving...' : 'Save Changes'}
-              </button>
-            </div>
-          </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 }
