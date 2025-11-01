@@ -27,7 +27,6 @@ export default function Dashboard() {
     try {
       const userData = JSON.parse(userSession);
       
-      // Check if user has dashboard access
       if (!userData.moduleAccess?.dashboard) {
         alert('You do not have access to Dashboard');
         router.push('/login');
@@ -46,14 +45,13 @@ export default function Dashboard() {
     try {
       setLoading(true);
       
-      // Load orders for stats
       const response = await fetch('/api/orders');
       if (response.ok) {
         const data = await response.json();
         const orders = data.orders || [];
         
         calculateStats(orders);
-        setRecentActivity(orders.slice(0, 5)); // Last 5 orders
+        setRecentActivity(orders.slice(0, 5));
       }
     } catch (error) {
       console.error('Error loading dashboard data:', error);
@@ -82,7 +80,7 @@ export default function Dashboard() {
       delivered: 0,
       paid: 0,
       totalRevenue: totalRevenue,
-      pendingPayments: pending * 1000 // Example calculation
+      pendingPayments: pending * 1000
     });
   };
 
@@ -303,22 +301,26 @@ export default function Dashboard() {
           <div className={styles.recentActivitySection}>
             <h3>Recent Activity</h3>
             <div className={styles.activityList}>
-              {recentActivity.map((order, idx) => (
-                <div key={idx} className={styles.activityItem}>
-                  <div className={styles.activityIcon}>📦</div>
-                  <div className={styles.activityContent}>
-                    <div className={styles.activityTitle}>
-                      Order {order['Oder ID']} - {order['Name of Client']}
+              {recentActivity.length === 0 ? (
+                <div className={styles.emptyActivity}>No recent activity</div>
+              ) : (
+                recentActivity.map((order, idx) => (
+                  <div key={idx} className={styles.activityItem}>
+                    <div className={styles.activityIcon}>📦</div>
+                    <div className={styles.activityContent}>
+                      <div className={styles.activityTitle}>
+                        Order {order['Oder ID']} - {order['Name of Client']}
+                      </div>
+                      <div className={styles.activityTime}>
+                        {order['Timestamp'] ? new Date(order['Timestamp']).toLocaleString() : 'Recently'}
+                      </div>
                     </div>
-                    <div className={styles.activityTime}>
-                      {order['Timestamp'] ? new Date(order['Timestamp']).toLocaleString() : 'Recently'}
+                    <div className={styles.activityAmount}>
+                      ₹{order['Invoice Amount'] || '0'}
                     </div>
                   </div>
-                  <div className={styles.activityAmount}>
-                    ₹{order['Invoice Amount'] || '0'}
-                  </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
         </div>
