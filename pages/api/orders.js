@@ -138,13 +138,18 @@ export default async function handler(req, res) {
       if (columnUpdates && Object.keys(columnUpdates).length > 0) {
         const updateData = [];
         
+        console.log('Column Updates Received:', columnUpdates);
+        
         Object.keys(columnUpdates).forEach(columnNumber => {
           const colLetter = columnIndexToLetter(parseInt(columnNumber) - 1); // -1 because columns are 1-based
+          console.log(`Column ${columnNumber} -> Letter ${colLetter} -> Value: ${columnUpdates[columnNumber]}`);
           updateData.push({
             range: `NewOrders!${colLetter}${rowIndex}`,
             values: [[columnUpdates[columnNumber]]]
           });
         });
+
+        console.log('Update Data:', JSON.stringify(updateData, null, 2));
 
         if (updateData.length === 0) {
           return res.status(400).json({ error: 'No valid columns to update' });
@@ -158,6 +163,8 @@ export default async function handler(req, res) {
             data: updateData
           }
         });
+
+        console.log('Update Result:', result.data);
 
         return res.status(200).json({
           success: true,
