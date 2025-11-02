@@ -300,20 +300,101 @@ export default function NewOrders() {
     return `${diffDays} days ago`;
   };
 
-  const renderField = (field, value) => {
-    switch (field.type) {
-      case 'currency':
-        return `₹${value || '0'}`;
-      case 'date':
-        return value ? new Date(value).toLocaleDateString() : '-';
-      case 'datetime':
-        return value ? new Date(value).toLocaleString() : '-';
-      case 'url':
-        return value ? <a href={value} target="_blank" rel="noopener noreferrer" style={{color: '#7a8450', textDecoration: 'underline'}}>View Link</a> : '-';
-      default:
-        return value || '-';
+  const parseSheetDate = (dateValue) => {
+  if (!dateValue || dateValue === '') return null;
+  
+  // If it's already a valid date string
+  if (dateValue.includes('-') || dateValue.includes('/')) {
+    const parsed = new Date(dateValue);
+    if (!isNaN(parsed.getTime())) {
+      return parsed;
     }
-  };
+  }
+  
+  // If it's a number (Excel serial date)
+  if (!isNaN(dateValue)) {
+    // Excel serial date starts from 1900-01-01
+    // JavaScript Date starts from 1970-01-01
+    const excelEpoch = new Date(1899, 11, 30); // December 30, 1899
+    const msPerDay = 86400000; // milliseconds in a day
+    return new Date(excelEpoch.getTime() + (parseFloat(dateValue) * msPerDay));
+  }
+  
+  return null;
+};
+
+const renderField = (field, value) => {
+  if (!value || value === '' || value === 'undefined') {
+    return '-';
+  }
+
+  switch (field.type) {
+    case 'currency':
+      const amount = parseFloat(value);
+      return isNaN(amount) ? '₹0' : `₹${amount.toLocaleString('en-IN')}`;
+      
+    case 'date':
+      const date = parseSheetDate(value);
+      if (!date || isNaN(date.getTime())) return '-';
+      return date.toLocaleDateString('en-IN', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric'
+      });
+      
+    case 'datetime':
+      const datetime = parseSheetDate(value);
+      if (!datetime || isNaN(datetime.getTime())) return '-';
+      return datetime.toLocaleString('en-IN', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+      
+    case 'url':
+      return value ? (
+        <a 
+          href={value} 
+          target="_blank" 
+          rel="noopener noreferrer" 
+          style={{color: '#7a8450', textDecoration: 'underline'}}
+        >
+          View Link
+        </a>
+      ) : '-';
+      
+    default:
+      return value;
+  }
+};
+
+const getTimeAgo = (timestamp) => {
+  if (!timestamp || timestamp === '') return '';
+  
+  const orderTime = parseSheetDate(timestamp);
+  if (!orderTime || isNaN(orderTime.getTime())) return '';
+  
+  const now = new Date();
+  const diffMs = now - orderTime;
+  const diffMins = Math.floor(diffMs / 60000);
+  
+  if (diffMins < 0) return 'just now';
+  if (diffMins < 60) return `${diffMins} mins ago`;
+  
+  const diffHours = Math.floor(diffMins / 60);
+  if (diffHours < 24) return `${diffHours} hours ago`;
+  
+  const diffDays = Math.floor(diffHours / 24);
+  if (diffDays < 30) return `${diffDays} days ago`;
+  
+  const diffMonths = Math.floor(diffDays / 30);
+  if (diffMonths < 12) return `${diffMonths} months ago`;
+  
+  const diffYears = Math.floor(diffDays / 365);
+  return `${diffYears} years ago`;
+};
 
   const renderFormField = (field, index) => {
     const isFullWidth = field.fullWidth || field.type === 'textarea';
