@@ -395,6 +395,7 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 24px;
+  gap: 16px;
 }
 
 .sectionHeader h2 {
@@ -402,6 +403,19 @@
   font-weight: 700;
   color: #3d4522;
   margin: 0;
+}
+
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.lastUpdated {
+  font-size: 13px;
+  color: #7a8450;
+  font-weight: 500;
+  white-space: nowrap;
 }
 
 .refreshBtn {
@@ -414,6 +428,7 @@
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
+  white-space: nowrap;
 }
 
 .refreshBtn:hover {
@@ -431,7 +446,7 @@
 .orderCard {
   background: white;
   border-radius: 12px;
-  padding: 20px;
+  padding: 16px 20px;
   border: 2px solid #e5e9d8;
   cursor: pointer;
   transition: all 0.2s;
@@ -456,8 +471,8 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
-  padding-bottom: 12px;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
   border-bottom: 1px solid #f0f2ea;
 }
 
@@ -502,9 +517,40 @@
 }
 
 .orderCardBody {
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
+.orderInfoGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px 16px;
+}
+
+.infoGridItem {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.infoLabel {
+  font-size: 11px;
+  color: #7a8450;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.infoValue {
+  font-size: 14px;
+  color: #3d4522;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Keep old styles for backward compatibility */
 .orderInfo {
   display: grid;
   grid-template-columns: 1fr;
@@ -574,21 +620,23 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 20px;
-  background: #f9faf7;
-  color: #7a8450;
-  border: 1px solid #e5e9d8;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 500;
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #7a8450 0%, #6a7345 100%);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
   cursor: pointer;
   margin-bottom: 24px;
   transition: all 0.2s;
+  box-shadow: 0 4px 12px rgba(122, 132, 80, 0.25);
 }
 
 .backBtn:hover {
-  background: #f0f2ea;
-  border-color: #7a8450;
+  background: linear-gradient(135deg, #6a7345 0%, #5a6338 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(122, 132, 80, 0.35);
 }
 
 /* Completed Alert */
@@ -1103,12 +1151,32 @@
     font-size: 18px;
   }
   
+  .headerRight {
+    width: 100%;
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .lastUpdated {
+    font-size: 12px;
+    width: 100%;
+  }
+  
   .refreshBtn {
     width: 100%;
   }
 
   .orderCard {
     padding: 16px;
+  }
+  
+  .orderCardHeader {
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+  }
+  
+  .orderCardBody {
+    margin-bottom: 10px;
   }
   
   .orderId {
@@ -1122,6 +1190,23 @@
   .newBadge {
     font-size: 9px;
     padding: 2px 8px;
+  }
+  
+  .orderInfoGrid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  
+  .infoGridItem {
+    gap: 3px;
+  }
+  
+  .infoLabel {
+    font-size: 10px;
+  }
+  
+  .infoValue {
+    font-size: 13px;
   }
   
   .infoItem {
@@ -1257,17 +1342,21 @@
     font-size: 16px;
   }
   
+  .lastUpdated {
+    font-size: 11px;
+  }
+  
   .orderCard {
     padding: 12px;
   }
   
   .orderCardHeader {
-    margin-bottom: 12px;
-    padding-bottom: 10px;
+    margin-bottom: 8px;
+    padding-bottom: 8px;
   }
   
   .orderCardBody {
-    margin-bottom: 12px;
+    margin-bottom: 10px;
   }
   
   .orderId {
@@ -1281,6 +1370,18 @@
   .newBadge {
     font-size: 8px;
     padding: 2px 6px;
+  }
+  
+  .orderInfoGrid {
+    gap: 6px;
+  }
+  
+  .infoLabel {
+    font-size: 9px;
+  }
+  
+  .infoValue {
+    font-size: 12px;
   }
   
   .infoItem {
@@ -1305,8 +1406,8 @@
   }
   
   .backBtn {
-    padding: 8px 16px;
-    font-size: 13px;
+    padding: 10px 20px;
+    font-size: 14px;
     margin-bottom: 16px;
   }
   
