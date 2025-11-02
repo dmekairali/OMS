@@ -8,6 +8,8 @@
  * - Data starts at row 9
  * - 84 columns total (A to CF)
  * - Order Status in column 45 (AS)
+ * 
+ * OPTIMIZED: Now uses direct column numbers instead of header lookup
  */
 
 export default async function handler(req, res) {
@@ -126,52 +128,90 @@ export default async function handler(req, res) {
 
     // PUT - Update existing order
     if (req.method === 'PUT') {
-      const { orderId, rowIndex, updates } = req.body;
+      const { orderId, rowIndex, updates, columnUpdates } = req.body;
 
-      if (!rowIndex || !updates) {
-        return res.status(400).json({ error: 'rowIndex and updates required' });
+      if (!rowIndex) {
+        return res.status(400).json({ error: 'rowIndex required' });
       }
 
-      // Get headers from row 8
-      const headersResponse = await sheets.spreadsheets.values.get({
-        spreadsheetId: orderSheetId,
-        range: 'NewOrders!A8:CF8',
-      });
-
-      const headers = headersResponse.data.values[0];
-
-      // Build update requests for each field
-      const updateData = [];
-      Object.keys(updates).forEach(fieldName => {
-        const colIndex = headers.indexOf(fieldName);
-        if (colIndex !== -1) {
-          // Convert column index to letter (0=A, 1=B, etc.)
-          const colLetter = columnIndexToLetter(colIndex);
+      // OPTIMIZED: If columnUpdates is provided, use direct column mapping (NO header lookup)
+      if (columnUpdates && Object.keys(columnUpdates).length > 0) {
+        const updateData = [];
+        
+        Object.keys(columnUpdates).forEach(columnNumber => {
+          const colLetter = columnIndexToLetter(parseInt(columnNumber) - 1); // -1 because columns are 1-based
           updateData.push({
             range: `NewOrders!${colLetter}${rowIndex}`,
-            values: [[updates[fieldName]]]
+            values: [[columnUpdates[columnNumber]]]
           });
-        }
-      });
+        });
 
-      if (updateData.length === 0) {
-        return res.status(400).json({ error: 'No valid fields to update' });
+        if (updateData.length === 0) {
+          return res.status(400).json({ error: 'No valid columns to update' });
+        }
+
+        // Batch update
+        const result = await sheets.spreadsheets.values.batchUpdate({
+          spreadsheetId: orderSheetId,
+          requestBody: {
+            valueInputOption: 'USER_ENTERED',
+            data: updateData
+          }
+        });
+
+        return res.status(200).json({
+          success: true,
+          message: 'Order updated successfully',
+          updatedCells: result.data.totalUpdatedCells,
+          updatedColumns: Object.keys(columnUpdates).length
+        });
       }
 
-      // Batch update
-      const result = await sheets.spreadsheets.values.batchUpdate({
-        spreadsheetId: orderSheetId,
-        requestBody: {
-          valueInputOption: 'USER_ENTERED',
-          data: updateData
-        }
-      });
+      // Fallback: Legacy method using field names (kept for backward compatibility)
+      if (updates && Object.keys(updates).length > 0) {
+        // Get headers from row 8
+        const headersResponse = await sheets.spreadsheets.values.get({
+          spreadsheetId: orderSheetId,
+          range: 'NewOrders!A8:CF8',
+        });
 
-      return res.status(200).json({
-        success: true,
-        message: 'Order updated successfully',
-        updatedCells: result.data.totalUpdatedCells
-      });
+        const headers = headersResponse.data.values[0];
+
+        // Build update requests for each field
+        const updateData = [];
+        Object.keys(updates).forEach(fieldName => {
+          const colIndex = headers.indexOf(fieldName);
+          if (colIndex !== -1) {
+            // Convert column index to letter (0=A, 1=B, etc.)
+            const colLetter = columnIndexToLetter(colIndex);
+            updateData.push({
+              range: `NewOrders!${colLetter}${rowIndex}`,
+              values: [[updates[fieldName]]]
+            });
+          }
+        });
+
+        if (updateData.length === 0) {
+          return res.status(400).json({ error: 'No valid fields to update' });
+        }
+
+        // Batch update
+        const result = await sheets.spreadsheets.values.batchUpdate({
+          spreadsheetId: orderSheetId,
+          requestBody: {
+            valueInputOption: 'USER_ENTERED',
+            data: updateData
+          }
+        });
+
+        return res.status(200).json({
+          success: true,
+          message: 'Order updated successfully',
+          updatedCells: result.data.totalUpdatedCells
+        });
+      }
+
+      return res.status(400).json({ error: 'No updates provided' });
     }
 
     // DELETE - Soft delete (mark as cancelled/deleted)
@@ -222,3 +262,10 @@ function columnIndexToLetter(index) {
   }
   return letter;
 }
+
+// Increase timeout for this function
+export const config = {
+  api: {
+    responseLimit: false,
+  },
+};
