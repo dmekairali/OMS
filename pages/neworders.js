@@ -6,10 +6,11 @@ import styles from '../styles/NewOrders.module.css';
 const DISPLAY_FIELDS = [
   { name: 'Oder ID', type: 'text' },
   { name: 'Order Status', type: 'status' },
+  { name: 'Dispatch Party From*', type: 'text' },
+  { name: 'Remarks*', type: 'text' },
   { name: 'Name of Client', type: 'text' },
   { name: 'Client Type', type: 'text' },
   { name: 'Mobile', type: 'text' },
-  { name: 'Email', type: 'text' },
   { name: 'Invoice Amount', type: 'currency' },
 ];
 
@@ -55,6 +56,7 @@ const ORDER_STATUS_OPTIONS = [
 // Status categories for filtering
 const STATUS_CATEGORIES = [
   { value: 'All', label: 'All', icon: '📋' },
+  { value: 'Pending', label: 'Pending', icon: '⏳' },
   { value: 'Order Confirmed', label: 'Confirmed', icon: '✅' },
   { value: 'Cancel Order', label: 'Cancelled', icon: '❌' },
   { value: 'False Order', label: 'False', icon: '⚠️' },
@@ -141,6 +143,7 @@ export default function NewOrders() {
   const [selectedStatus, setSelectedStatus] = useState('');
   const [activeFilter, setActiveFilter] = useState('All');
   const [newOrderIds, setNewOrderIds] = useState(new Set());
+  const [lastUpdated, setLastUpdated] = useState(null);
   const pollingIntervalRef = useRef(null);
 
   useEffect(() => {
@@ -169,10 +172,10 @@ export default function NewOrders() {
       setUser(userData);
       loadOrders();
       
-      // Start polling for new orders every 30 seconds
+      // Start polling for new orders every 5 minutes (300000ms)
       pollingIntervalRef.current = setInterval(() => {
         loadOrdersSilently();
-      }, 30000);
+      }, 300000);
     } catch (error) {
       console.error('Error parsing user session:', error);
       localStorage.removeItem('userSession');
@@ -198,6 +201,7 @@ export default function NewOrders() {
         ordersList = ordersList.reverse();
         
         setOrders(ordersList);
+        setLastUpdated(new Date());
         filterOrders(ordersList, activeFilter, searchTerm);
       }
     } catch (error) {
@@ -227,6 +231,7 @@ export default function NewOrders() {
         }
         
         setOrders(ordersList);
+        setLastUpdated(new Date());
         filterOrders(ordersList, activeFilter, searchTerm);
       }
     } catch (error) {
@@ -239,7 +244,14 @@ export default function NewOrders() {
 
     // Filter by status
     if (statusFilter !== 'All') {
-      filtered = filtered.filter(order => order['Order Status'] === statusFilter);
+      if (statusFilter === 'Pending') {
+        // Pending means Order Status is blank or null
+        filtered = filtered.filter(order => 
+          !order['Order Status'] || order['Order Status'].trim() === ''
+        );
+      } else {
+        filtered = filtered.filter(order => order['Order Status'] === statusFilter);
+      }
     }
 
     // Filter by search term
@@ -537,6 +549,23 @@ export default function NewOrders() {
     return `${diffYears} year${diffYears > 1 ? 's' : ''} ago`;
   };
 
+  const getLastUpdatedText = () => {
+    if (!lastUpdated) return '';
+    
+    const now = new Date();
+    const diffMs = now - lastUpdated;
+    const diffMins = Math.floor(diffMs / 60000);
+    
+    if (diffMins < 1) return 'Updated just now';
+    if (diffMins < 60) return `Updated ${diffMins} min${diffMins > 1 ? 's' : ''} ago`;
+    
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) return `Updated ${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+    
+    const diffDays = Math.floor(diffHours / 24);
+    return `Updated ${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+  };
+
   const isOrderCompleted = (order) => {
     return order['Actual'] && order['Actual'].trim() !== '';
   };
@@ -546,6 +575,11 @@ export default function NewOrders() {
     STATUS_CATEGORIES.forEach(cat => {
       if (cat.value === 'All') {
         counts[cat.value] = orders.length;
+      } else if (cat.value === 'Pending') {
+        // Count orders with blank or null status
+        counts[cat.value] = orders.filter(o => 
+          !o['Order Status'] || o['Order Status'].trim() === ''
+        ).length;
       } else {
         counts[cat.value] = orders.filter(o => o['Order Status'] === cat.value).length;
       }
@@ -793,9 +827,16 @@ export default function NewOrders() {
                 <h2>
                   {activeFilter === 'All' ? '📋 All Orders' : `${STATUS_CATEGORIES.find(c => c.value === activeFilter)?.icon} ${activeFilter}`} ({filteredOrders.length})
                 </h2>
-                <button onClick={loadOrders} className={styles.refreshBtn}>
-                  🔄 Refresh
-                </button>
+                <div className={styles.headerRight}>
+                  {lastUpdated && (
+                    <span className={styles.lastUpdated}>
+                      🕐 {getLastUpdatedText()}
+                    </span>
+                  )}
+                  <button onClick={loadOrders} className={styles.refreshBtn}>
+                    🔄 Refresh
+                  </button>
+                </div>
               </div>
 
               {/* Orders List */}
@@ -831,10 +872,11 @@ export default function NewOrders() {
                           </span>
                         </div>
                         <div className={styles.orderCardBody}>
-                          <div className={styles.orderInfo}>
+                          <div className={styles.orderInfoGrid}>
                             {DISPLAY_FIELDS.slice(1).map((field, idx) => (
-                              <div key={idx} className={styles.infoItem}>
-                                <strong>{field.name}:</strong> {renderField(field, order[field.name], order)}
+                              <div key={idx} className={styles.infoGridItem}>
+                                <span className={styles.infoLabel}>{field.name}:</span>
+                                <span className={styles.infoValue}>{renderField(field, order[field.name], order)}</span>
                               </div>
                             ))}
                           </div>
