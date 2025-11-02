@@ -5,14 +5,16 @@ import styles from '../styles/NewOrders.module.css';
 // Non-editable display fields for order cards
 const DISPLAY_FIELDS = [
   { name: 'Oder ID', type: 'text' },
+  { name: 'Order Status', type: 'status' },
   { name: 'Name of Client', type: 'text' },
   { name: 'Client Type', type: 'text' },
   { name: 'Mobile', type: 'text' },
+  { name: 'Email', type: 'text' },
   { name: 'Invoice Amount', type: 'currency' },
-  { name: 'Order Status', type: 'status' },
   { name: 'Dispatch Party From*', type: 'text' },
   { name: 'Remarks*', type: 'text' },
 ];
+
 // All non-editable fields for detail view
 const NON_EDITABLE_FIELDS = [
   { name: 'Timestamp', type: 'datetime' },
@@ -41,6 +43,9 @@ const NON_EDITABLE_FIELDS = [
   { name: 'Doer Name', type: 'text' },
   { name: 'CAPA Link', type: 'url' },
   { name: 'Feedback Collection Link', type: 'url' },
+  { name: 'Order Status', type: 'status' },
+  { name: 'Dispatch Party From*', type: 'text' },
+  { name: 'Remarks*', type: 'text' },
 ];
 
 // Order Status options
@@ -84,48 +89,49 @@ const PAYMENT_TYPE_OPTIONS = [
 ];
 
 // Action field configurations based on Order Status
+// Each field now includes columnNumber for direct mapping
 const ACTION_FIELDS = {
   'Order Confirmed': [
-    { name: 'Order Status', type: 'dropdown', defaultValue: 'Order Confirmed', readOnly: true, required: true, options: ORDER_STATUS_OPTIONS },
-    { name: 'Dispatch Party From', type: 'dropdown', required: true, options: DISPATCH_PARTY_OPTIONS },
-    { name: 'Remarks*', type: 'textarea', required: true, fullWidth: true },
-    { name: 'Inform to Client by call', type: 'checkbox' },
-    { name: 'Inform to Dispatch Party From by call', type: 'checkbox' },
-    { name: 'Payment Date', type: 'date' },
-    { name: 'Payment Confirmation Type', type: 'dropdown', options: PAYMENT_TYPE_OPTIONS },
-    { name: 'Expected Date and time of the Dispatch', type: 'datetime-local' },
-    { name: 'Enter Actual Invoice Amount of Dispatch Party', type: 'number', step: '0.01' },
+    { name: 'Order Status', type: 'dropdown', defaultValue: 'Order Confirmed', readOnly: true, required: true, options: ORDER_STATUS_OPTIONS, columnNumber: 45 },
+    { name: 'Dispatch Party From*', type: 'dropdown', required: true, options: DISPATCH_PARTY_OPTIONS, columnNumber: 46 },
+    { name: 'Remarks*', type: 'textarea', required: true, fullWidth: true, columnNumber: 47 },
+    { name: 'Inform to Client by call', type: 'checkbox', columnNumber: 48 },
+    { name: 'Inform to Dispatch Party From by call', type: 'checkbox', columnNumber: 49 },
+    { name: 'Payment Date', type: 'date', columnNumber: 51 },
+    { name: 'Payment Confirmation Type', type: 'dropdown', options: PAYMENT_TYPE_OPTIONS, columnNumber: 52 },
+    { name: 'Expected Date and time of the Dispatch', type: 'datetime-local', columnNumber: 53 },
+    { name: 'Enter Actual Invoice Amount of Dispatch Party', type: 'number', step: '0.01', columnNumber: 74 },
   ],
   'Cancel Order': [
-    { name: 'Order Status', type: 'dropdown', defaultValue: 'Cancel Order', readOnly: true, required: true, options: ORDER_STATUS_OPTIONS },
-    { name: 'Remarks*', type: 'textarea', required: true, fullWidth: true },
-    { name: 'Is order in full-Yes/No', type: 'dropdown', options: ['Yes', 'No'] },
-    { name: 'Reason(If No)', type: 'textarea', fullWidth: true },
-    { name: 'Inform to Client by call', type: 'checkbox' },
-    { name: 'Inform to Dispatch Party From by call', type: 'checkbox' },
+    { name: 'Order Status', type: 'dropdown', defaultValue: 'Cancel Order', readOnly: true, required: true, options: ORDER_STATUS_OPTIONS, columnNumber: 45 },
+    { name: 'Remarks*', type: 'textarea', required: true, fullWidth: true, columnNumber: 47 },
+    { name: 'Is order in full-Yes/No', type: 'dropdown', options: ['Yes', 'No'], columnNumber: 54 },
+    { name: 'Reason(If No)', type: 'textarea', fullWidth: true, columnNumber: 55 },
+    { name: 'Inform to Client by call', type: 'checkbox', columnNumber: 48 },
+    { name: 'Inform to Dispatch Party From by call', type: 'checkbox', columnNumber: 49 },
   ],
   'False Order': [
-    { name: 'Order Status', type: 'dropdown', defaultValue: 'False Order', readOnly: true, required: true, options: ORDER_STATUS_OPTIONS },
-    { name: 'Remarks*', type: 'textarea', required: true, fullWidth: true },
-    { name: 'Is order in full-Yes/No', type: 'dropdown', options: ['Yes', 'No'] },
-    { name: 'Reason(If No)', type: 'textarea', fullWidth: true },
-    { name: 'Inform to Client by call', type: 'checkbox' },
-    { name: 'Inform to Dispatch Party From by call', type: 'checkbox' },
+    { name: 'Order Status', type: 'dropdown', defaultValue: 'False Order', readOnly: true, required: true, options: ORDER_STATUS_OPTIONS, columnNumber: 45 },
+    { name: 'Remarks*', type: 'textarea', required: true, fullWidth: true, columnNumber: 47 },
+    { name: 'Is order in full-Yes/No', type: 'dropdown', options: ['Yes', 'No'], columnNumber: 54 },
+    { name: 'Reason(If No)', type: 'textarea', fullWidth: true, columnNumber: 55 },
+    { name: 'Inform to Client by call', type: 'checkbox', columnNumber: 48 },
+    { name: 'Inform to Dispatch Party From by call', type: 'checkbox', columnNumber: 49 },
   ],
   'Hold': [
-    { name: 'Order Status', type: 'dropdown', defaultValue: 'Hold', readOnly: true, required: true, options: ORDER_STATUS_OPTIONS },
-    { name: 'Remarks*', type: 'textarea', required: true, fullWidth: true },
+    { name: 'Order Status', type: 'dropdown', defaultValue: 'Hold', readOnly: true, required: true, options: ORDER_STATUS_OPTIONS, columnNumber: 45 },
+    { name: 'Remarks*', type: 'textarea', required: true, fullWidth: true, columnNumber: 47 },
   ],
   'Stock Transfer': [
-    { name: 'Order Status', type: 'dropdown', defaultValue: 'Stock Transfer', readOnly: true, required: true, options: ORDER_STATUS_OPTIONS },
-    { name: 'Dispatch Party From', type: 'dropdown', required: true, options: DISPATCH_PARTY_OPTIONS },
-    { name: 'Remarks*', type: 'textarea', required: true, fullWidth: true },
-    { name: 'Inform to Client by call', type: 'checkbox' },
-    { name: 'Inform to Dispatch Party From by call', type: 'checkbox' },
-    { name: 'Payment Date', type: 'date' },
-    { name: 'Payment Confirmation Type', type: 'dropdown', options: PAYMENT_TYPE_OPTIONS },
-    { name: 'Expected Date and time of the Dispatch', type: 'datetime-local' },
-    { name: 'Enter Actual Invoice Amount of Dispatch Party', type: 'number', step: '0.01' },
+    { name: 'Order Status', type: 'dropdown', defaultValue: 'Stock Transfer', readOnly: true, required: true, options: ORDER_STATUS_OPTIONS, columnNumber: 45 },
+    { name: 'Dispatch Party From*', type: 'dropdown', required: true, options: DISPATCH_PARTY_OPTIONS, columnNumber: 46 },
+    { name: 'Remarks*', type: 'textarea', required: true, fullWidth: true, columnNumber: 47 },
+    { name: 'Inform to Client by call', type: 'checkbox', columnNumber: 48 },
+    { name: 'Inform to Dispatch Party From by call', type: 'checkbox', columnNumber: 49 },
+    { name: 'Payment Date', type: 'date', columnNumber: 51 },
+    { name: 'Payment Confirmation Type', type: 'dropdown', options: PAYMENT_TYPE_OPTIONS, columnNumber: 52 },
+    { name: 'Expected Date and time of the Dispatch', type: 'datetime-local', columnNumber: 53 },
+    { name: 'Enter Actual Invoice Amount of Dispatch Party', type: 'number', step: '0.01', columnNumber: 74 },
   ],
 };
 
@@ -143,6 +149,8 @@ export default function NewOrders() {
   const [activeFilter, setActiveFilter] = useState('All');
   const [newOrderIds, setNewOrderIds] = useState(new Set());
   const [lastUpdated, setLastUpdated] = useState(null);
+  const [showUpdateSummary, setShowUpdateSummary] = useState(false);
+  const [updateSummaryData, setUpdateSummaryData] = useState(null);
   const pollingIntervalRef = useRef(null);
 
   useEffect(() => {
@@ -307,17 +315,31 @@ export default function NewOrders() {
     
     const formData = new FormData(e.target);
     const updates = {};
+    const columnUpdates = {};
+    
+    // Get field configurations for current status
+    const fieldConfigs = ACTION_FIELDS[selectedStatus] || [];
     
     for (let [key, value] of formData.entries()) {
+      const fieldConfig = fieldConfigs.find(f => f.name === key);
+      
       if (e.target.elements[key].type === 'checkbox') {
         updates[key] = e.target.elements[key].checked ? 'TRUE' : 'FALSE';
       } else {
         updates[key] = value;
       }
+      
+      // Add column number mapping
+      if (fieldConfig && fieldConfig.columnNumber) {
+        columnUpdates[fieldConfig.columnNumber] = updates[key];
+      }
     }
 
+    // Add Last Edited metadata
     updates['Last Edited By'] = user.username;
     updates['Last Edited At'] = new Date().toISOString();
+    columnUpdates[78] = user.username; // Last Edited By
+    columnUpdates[79] = new Date().toISOString(); // Last Edited At
 
     try {
       const response = await fetch('/api/orders', {
@@ -328,14 +350,38 @@ export default function NewOrders() {
         body: JSON.stringify({
           orderId: selectedOrder['Oder ID'],
           rowIndex: selectedOrder._rowIndex,
-          updates: updates
+          updates: updates,
+          columnUpdates: columnUpdates // Send column-based updates
         }),
       });
 
       if (response.ok) {
-        alert('Order updated successfully!');
+        // Prepare update summary
+        const summary = {
+          orderId: selectedOrder['Oder ID'],
+          status: selectedStatus,
+          fields: Object.keys(updates).filter(key => key !== 'Last Edited By' && key !== 'Last Edited At'),
+          updates: updates,
+          timestamp: new Date().toLocaleString('en-IN', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true
+          })
+        };
+        
+        setUpdateSummaryData(summary);
+        setShowUpdateSummary(true);
+        
+        // Auto-close after 5 seconds
+        setTimeout(() => {
+          setShowUpdateSummary(false);
+          handleBackToDashboard();
+        }, 5000);
+        
         await loadOrders(false); // Silent reload without loading state
-        handleBackToDashboard();
       } else {
         const errorData = await response.json();
         alert('Failed to update order: ' + (errorData.error || 'Unknown error'));
@@ -1003,6 +1049,72 @@ export default function NewOrders() {
           )}
         </div>
       </div>
+
+      {/* Update Summary Modal */}
+      {showUpdateSummary && updateSummaryData && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.updateSummaryModal}>
+            <div className={styles.summaryHeader}>
+              <div className={styles.summaryIcon}>✓</div>
+              <h3>Order Updated Successfully</h3>
+            </div>
+            
+            <div className={styles.summaryBody}>
+              <div className={styles.summaryRow}>
+                <span className={styles.summaryLabel}>Order ID:</span>
+                <span className={styles.summaryValue}>{updateSummaryData.orderId}</span>
+              </div>
+              
+              <div className={styles.summaryRow}>
+                <span className={styles.summaryLabel}>Status:</span>
+                <span className={styles.summaryValue} style={{
+                  color: getStatusBadgeColor(updateSummaryData.status),
+                  fontWeight: 700
+                }}>
+                  {updateSummaryData.status}
+                </span>
+              </div>
+              
+              <div className={styles.summaryRow}>
+                <span className={styles.summaryLabel}>Updated At:</span>
+                <span className={styles.summaryValue}>{updateSummaryData.timestamp}</span>
+              </div>
+              
+              <div className={styles.summaryDivider}></div>
+              
+              <div className={styles.summaryFields}>
+                <h4>Updated Fields ({updateSummaryData.fields.length})</h4>
+                {updateSummaryData.fields.map((fieldName, idx) => (
+                  <div key={idx} className={styles.summaryFieldRow}>
+                    <span className={styles.fieldName}>{fieldName}:</span>
+                    <span className={styles.fieldValue}>
+                      {updateSummaryData.updates[fieldName] === 'TRUE' ? '✓ Yes' : 
+                       updateSummaryData.updates[fieldName] === 'FALSE' ? '✗ No' :
+                       updateSummaryData.updates[fieldName] || '-'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            <div className={styles.summaryFooter}>
+              <button 
+                onClick={() => {
+                  setShowUpdateSummary(false);
+                  handleBackToDashboard();
+                }} 
+                className={styles.summaryCloseBtn}
+              >
+                Close & Return to Orders
+              </button>
+            </div>
+            
+            <div className={styles.autoCloseNote}>
+              Auto-closing in 5 seconds...
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
