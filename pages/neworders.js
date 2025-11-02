@@ -88,7 +88,7 @@ const ACTION_FIELDS = {
   'Order Confirmed': [
     { name: 'Order Status', type: 'dropdown', defaultValue: 'Order Confirmed', readOnly: true, required: true, options: ORDER_STATUS_OPTIONS },
     { name: 'Dispatch Party From', type: 'dropdown', required: true, options: DISPATCH_PARTY_OPTIONS },
-    { name: 'Remarks', type: 'textarea', required: true, fullWidth: true },
+    { name: 'Remarks*', type: 'textarea', required: true, fullWidth: true },
     { name: 'Inform to Client by call', type: 'checkbox' },
     { name: 'Inform to Dispatch Party From by call', type: 'checkbox' },
     { name: 'Payment Date', type: 'date' },
@@ -98,7 +98,7 @@ const ACTION_FIELDS = {
   ],
   'Cancel Order': [
     { name: 'Order Status', type: 'dropdown', defaultValue: 'Cancel Order', readOnly: true, required: true, options: ORDER_STATUS_OPTIONS },
-    { name: 'Remarks', type: 'textarea', required: true, fullWidth: true },
+    { name: 'Remarks*', type: 'textarea', required: true, fullWidth: true },
     { name: 'Is order in full-Yes/No', type: 'dropdown', options: ['Yes', 'No'] },
     { name: 'Reason(If No)', type: 'textarea', fullWidth: true },
     { name: 'Inform to Client by call', type: 'checkbox' },
@@ -106,7 +106,7 @@ const ACTION_FIELDS = {
   ],
   'False Order': [
     { name: 'Order Status', type: 'dropdown', defaultValue: 'False Order', readOnly: true, required: true, options: ORDER_STATUS_OPTIONS },
-    { name: 'Remarks', type: 'textarea', required: true, fullWidth: true },
+    { name: 'Remarks*', type: 'textarea', required: true, fullWidth: true },
     { name: 'Is order in full-Yes/No', type: 'dropdown', options: ['Yes', 'No'] },
     { name: 'Reason(If No)', type: 'textarea', fullWidth: true },
     { name: 'Inform to Client by call', type: 'checkbox' },
@@ -114,12 +114,12 @@ const ACTION_FIELDS = {
   ],
   'Hold': [
     { name: 'Order Status', type: 'dropdown', defaultValue: 'Hold', readOnly: true, required: true, options: ORDER_STATUS_OPTIONS },
-    { name: 'Remarks', type: 'textarea', required: true, fullWidth: true },
+    { name: 'Remarks*', type: 'textarea', required: true, fullWidth: true },
   ],
   'Stock Transfer': [
     { name: 'Order Status', type: 'dropdown', defaultValue: 'Stock Transfer', readOnly: true, required: true, options: ORDER_STATUS_OPTIONS },
     { name: 'Dispatch Party From', type: 'dropdown', required: true, options: DISPATCH_PARTY_OPTIONS },
-    { name: 'Remarks', type: 'textarea', required: true, fullWidth: true },
+    { name: 'Remarks*', type: 'textarea', required: true, fullWidth: true },
     { name: 'Inform to Client by call', type: 'checkbox' },
     { name: 'Inform to Dispatch Party From by call', type: 'checkbox' },
     { name: 'Payment Date', type: 'date' },
