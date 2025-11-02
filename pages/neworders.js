@@ -13,7 +13,6 @@ const DISPLAY_FIELDS = [
   { name: 'Dispatch Party From*', type: 'text' },
   { name: 'Remarks*', type: 'text' },
 ];
-
 // All non-editable fields for detail view
 const NON_EDITABLE_FIELDS = [
   { name: 'Timestamp', type: 'datetime' },
@@ -170,11 +169,11 @@ export default function NewOrders() {
       }
 
       setUser(userData);
-      loadOrders();
+      loadOrders(true); // Initial load with loading state
       
       // Start polling for new orders every 5 minutes (300000ms)
       pollingIntervalRef.current = setInterval(() => {
-        loadOrdersSilently();
+        loadOrders(false); // Silent updates without loading state
       }, 300000);
     } catch (error) {
       console.error('Error parsing user session:', error);
@@ -189,9 +188,11 @@ export default function NewOrders() {
     };
   }, [router]);
 
-  const loadOrders = async () => {
+  const loadOrders = async (showLoading = true) => {
     try {
-      setLoading(true);
+      if (showLoading) {
+        setLoading(true);
+      }
       const response = await fetch('/api/orders');
       if (response.ok) {
         const data = await response.json();
@@ -200,42 +201,38 @@ export default function NewOrders() {
         // Reverse order so latest is at top
         ordersList = ordersList.reverse();
         
-        setOrders(ordersList);
-        setLastUpdated(new Date());
-        filterOrders(ordersList, activeFilter, searchTerm);
+        // If we have existing orders, only add new ones at the top
+        if (orders.length > 0 && !showLoading) {
+          const existingOrderIds = new Set(orders.map(o => o['Oder ID']));
+          const newOrders = ordersList.filter(o => !existingOrderIds.has(o['Oder ID']));
+          
+          if (newOrders.length > 0) {
+            // Add new orders to the top and mark them as new
+            const newIds = new Set(newOrders.map(o => o['Oder ID']));
+            setNewOrderIds(prev => new Set([...prev, ...newIds]));
+            
+            // Merge: new orders at top + existing orders
+            const mergedOrders = [...newOrders, ...orders];
+            setOrders(mergedOrders);
+            setLastUpdated(new Date());
+            filterOrders(mergedOrders, activeFilter, searchTerm);
+          } else {
+            // No new orders, just update timestamp
+            setLastUpdated(new Date());
+          }
+        } else {
+          // First load or manual refresh - replace all data
+          setOrders(ordersList);
+          setLastUpdated(new Date());
+          filterOrders(ordersList, activeFilter, searchTerm);
+        }
       }
     } catch (error) {
       console.error('Error loading orders:', error);
     } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadOrdersSilently = async () => {
-    try {
-      const response = await fetch('/api/orders');
-      if (response.ok) {
-        const data = await response.json();
-        let ordersList = data.orders || [];
-        
-        // Reverse order so latest is at top
-        ordersList = ordersList.reverse();
-        
-        // Find new orders
-        const existingOrderIds = new Set(orders.map(o => o['Oder ID']));
-        const newOrders = ordersList.filter(o => !existingOrderIds.has(o['Oder ID']));
-        
-        if (newOrders.length > 0) {
-          const newIds = new Set(newOrders.map(o => o['Oder ID']));
-          setNewOrderIds(prev => new Set([...prev, ...newIds]));
-        }
-        
-        setOrders(ordersList);
-        setLastUpdated(new Date());
-        filterOrders(ordersList, activeFilter, searchTerm);
+      if (showLoading) {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error('Error loading orders silently:', error);
     }
   };
 
@@ -297,6 +294,8 @@ export default function NewOrders() {
     setSelectedOrder(null);
     setShowDetailView(false);
     setSelectedStatus('');
+    // Silent reload to ensure fresh data without showing loading
+    loadOrders(false);
   };
 
   const handleStatusSelect = (status) => {
@@ -335,7 +334,7 @@ export default function NewOrders() {
 
       if (response.ok) {
         alert('Order updated successfully!');
-        await loadOrders();
+        await loadOrders(false); // Silent reload without loading state
         handleBackToDashboard();
       } else {
         const errorData = await response.json();
@@ -833,7 +832,7 @@ export default function NewOrders() {
                       🕐 {getLastUpdatedText()}
                     </span>
                   )}
-                  <button onClick={loadOrders} className={styles.refreshBtn}>
+                  <button onClick={() => loadOrders(true)} className={styles.refreshBtn}>
                     🔄 Refresh
                   </button>
                 </div>
@@ -844,7 +843,7 @@ export default function NewOrders() {
                 <div className={styles.emptyState}>
                   <p className={styles.emptyIcon}>📦</p>
                   <p className={styles.emptyText}>No orders found</p>
-                  <button onClick={loadOrders} className={styles.refreshBtn}>Refresh</button>
+                  <button onClick={() => loadOrders(true)} className={styles.refreshBtn}>Refresh</button>
                 </div>
               ) : (
                 <div className={styles.ordersList}>
