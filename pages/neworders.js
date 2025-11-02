@@ -371,10 +371,38 @@ export default function NewOrders() {
       });
 
       if (response.ok) {
+        // IMMEDIATELY update the order in local state
+        const updatedOrders = orders.map(order => {
+          if (order['Oder ID'] === selectedOrder['Oder ID']) {
+            // Merge updates into the order
+            return { ...order, ...updates };
+          }
+          return order;
+        });
+        
+        setOrders(updatedOrders);
+        
+        // Determine which filter the updated order should be in
+        const newStatus = updates['Order Status'];
+        let targetFilter = 'All';
+        
+        if (newStatus && newStatus.trim() !== '') {
+          // If status is set, use that as filter
+          targetFilter = newStatus;
+        } else {
+          // If status is blank, it's Pending
+          targetFilter = 'Pending';
+        }
+        
+        // Switch to the appropriate filter so user can see the updated order
+        setActiveFilter(targetFilter);
+        filterOrders(updatedOrders, targetFilter, searchTerm);
+        
         // Prepare update summary
         const summary = {
           orderId: selectedOrder['Oder ID'],
           status: selectedStatus,
+          newFilter: targetFilter,
           fields: Object.keys(updates).filter(key => key !== 'Last Edited By' && key !== 'Last Edited At'),
           updates: updates,
           timestamp: new Date().toLocaleString('en-IN', {
@@ -390,13 +418,16 @@ export default function NewOrders() {
         setUpdateSummaryData(summary);
         setShowUpdateSummary(true);
         
-        // Auto-close after 5 seconds
+        // Auto-close after 5 seconds and return to list
         setTimeout(() => {
           setShowUpdateSummary(false);
           handleBackToDashboard();
         }, 5000);
         
-        await loadOrders(false); // Silent reload without loading state
+        // Also do a silent background refresh to ensure sync with server
+        setTimeout(() => {
+          loadOrders(false);
+        }, 1000);
       } else {
         const errorData = await response.json();
         alert('Failed to update order: ' + (errorData.error || 'Unknown error'));
@@ -1090,6 +1121,18 @@ export default function NewOrders() {
                 </span>
               </div>
               
+              {updateSummaryData.newFilter && (
+                <div className={styles.summaryRow}>
+                  <span className={styles.summaryLabel}>Moved to:</span>
+                  <span className={styles.summaryValue} style={{
+                    color: getStatusBadgeColor(updateSummaryData.newFilter),
+                    fontWeight: 600
+                  }}>
+                    {STATUS_CATEGORIES.find(c => c.value === updateSummaryData.newFilter)?.icon} {updateSummaryData.newFilter}
+                  </span>
+                </div>
+              )}
+              
               <div className={styles.summaryRow}>
                 <span className={styles.summaryLabel}>Updated At:</span>
                 <span className={styles.summaryValue}>{updateSummaryData.timestamp}</span>
@@ -1120,7 +1163,7 @@ export default function NewOrders() {
                 }} 
                 className={styles.summaryCloseBtn}
               >
-                Close & Return to Orders
+                Close & View in {updateSummaryData.newFilter || 'All Orders'}
               </button>
             </div>
             
