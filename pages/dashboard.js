@@ -241,6 +241,15 @@ export default function Dashboard() {
             </div>
           )}
         </nav>
+
+            {/* Add this new section at the bottom */}
+  <div className={styles.sidebarFooter}>
+    <div className={styles.sidebarWatermark}>
+      <span>Design & Developed by</span>
+      <strong>Ambuj</strong>
+    </div>
+  </div>
+    
       </aside>
 
       {/* Main Content */}
