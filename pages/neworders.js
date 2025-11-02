@@ -48,8 +48,6 @@ const ORDER_STATUS_OPTIONS = [
   'False Order',
   'Hold',
   'Stock Transfer',
-  // 'Edit Order', // Disabled for now
-  // 'Edit and Split', // Disabled for now
 ];
 
 // Dispatch Party options
@@ -121,6 +119,7 @@ const ACTION_FIELDS = {
 export default function NewOrders() {
   const router = useRouter();
   const [user, setUser] = useState(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [orders, setOrders] = useState([]);
   const [filteredOrders, setFilteredOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -204,6 +203,7 @@ export default function NewOrders() {
     setSelectedOrder(order);
     setShowDetailView(true);
     setSelectedStatus('');
+    closeSidebar();
   };
 
   const handleBackToDashboard = () => {
@@ -278,6 +278,14 @@ export default function NewOrders() {
     }
   };
 
+  const toggleSidebar = () => {
+    setSidebarOpen(!sidebarOpen);
+  };
+
+  const closeSidebar = () => {
+    setSidebarOpen(false);
+  };
+
   const getTimeAgo = (timestamp) => {
     if (!timestamp) return '';
     const now = new Date();
@@ -301,7 +309,7 @@ export default function NewOrders() {
       case 'datetime':
         return value ? new Date(value).toLocaleString() : '-';
       case 'url':
-        return value ? <a href={value} target="_blank" rel="noopener noreferrer" style={{color: '#3b82f6', textDecoration: 'underline'}}>View Link</a> : '-';
+        return value ? <a href={value} target="_blank" rel="noopener noreferrer" style={{color: '#7a8450', textDecoration: 'underline'}}>View Link</a> : '-';
       default:
         return value || '-';
     }
@@ -410,43 +418,59 @@ export default function NewOrders() {
 
   return (
     <div className={styles.pageContainer}>
+      {/* Mobile Menu Toggle */}
+      <button className={styles.menuToggle} onClick={toggleSidebar}>
+        ☰
+      </button>
+
+      {/* Sidebar Overlay */}
+      <div 
+        className={`${styles.sidebarOverlay} ${sidebarOpen ? styles.show : ''}`}
+        onClick={closeSidebar}
+      ></div>
+
       {/* Sidebar */}
-      <aside className={styles.sidebar}>
+      <aside className={`${styles.sidebar} ${sidebarOpen ? styles.open : ''}`}>
         <div className={styles.logoSection}>
-          <span className={styles.logoIcon}>📦</span>
-          <span className={styles.logoText}>OrderFlow</span>
+          <img 
+            src="/kairali-logo.png" 
+            alt="Kairali Products" 
+            className={styles.logoImage}
+          />
         </div>
 
         <nav className={styles.navMenu}>
           {user.moduleAccess?.dashboard && (
-            <div className={styles.navItem} onClick={() => navigateToModule('dashboard')}>
+            <div className={styles.navItem} onClick={() => { navigateToModule('dashboard'); closeSidebar(); }}>
               <span className={styles.navIcon}>📊</span>
               <span className={styles.navText}>Dashboard</span>
             </div>
           )}
           
-          <div className={`${styles.navItem} ${styles.active}`}>
+          <div className={`${styles.navItem} ${styles.active}`} onClick={closeSidebar}>
             <span className={styles.navIcon}>📋</span>
             <span className={styles.navText}>New Orders</span>
-            <span className={styles.badge}>{filteredOrders.length}</span>
+            {filteredOrders.length > 0 && (
+              <span className={styles.badge}>{filteredOrders.length}</span>
+            )}
           </div>
           
           {user.moduleAccess?.dispatch && (
-            <div className={styles.navItem} onClick={() => navigateToModule('dispatch')}>
+            <div className={styles.navItem} onClick={() => { navigateToModule('dispatch'); closeSidebar(); }}>
               <span className={styles.navIcon}>🚚</span>
               <span className={styles.navText}>Dispatch</span>
             </div>
           )}
           
           {user.moduleAccess?.delivery && (
-            <div className={styles.navItem} onClick={() => navigateToModule('delivery')}>
+            <div className={styles.navItem} onClick={() => { navigateToModule('delivery'); closeSidebar(); }}>
               <span className={styles.navIcon}>📦</span>
               <span className={styles.navText}>Delivery</span>
             </div>
           )}
           
           {user.moduleAccess?.payment && (
-            <div className={styles.navItem} onClick={() => navigateToModule('payment')}>
+            <div className={styles.navItem} onClick={() => { navigateToModule('payment'); closeSidebar(); }}>
               <span className={styles.navIcon}>💰</span>
               <span className={styles.navText}>Payment</span>
             </div>
@@ -586,7 +610,6 @@ export default function NewOrders() {
                           status === 'Hold' ? styles.statusInfo :
                           styles.statusDisabled
                         }`}
-                        disabled={status === 'Edit Order' || status === 'Edit and Split'}
                       >
                         {status === 'Order Confirmed' && '✓ '}
                         {status === 'Cancel Order' && '✕ '}
@@ -594,7 +617,6 @@ export default function NewOrders() {
                         {status === 'Hold' && '⏸ '}
                         {status === 'Stock Transfer' && '🔄 '}
                         {status}
-                        {(status === 'Edit Order' || status === 'Edit and Split') && ' (Coming Soon)'}
                       </button>
                     ))}
                   </div>
