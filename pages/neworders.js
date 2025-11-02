@@ -320,6 +320,7 @@ export default function NewOrders() {
     // Get field configurations for current status
     const fieldConfigs = ACTION_FIELDS[selectedStatus] || [];
     
+    // First, process all form fields
     for (let [key, value] of formData.entries()) {
       const fieldConfig = fieldConfigs.find(f => f.name === key);
       
@@ -334,12 +335,26 @@ export default function NewOrders() {
         columnUpdates[fieldConfig.columnNumber] = updates[key];
       }
     }
+    
+    // IMPORTANT: Add readonly/disabled fields that aren't in FormData
+    // Find Order Status field (it's readonly, so not in FormData)
+    const orderStatusField = fieldConfigs.find(f => f.name === 'Order Status');
+    if (orderStatusField) {
+      const orderStatusValue = orderStatusField.defaultValue || selectedStatus;
+      updates['Order Status'] = orderStatusValue;
+      if (orderStatusField.columnNumber) {
+        columnUpdates[orderStatusField.columnNumber] = orderStatusValue;
+      }
+    }
 
     // Add Last Edited metadata
     updates['Last Edited By'] = user.username;
     updates['Last Edited At'] = new Date().toISOString();
     columnUpdates[78] = user.username; // Last Edited By
     columnUpdates[79] = new Date().toISOString(); // Last Edited At
+
+    console.log('Submitting updates:', updates);
+    console.log('Column updates:', columnUpdates);
 
     try {
       const response = await fetch('/api/orders', {
