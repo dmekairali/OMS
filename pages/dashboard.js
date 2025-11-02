@@ -5,6 +5,7 @@ import styles from '../styles/Dashboard.module.css';
 export default function Dashboard() {
   const router = useRouter();
   const [user, setUser] = useState(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [stats, setStats] = useState({
     newOrders: 0,
     confirmed: 0,
@@ -18,38 +19,38 @@ export default function Dashboard() {
   const [recentActivity, setRecentActivity] = useState([]);
 
   useEffect(() => {
-  const userSession = localStorage.getItem('userSession');
-  if (!userSession) {
-    router.push('/login');
-    return;
-  }
-
-  try {
-    const userData = JSON.parse(userSession);
-    
-    // Check if moduleAccess exists, if not, clear session and force re-login
-    if (!userData.moduleAccess) {
-      console.log('Invalid session detected, clearing...');
-      localStorage.removeItem('userSession');
-      router.push('/login');
-      return;
-    }
-    
-    if (!userData.moduleAccess?.dashboard) {
-      alert('You do not have access to Dashboard');
-      localStorage.removeItem('userSession');
+    const userSession = localStorage.getItem('userSession');
+    if (!userSession) {
       router.push('/login');
       return;
     }
 
-    setUser(userData);
-    loadDashboardData();
-  } catch (error) {
-    console.error('Error parsing user session:', error);
-    localStorage.removeItem('userSession');
-    router.push('/login');
-  }
-}, [router]);
+    try {
+      const userData = JSON.parse(userSession);
+      
+      // Check if moduleAccess exists, if not, clear and force re-login
+      if (!userData.moduleAccess) {
+        console.log('Invalid session detected, clearing...');
+        localStorage.removeItem('userSession');
+        router.push('/login');
+        return;
+      }
+      
+      if (!userData.moduleAccess?.dashboard) {
+        alert('You do not have access to Dashboard');
+        localStorage.removeItem('userSession');
+        router.push('/login');
+        return;
+      }
+
+      setUser(userData);
+      loadDashboardData();
+    } catch (error) {
+      console.error('Error parsing user session:', error);
+      localStorage.removeItem('userSession');
+      router.push('/login');
+    }
+  }, [router]);
 
   const loadDashboardData = async () => {
     try {
@@ -117,6 +118,14 @@ export default function Dashboard() {
     }
   };
 
+  const toggleSidebar = () => {
+    setSidebarOpen(!sidebarOpen);
+  };
+
+  const closeSidebar = () => {
+    setSidebarOpen(false);
+  };
+
   if (!user || loading) {
     return (
       <div className={styles.loadingContainer}>
@@ -128,48 +137,70 @@ export default function Dashboard() {
 
   return (
     <div className={styles.pageContainer}>
+      {/* Mobile Menu Toggle */}
+      <button className={styles.menuToggle} onClick={toggleSidebar}>
+        ☰
+      </button>
+
+      {/* Sidebar Overlay */}
+      <div 
+        className={`${styles.sidebarOverlay} ${sidebarOpen ? styles.show : ''}`}
+        onClick={closeSidebar}
+      ></div>
+
       {/* Sidebar */}
-      <aside className={styles.sidebar}>
+      <aside className={`${styles.sidebar} ${sidebarOpen ? styles.open : ''}`}>
         <div className={styles.logoSection}>
-          <span className={styles.logoIcon}>📦</span>
-          <span className={styles.logoText}>OrderFlow</span>
+          <img 
+            src="/kairali-logo.png" 
+            alt="Kairali Products" 
+            className={styles.logoImage}
+          />
         </div>
 
         <nav className={styles.navMenu}>
-          <div className={`${styles.navItem} ${styles.active}`}>
+          <div className={`${styles.navItem} ${styles.active}`} onClick={closeSidebar}>
             <span className={styles.navIcon}>📊</span>
             <span className={styles.navText}>Dashboard</span>
           </div>
           
           {user.moduleAccess?.newOrders && (
-            <div className={styles.navItem} onClick={() => navigateToModule('newOrders')}>
+            <div className={styles.navItem} onClick={() => { navigateToModule('newOrders'); closeSidebar(); }}>
               <span className={styles.navIcon}>📋</span>
               <span className={styles.navText}>New Orders</span>
-              <span className={styles.badge}>{stats.newOrders}</span>
+              {stats.newOrders > 0 && (
+                <span className={styles.badge}>{stats.newOrders}</span>
+              )}
             </div>
           )}
           
           {user.moduleAccess?.dispatch && (
-            <div className={styles.navItem} onClick={() => navigateToModule('dispatch')}>
+            <div className={styles.navItem} onClick={() => { navigateToModule('dispatch'); closeSidebar(); }}>
               <span className={styles.navIcon}>🚚</span>
               <span className={styles.navText}>Dispatch</span>
-              <span className={styles.badge}>{stats.dispatched}</span>
+              {stats.dispatched > 0 && (
+                <span className={styles.badge}>{stats.dispatched}</span>
+              )}
             </div>
           )}
           
           {user.moduleAccess?.delivery && (
-            <div className={styles.navItem} onClick={() => navigateToModule('delivery')}>
+            <div className={styles.navItem} onClick={() => { navigateToModule('delivery'); closeSidebar(); }}>
               <span className={styles.navIcon}>📦</span>
               <span className={styles.navText}>Delivery</span>
-              <span className={styles.badge}>{stats.delivered}</span>
+              {stats.delivered > 0 && (
+                <span className={styles.badge}>{stats.delivered}</span>
+              )}
             </div>
           )}
           
           {user.moduleAccess?.payment && (
-            <div className={styles.navItem} onClick={() => navigateToModule('payment')}>
+            <div className={styles.navItem} onClick={() => { navigateToModule('payment'); closeSidebar(); }}>
               <span className={styles.navIcon}>💰</span>
               <span className={styles.navText}>Payment</span>
-              <span className={styles.badge}>{stats.paid}</span>
+              {stats.paid > 0 && (
+                <span className={styles.badge}>{stats.paid}</span>
+              )}
             </div>
           )}
         </nav>
@@ -208,7 +239,7 @@ export default function Dashboard() {
         <div className={styles.content}>
           {/* Welcome Section */}
           <div className={styles.welcomeSection}>
-            <h2>Welcome back, {user.username}! 👋</h2>
+            <h2>Welcome back, {user.username}! 🌿</h2>
             <p>Here's what's happening with your orders today.</p>
           </div>
 
