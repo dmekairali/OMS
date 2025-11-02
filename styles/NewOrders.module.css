@@ -686,6 +686,9 @@
 }
 
 /* Responsive Design */
+/* Update existing responsive section with this complete version */
+
+/* Responsive Design - COMPLETE MOBILE OPTIMIZATION */
 @media (max-width: 1024px) {
   .detailGrid {
     grid-template-columns: 1fr;
@@ -694,42 +697,168 @@
   .formGrid {
     grid-template-columns: 1fr;
   }
+  
+  .orderMeta {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .statusButtonsGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 @media (max-width: 768px) {
+  /* Hide sidebar by default on mobile */
   .sidebar {
-    width: 60px;
+    transform: translateX(-100%);
+    width: 240px;
+    transition: transform 0.3s ease;
   }
-
-  .logoText,
-  .navText {
-    display: none;
+  
+  .sidebar.open {
+    transform: translateX(0);
   }
 
   .mainContent {
-    margin-left: 60px;
+    margin-left: 0;
+    width: 100%;
   }
 
   .header {
     padding: 12px 16px;
   }
+  
+  .pageTitle {
+    font-size: 18px;
+  }
 
   .searchBox {
-    width: 200px;
+    width: 150px;
+  }
+  
+  .headerActions {
+    gap: 8px;
   }
 
   .content {
     padding: 16px;
   }
+  
+  .sectionHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  
+  .sectionHeader h2 {
+    font-size: 18px;
+  }
+  
+  .refreshBtn {
+    width: 100%;
+  }
 
+  .orderCard {
+    padding: 16px;
+  }
+  
+  .orderId {
+    font-size: 14px;
+  }
+  
+  .orderTime {
+    font-size: 12px;
+  }
+  
+  .infoItem,
+  .metaItem {
+    font-size: 13px;
+  }
+  
   .orderMeta {
     grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  
+  .reviewBtn {
+    padding: 6px 16px;
+    font-size: 13px;
+  }
+  
+  .detailCard {
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  
+  .cardTitle {
+    font-size: 16px;
+    margin-bottom: 16px;
+  }
+  
+  .detailItem {
+    gap: 4px;
+  }
+  
+  .detailLabel {
+    font-size: 12px;
+  }
+  
+  .detailValue {
+    font-size: 14px;
+  }
+  
+  .infoBox {
+    padding: 12px 14px;
+    font-size: 13px;
+  }
+  
+  .formGrid {
+    gap: 16px;
+  }
+  
+  .formField label {
+    font-size: 13px;
+  }
+  
+  .formField input,
+  .formField select,
+  .formField textarea {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+  
+  .formActions {
+    flex-direction: column-reverse;
+    gap: 8px;
+  }
+  
+  .formActions button {
+    width: 100%;
+  }
+  
+  .actionButtons {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .actionBtn {
+    width: 100%;
+  }
+  
+  .statusButtonsGrid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  
+  .statusButton {
+    padding: 14px 16px;
+    font-size: 14px;
   }
 }
 
 @media (max-width: 480px) {
   .headerActions {
-    gap: 8px;
+    gap: 6px;
   }
   
   .searchBox {
@@ -738,6 +867,173 @@
   
   .userInfo {
     display: none;
+  }
+  
+  .logoutBtn {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+  
+  .notificationBtn {
+    padding: 6px 10px;
+    font-size: 16px;
+  }
+  
+  .content {
+    padding: 12px;
+  }
+  
+  .sectionHeader h2 {
+    font-size: 16px;
+  }
+  
+  .orderCard {
+    padding: 12px;
+  }
+  
+  .orderCardHeader {
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+  }
+  
+  .orderCardBody {
+    margin-bottom: 12px;
+  }
+  
+  .orderId {
+    font-size: 13px;
+  }
+  
+  .orderTime {
+    font-size: 11px;
+  }
+  
+  .infoItem,
+  .metaItem {
+    font-size: 12px;
+  }
+  
+  .detailCard {
+    padding: 12px;
+  }
+  
+  .cardTitle {
+    font-size: 15px;
+  }
+  
+  .detailLabel {
+    font-size: 11px;
+  }
+  
+  .detailValue {
+    font-size: 13px;
+    word-break: break-word;
+  }
+  
+  .backBtn {
+    padding: 8px 16px;
+    font-size: 13px;
+    margin-bottom: 16px;
+  }
+  
+  .infoBox {
+    padding: 10px 12px;
+    font-size: 12px;
+    gap: 8px;
+  }
+  
+  .infoIcon {
+    font-size: 18px;
+  }
+  
+  .formGrid {
+    gap: 12px;
+  }
+  
+  .formField label {
+    font-size: 12px;
+  }
+  
+  .formField input,
+  .formField select,
+  .formField textarea {
+    padding: 8px 10px;
+    font-size: 13px;
+  }
+  
+  .checkboxLabel {
+    font-size: 13px;
+  }
+  
+  .checkboxLabel input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+  }
+  
+  .btnSecondary,
+  .btnSuccess,
+  .btnDanger,
+  .btnGray,
+  .btnInfo,
+  .btnWarning {
+    padding: 10px 20px;
+    font-size: 13px;
+  }
+  
+  .statusButton {
+    padding: 12px 14px;
+    font-size: 13px;
+  }
+  
+  .actionDescription {
+    font-size: 13px;
+    margin-bottom: 16px;
+  }
+  
+  .emptyIcon {
+    font-size: 48px;
+  }
+  
+  .emptyText {
+    font-size: 14px;
+  }
+}
+
+/* Touch-friendly adjustments for mobile */
+@media (hover: none) and (pointer: coarse) {
+  .orderCard,
+  .statCard,
+  .actionCard,
+  .statusButton,
+  .navItem {
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+  }
+  
+  .orderCard:active {
+    transform: scale(0.98);
+  }
+  
+  button:active {
+    transform: scale(0.95);
+  }
+}
+
+/* Landscape mode for mobile */
+@media (max-width: 896px) and (orientation: landscape) {
+  .content {
+    padding: 12px 16px;
+  }
+  
+  .detailCard {
+    margin-bottom: 12px;
+  }
+  
+  .formGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .formField.fullWidth {
+    grid-column: 1 / -1;
   }
 }
 
