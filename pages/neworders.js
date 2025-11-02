@@ -298,30 +298,60 @@ export default function NewOrders() {
  
 
   const parseSheetDate = (dateValue) => {
-  if (!dateValue || dateValue === '') return null;
+  if (!dateValue || dateValue === '' || dateValue === ' ') return null;
   
-  // If it's already a valid date string
-  if (dateValue.includes('-') || dateValue.includes('/')) {
-    const parsed = new Date(dateValue);
-    if (!isNaN(parsed.getTime())) {
-      return parsed;
+  try {
+    const value = dateValue.toString().trim();
+    
+    // Format: DD/MM/YYYY HH:MM:SS or DD/MM/YYYY
+    if (value.includes('/')) {
+      const parts = value.split(' ');
+      const datePart = parts[0]; // "17/03/2025"
+      const timePart = parts[1]; // "14:38:17" (optional)
+      
+      const datePieces = datePart.split('/');
+      if (datePieces.length === 3) {
+        const day = parseInt(datePieces[0]);
+        const month = parseInt(datePieces[1]) - 1; // JavaScript months are 0-indexed
+        const year = parseInt(datePieces[2]);
+        
+        if (timePart) {
+          const timePieces = timePart.split(':');
+          const hours = parseInt(timePieces[0]);
+          const minutes = parseInt(timePieces[1]);
+          const seconds = timePieces[2] ? parseInt(timePieces[2]) : 0;
+          
+          return new Date(year, month, day, hours, minutes, seconds);
+        } else {
+          return new Date(year, month, day);
+        }
+      }
     }
+    
+    // Format: YYYY-MM-DD or ISO format
+    if (value.includes('-')) {
+      const parsed = new Date(value);
+      if (!isNaN(parsed.getTime())) {
+        return parsed;
+      }
+    }
+    
+    // If it's a number (Excel serial date)
+    if (!isNaN(value)) {
+      const excelEpoch = new Date(1899, 11, 30);
+      const msPerDay = 86400000;
+      return new Date(excelEpoch.getTime() + (parseFloat(value) * msPerDay));
+    }
+    
+    return null;
+  } catch (e) {
+    console.error('Date parsing error:', e, 'Value:', dateValue);
+    return null;
   }
-  
-  // If it's a number (Excel serial date)
-  if (!isNaN(dateValue)) {
-    // Excel serial date starts from 1900-01-01
-    // JavaScript Date starts from 1970-01-01
-    const excelEpoch = new Date(1899, 11, 30); // December 30, 1899
-    const msPerDay = 86400000; // milliseconds in a day
-    return new Date(excelEpoch.getTime() + (parseFloat(dateValue) * msPerDay));
-  }
-  
-  return null;
 };
 
 const renderField = (field, value) => {
-  if (!value || value === '' || value === 'undefined') {
+  if (!value || value === '' || value === 'undefined' || value === 'null' || value === ' ') {
     return '-';
   }
 
@@ -332,7 +362,9 @@ const renderField = (field, value) => {
       
     case 'date':
       const date = parseSheetDate(value);
-      if (!date || isNaN(date.getTime())) return '-';
+      if (!date || isNaN(date.getTime())) {
+        return '-';
+      }
       return date.toLocaleDateString('en-IN', {
         day: '2-digit',
         month: 'short',
@@ -341,13 +373,16 @@ const renderField = (field, value) => {
       
     case 'datetime':
       const datetime = parseSheetDate(value);
-      if (!datetime || isNaN(datetime.getTime())) return '-';
+      if (!datetime || isNaN(datetime.getTime())) {
+        return '-';
+      }
       return datetime.toLocaleString('en-IN', {
         day: '2-digit',
         month: 'short',
         year: 'numeric',
         hour: '2-digit',
-        minute: '2-digit'
+        minute: '2-digit',
+        hour12: true
       });
       
     case 'url':
@@ -357,40 +392,54 @@ const renderField = (field, value) => {
           target="_blank" 
           rel="noopener noreferrer" 
           style={{color: '#7a8450', textDecoration: 'underline'}}
+          onClick={(e) => e.stopPropagation()}
         >
           View Link
         </a>
       ) : '-';
       
     default:
-      return value;
+      return value.toString();
   }
 };
 
 const getTimeAgo = (timestamp) => {
-  if (!timestamp || timestamp === '') return '';
+  if (!timestamp || timestamp === '' || timestamp === 'undefined' || timestamp === ' ') {
+    return '';
+  }
   
   const orderTime = parseSheetDate(timestamp);
-  if (!orderTime || isNaN(orderTime.getTime())) return '';
+  if (!orderTime || isNaN(orderTime.getTime())) {
+    return '';
+  }
   
   const now = new Date();
   const diffMs = now - orderTime;
+  
+  // If date is in the future
+  if (diffMs < 0) {
+    const futureDiffMs = Math.abs(diffMs);
+    const futureDays = Math.floor(futureDiffMs / (1000 * 60 * 60 * 24));
+    if (futureDays > 0) return `in ${futureDays} day${futureDays > 1 ? 's' : ''}`;
+    return 'soon';
+  }
+  
   const diffMins = Math.floor(diffMs / 60000);
   
-  if (diffMins < 0) return 'just now';
-  if (diffMins < 60) return `${diffMins} mins ago`;
+  if (diffMins < 1) return 'just now';
+  if (diffMins < 60) return `${diffMins} min${diffMins > 1 ? 's' : ''} ago`;
   
   const diffHours = Math.floor(diffMins / 60);
-  if (diffHours < 24) return `${diffHours} hours ago`;
+  if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
   
   const diffDays = Math.floor(diffHours / 24);
-  if (diffDays < 30) return `${diffDays} days ago`;
+  if (diffDays < 30) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
   
   const diffMonths = Math.floor(diffDays / 30);
-  if (diffMonths < 12) return `${diffMonths} months ago`;
+  if (diffMonths < 12) return `${diffMonths} month${diffMonths > 1 ? 's' : ''} ago`;
   
   const diffYears = Math.floor(diffDays / 365);
-  return `${diffYears} years ago`;
+  return `${diffYears} year${diffYears > 1 ? 's' : ''} ago`;
 };
 
   const renderFormField = (field, index) => {
