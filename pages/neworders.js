@@ -5,13 +5,13 @@ import styles from '../styles/NewOrders.module.css';
 // Non-editable display fields for order cards
 const DISPLAY_FIELDS = [
   { name: 'Oder ID', type: 'text' },
-  { name: 'Order Status', type: 'status' },
-  { name: 'Dispatch Party From*', type: 'text' },
-  { name: 'Remarks*', type: 'text' },
   { name: 'Name of Client', type: 'text' },
   { name: 'Client Type', type: 'text' },
   { name: 'Mobile', type: 'text' },
   { name: 'Invoice Amount', type: 'currency' },
+  { name: 'Order Status', type: 'status' },
+  { name: 'Dispatch Party From*', type: 'text' },
+  { name: 'Remarks*', type: 'text' },
 ];
 
 // All non-editable fields for detail view
