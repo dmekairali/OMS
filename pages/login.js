@@ -114,9 +114,14 @@ export default function Login() {
         </form>
 
         <div className={styles.footer}>
-          <p>Order Management System v1.0</p>
-          <p style={{ marginTop: '8px', fontSize: '11px' }}>© 2025 Kairali Products</p>
-        </div>
+  <p>Order Management System v1.0</p>
+  <p style={{ marginTop: '8px', fontSize: '11px' }}>© 2025 Kairali Products</p>
+  <div className={styles.watermark}>
+    <span>Design & Developed by</span>
+    <strong>Ambuj</strong>
+  </div>
+</div>
+            
       </div>
     </div>
   );
