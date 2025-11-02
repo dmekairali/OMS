@@ -1,11 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
 import styles from '../styles/NewOrders.module.css';
 
 // Non-editable display fields for order cards
 const DISPLAY_FIELDS = [
   { name: 'Oder ID', type: 'text' },
+  { name: 'Order Status', type: 'status' },
   { name: 'Name of Client', type: 'text' },
+  { name: 'Client Type', type: 'text' },
   { name: 'Mobile', type: 'text' },
   { name: 'Email', type: 'text' },
   { name: 'Invoice Amount', type: 'currency' },
@@ -48,6 +50,16 @@ const ORDER_STATUS_OPTIONS = [
   'False Order',
   'Hold',
   'Stock Transfer',
+];
+
+// Status categories for filtering
+const STATUS_CATEGORIES = [
+  { value: 'All', label: 'All', icon: '📋' },
+  { value: 'Order Confirmed', label: 'Confirmed', icon: '✅' },
+  { value: 'Cancel Order', label: 'Cancelled', icon: '❌' },
+  { value: 'False Order', label: 'False', icon: '⚠️' },
+  { value: 'Hold', label: 'On Hold', icon: '⏸️' },
+  { value: 'Stock Transfer', label: 'Transfer', icon: '🔄' },
 ];
 
 // Dispatch Party options
@@ -127,6 +139,9 @@ export default function NewOrders() {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showDetailView, setShowDetailView] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState('');
+  const [activeFilter, setActiveFilter] = useState('All');
+  const [newOrderIds, setNewOrderIds] = useState(new Set());
+  const pollingIntervalRef = useRef(null);
 
   useEffect(() => {
     const userSession = localStorage.getItem('userSession');
@@ -138,7 +153,6 @@ export default function NewOrders() {
     try {
       const userData = JSON.parse(userSession);
       
-      // Check if moduleAccess exists, if not, clear and force re-login
       if (!userData.moduleAccess) {
         console.log('Invalid session detected, clearing...');
         localStorage.removeItem('userSession');
@@ -154,11 +168,22 @@ export default function NewOrders() {
 
       setUser(userData);
       loadOrders();
+      
+      // Start polling for new orders every 30 seconds
+      pollingIntervalRef.current = setInterval(() => {
+        loadOrdersSilently();
+      }, 30000);
     } catch (error) {
       console.error('Error parsing user session:', error);
       localStorage.removeItem('userSession');
       router.push('/login');
     }
+
+    return () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+      }
+    };
   }, [router]);
 
   const loadOrders = async () => {
@@ -167,9 +192,13 @@ export default function NewOrders() {
       const response = await fetch('/api/orders');
       if (response.ok) {
         const data = await response.json();
-        const ordersList = data.orders || [];
+        let ordersList = data.orders || [];
+        
+        // Reverse order so latest is at top
+        ordersList = ordersList.reverse();
+        
         setOrders(ordersList);
-        setFilteredOrders(ordersList);
+        filterOrders(ordersList, activeFilter, searchTerm);
       }
     } catch (error) {
       console.error('Error loading orders:', error);
@@ -178,16 +207,44 @@ export default function NewOrders() {
     }
   };
 
-  useEffect(() => {
-    if (!orders.length) {
-      setFilteredOrders([]);
-      return;
+  const loadOrdersSilently = async () => {
+    try {
+      const response = await fetch('/api/orders');
+      if (response.ok) {
+        const data = await response.json();
+        let ordersList = data.orders || [];
+        
+        // Reverse order so latest is at top
+        ordersList = ordersList.reverse();
+        
+        // Find new orders
+        const existingOrderIds = new Set(orders.map(o => o['Oder ID']));
+        const newOrders = ordersList.filter(o => !existingOrderIds.has(o['Oder ID']));
+        
+        if (newOrders.length > 0) {
+          const newIds = new Set(newOrders.map(o => o['Oder ID']));
+          setNewOrderIds(prev => new Set([...prev, ...newIds]));
+        }
+        
+        setOrders(ordersList);
+        filterOrders(ordersList, activeFilter, searchTerm);
+      }
+    } catch (error) {
+      console.error('Error loading orders silently:', error);
+    }
+  };
+
+  const filterOrders = (ordersList, statusFilter, search) => {
+    let filtered = [...ordersList];
+
+    // Filter by status
+    if (statusFilter !== 'All') {
+      filtered = filtered.filter(order => order['Order Status'] === statusFilter);
     }
 
-    let filtered = [...orders];
-
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase();
+    // Filter by search term
+    if (search) {
+      const term = search.toLowerCase();
       filtered = filtered.filter(order => {
         return DISPLAY_FIELDS.some(field => {
           const value = order[field.name];
@@ -197,21 +254,30 @@ export default function NewOrders() {
     }
 
     setFilteredOrders(filtered);
-  }, [orders, searchTerm]);
-
+  };
 
   useEffect(() => {
-  if (orders.length > 0) {
-    console.log('Sample order:', orders[0]);
-    console.log('Timestamp value:', orders[0]['Timestamp']);
-    console.log('Timestamp type:', typeof orders[0]['Timestamp']);
-  }
-}, [orders]);
-  
+    filterOrders(orders, activeFilter, searchTerm);
+  }, [orders, activeFilter, searchTerm]);
+
+  const handleFilterChange = (filterValue) => {
+    setActiveFilter(filterValue);
+  };
+
   const handleOrderClick = (order) => {
     setSelectedOrder(order);
     setShowDetailView(true);
     setSelectedStatus('');
+    
+    // Remove 'new' badge when order is viewed
+    if (newOrderIds.has(order['Oder ID'])) {
+      setNewOrderIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(order['Oder ID']);
+        return newSet;
+      });
+    }
+    
     closeSidebar();
   };
 
@@ -295,152 +361,199 @@ export default function NewOrders() {
     setSidebarOpen(false);
   };
 
- 
-
   const parseSheetDate = (dateValue) => {
-  if (!dateValue || dateValue === '' || dateValue === ' ') return null;
-  
-  try {
-    const value = dateValue.toString().trim();
+    if (!dateValue || dateValue === '' || dateValue === ' ') return null;
     
-    // Format: DD/MM/YYYY HH:MM:SS or DD/MM/YYYY
-    if (value.includes('/')) {
-      const parts = value.split(' ');
-      const datePart = parts[0]; // "17/03/2025"
-      const timePart = parts[1]; // "14:38:17" (optional)
+    try {
+      const value = dateValue.toString().trim();
       
-      const datePieces = datePart.split('/');
-      if (datePieces.length === 3) {
-        const day = parseInt(datePieces[0]);
-        const month = parseInt(datePieces[1]) - 1; // JavaScript months are 0-indexed
-        const year = parseInt(datePieces[2]);
+      if (value.includes('/')) {
+        const parts = value.split(' ');
+        const datePart = parts[0];
+        const timePart = parts[1];
         
-        if (timePart) {
-          const timePieces = timePart.split(':');
-          const hours = parseInt(timePieces[0]);
-          const minutes = parseInt(timePieces[1]);
-          const seconds = timePieces[2] ? parseInt(timePieces[2]) : 0;
+        const datePieces = datePart.split('/');
+        if (datePieces.length === 3) {
+          const day = parseInt(datePieces[0]);
+          const month = parseInt(datePieces[1]) - 1;
+          const year = parseInt(datePieces[2]);
           
-          return new Date(year, month, day, hours, minutes, seconds);
-        } else {
-          return new Date(year, month, day);
+          if (timePart) {
+            const timePieces = timePart.split(':');
+            const hours = parseInt(timePieces[0]);
+            const minutes = parseInt(timePieces[1]);
+            const seconds = timePieces[2] ? parseInt(timePieces[2]) : 0;
+            
+            return new Date(year, month, day, hours, minutes, seconds);
+          } else {
+            return new Date(year, month, day);
+          }
         }
       }
+      
+      if (value.includes('-')) {
+        const parsed = new Date(value);
+        if (!isNaN(parsed.getTime())) {
+          return parsed;
+        }
+      }
+      
+      if (!isNaN(value)) {
+        const excelEpoch = new Date(1899, 11, 30);
+        const msPerDay = 86400000;
+        return new Date(excelEpoch.getTime() + (parseFloat(value) * msPerDay));
+      }
+      
+      return null;
+    } catch (e) {
+      console.error('Date parsing error:', e, 'Value:', dateValue);
+      return null;
+    }
+  };
+
+  const getStatusBadgeColor = (status) => {
+    switch(status) {
+      case 'Order Confirmed':
+        return '#10b981'; // green
+      case 'Cancel Order':
+        return '#ef4444'; // red
+      case 'False Order':
+        return '#f59e0b'; // orange
+      case 'Hold':
+        return '#6366f1'; // indigo
+      case 'Stock Transfer':
+        return '#8b5cf6'; // purple
+      default:
+        return '#64748b'; // gray
+    }
+  };
+
+  const renderField = (field, value, order) => {
+    if (!value || value === '' || value === 'undefined' || value === 'null' || value === ' ') {
+      return '-';
+    }
+
+    switch (field.type) {
+      case 'status':
+        return (
+          <span 
+            className={styles.statusBadge} 
+            style={{ 
+              backgroundColor: getStatusBadgeColor(value),
+              color: 'white',
+              padding: '4px 12px',
+              borderRadius: '12px',
+              fontSize: '12px',
+              fontWeight: '700',
+              display: 'inline-block'
+            }}
+          >
+            {value}
+          </span>
+        );
+        
+      case 'currency':
+        const amount = parseFloat(value);
+        return isNaN(amount) ? '₹0' : `₹${amount.toLocaleString('en-IN')}`;
+        
+      case 'date':
+        const date = parseSheetDate(value);
+        if (!date || isNaN(date.getTime())) {
+          return '-';
+        }
+        return date.toLocaleDateString('en-IN', {
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric'
+        });
+        
+      case 'datetime':
+        const datetime = parseSheetDate(value);
+        if (!datetime || isNaN(datetime.getTime())) {
+          return '-';
+        }
+        return datetime.toLocaleString('en-IN', {
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: true
+        });
+        
+      case 'url':
+        return value ? (
+          <a 
+            href={value} 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            style={{color: '#7a8450', textDecoration: 'underline'}}
+            onClick={(e) => e.stopPropagation()}
+          >
+            View Link
+          </a>
+        ) : '-';
+        
+      default:
+        return value.toString();
+    }
+  };
+
+  const getTimeAgo = (timestamp) => {
+    if (!timestamp || timestamp === '' || timestamp === 'undefined' || timestamp === ' ') {
+      return '';
     }
     
-    // Format: YYYY-MM-DD or ISO format
-    if (value.includes('-')) {
-      const parsed = new Date(value);
-      if (!isNaN(parsed.getTime())) {
-        return parsed;
-      }
+    const orderTime = parseSheetDate(timestamp);
+    if (!orderTime || isNaN(orderTime.getTime())) {
+      return '';
     }
     
-    // If it's a number (Excel serial date)
-    if (!isNaN(value)) {
-      const excelEpoch = new Date(1899, 11, 30);
-      const msPerDay = 86400000;
-      return new Date(excelEpoch.getTime() + (parseFloat(value) * msPerDay));
+    const now = new Date();
+    const diffMs = now - orderTime;
+    
+    if (diffMs < 0) {
+      const futureDiffMs = Math.abs(diffMs);
+      const futureDays = Math.floor(futureDiffMs / (1000 * 60 * 60 * 24));
+      if (futureDays > 0) return `in ${futureDays} day${futureDays > 1 ? 's' : ''}`;
+      return 'soon';
     }
     
-    return null;
-  } catch (e) {
-    console.error('Date parsing error:', e, 'Value:', dateValue);
-    return null;
-  }
-};
+    const diffMins = Math.floor(diffMs / 60000);
+    
+    if (diffMins < 1) return 'just now';
+    if (diffMins < 60) return `${diffMins} min${diffMins > 1 ? 's' : ''} ago`;
+    
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+    
+    const diffDays = Math.floor(diffHours / 24);
+    if (diffDays < 30) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+    
+    const diffMonths = Math.floor(diffDays / 30);
+    if (diffMonths < 12) return `${diffMonths} month${diffMonths > 1 ? 's' : ''} ago`;
+    
+    const diffYears = Math.floor(diffDays / 365);
+    return `${diffYears} year${diffYears > 1 ? 's' : ''} ago`;
+  };
 
-const renderField = (field, value) => {
-  if (!value || value === '' || value === 'undefined' || value === 'null' || value === ' ') {
-    return '-';
-  }
+  const isOrderCompleted = (order) => {
+    return order['Actual'] && order['Actual'].trim() !== '';
+  };
 
-  switch (field.type) {
-    case 'currency':
-      const amount = parseFloat(value);
-      return isNaN(amount) ? '₹0' : `₹${amount.toLocaleString('en-IN')}`;
-      
-    case 'date':
-      const date = parseSheetDate(value);
-      if (!date || isNaN(date.getTime())) {
-        return '-';
+  const getStatusCounts = () => {
+    const counts = {};
+    STATUS_CATEGORIES.forEach(cat => {
+      if (cat.value === 'All') {
+        counts[cat.value] = orders.length;
+      } else {
+        counts[cat.value] = orders.filter(o => o['Order Status'] === cat.value).length;
       }
-      return date.toLocaleDateString('en-IN', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric'
-      });
-      
-    case 'datetime':
-      const datetime = parseSheetDate(value);
-      if (!datetime || isNaN(datetime.getTime())) {
-        return '-';
-      }
-      return datetime.toLocaleString('en-IN', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: true
-      });
-      
-    case 'url':
-      return value ? (
-        <a 
-          href={value} 
-          target="_blank" 
-          rel="noopener noreferrer" 
-          style={{color: '#7a8450', textDecoration: 'underline'}}
-          onClick={(e) => e.stopPropagation()}
-        >
-          View Link
-        </a>
-      ) : '-';
-      
-    default:
-      return value.toString();
-  }
-};
+    });
+    return counts;
+  };
 
-const getTimeAgo = (timestamp) => {
-  if (!timestamp || timestamp === '' || timestamp === 'undefined' || timestamp === ' ') {
-    return '';
-  }
-  
-  const orderTime = parseSheetDate(timestamp);
-  if (!orderTime || isNaN(orderTime.getTime())) {
-    return '';
-  }
-  
-  const now = new Date();
-  const diffMs = now - orderTime;
-  
-  // If date is in the future
-  if (diffMs < 0) {
-    const futureDiffMs = Math.abs(diffMs);
-    const futureDays = Math.floor(futureDiffMs / (1000 * 60 * 60 * 24));
-    if (futureDays > 0) return `in ${futureDays} day${futureDays > 1 ? 's' : ''}`;
-    return 'soon';
-  }
-  
-  const diffMins = Math.floor(diffMs / 60000);
-  
-  if (diffMins < 1) return 'just now';
-  if (diffMins < 60) return `${diffMins} min${diffMins > 1 ? 's' : ''} ago`;
-  
-  const diffHours = Math.floor(diffMins / 60);
-  if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
-  
-  const diffDays = Math.floor(diffHours / 24);
-  if (diffDays < 30) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
-  
-  const diffMonths = Math.floor(diffDays / 30);
-  if (diffMonths < 12) return `${diffMonths} month${diffMonths > 1 ? 's' : ''} ago`;
-  
-  const diffYears = Math.floor(diffDays / 365);
-  return `${diffYears} year${diffYears > 1 ? 's' : ''} ago`;
-};
+  const statusCounts = getStatusCounts();
 
   const renderFormField = (field, index) => {
     const isFullWidth = field.fullWidth || field.type === 'textarea';
@@ -542,6 +655,7 @@ const getTimeAgo = (timestamp) => {
   }
 
   const actionFieldsConfig = ACTION_FIELDS[selectedStatus] || [];
+  const isCompleted = selectedOrder && isOrderCompleted(selectedOrder);
 
   return (
     <div className={styles.pageContainer}>
@@ -566,6 +680,11 @@ const getTimeAgo = (timestamp) => {
           />
         </div>
 
+        <div className={styles.appName}>
+          <span className={styles.appIcon}>📦</span>
+          <span className={styles.appText}>OrderFlow</span>
+        </div>
+
         <nav className={styles.navMenu}>
           {user.moduleAccess?.dashboard && (
             <div className={styles.navItem} onClick={() => { navigateToModule('dashboard'); closeSidebar(); }}>
@@ -577,8 +696,8 @@ const getTimeAgo = (timestamp) => {
           <div className={`${styles.navItem} ${styles.active}`} onClick={closeSidebar}>
             <span className={styles.navIcon}>📋</span>
             <span className={styles.navText}>New Orders</span>
-            {filteredOrders.length > 0 && (
-              <span className={styles.badge}>{filteredOrders.length}</span>
+            {orders.length > 0 && (
+              <span className={styles.badge}>{orders.length}</span>
             )}
           </div>
           
@@ -604,14 +723,12 @@ const getTimeAgo = (timestamp) => {
           )}
         </nav>
 
-            {/* Add this new section at the bottom */}
-  <div className={styles.sidebarFooter}>
-    <div className={styles.sidebarWatermark}>
-      <span>Design & Developed by</span>
-      <strong>Ambuj</strong>
-    </div>
-  </div>
-    
+        <div className={styles.sidebarFooter}>
+          <div className={styles.sidebarWatermark}>
+            <span>Design & Developed by</span>
+            <strong>Ambuj</strong>
+          </div>
+        </div>
       </aside>
 
       {/* Main Content */}
@@ -651,9 +768,31 @@ const getTimeAgo = (timestamp) => {
         <div className={styles.content}>
           {!showDetailView ? (
             <>
+              {/* Status Filter Pills */}
+              <div className={styles.statusFilters}>
+                {STATUS_CATEGORIES.map((category) => {
+                  const count = statusCounts[category.value];
+                  if (count === 0 && category.value !== 'All') return null;
+                  
+                  return (
+                    <button
+                      key={category.value}
+                      className={`${styles.filterPill} ${activeFilter === category.value ? styles.active : ''}`}
+                      onClick={() => handleFilterChange(category.value)}
+                    >
+                      <span className={styles.filterIcon}>{category.icon}</span>
+                      <span className={styles.filterLabel}>{category.label}</span>
+                      <span className={styles.filterCount}>{count}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
               {/* Section Header */}
               <div className={styles.sectionHeader}>
-                <h2>🔍 Pending Review ({filteredOrders.length})</h2>
+                <h2>
+                  {activeFilter === 'All' ? '📋 All Orders' : `${STATUS_CATEGORIES.find(c => c.value === activeFilter)?.icon} ${activeFilter}`} ({filteredOrders.length})
+                </h2>
                 <button onClick={loadOrders} className={styles.refreshBtn}>
                   🔄 Refresh
                 </button>
@@ -668,42 +807,46 @@ const getTimeAgo = (timestamp) => {
                 </div>
               ) : (
                 <div className={styles.ordersList}>
-                  {filteredOrders.map((order, index) => (
-                    <div 
-                      key={index} 
-                      className={styles.orderCard}
-                      onClick={() => handleOrderClick(order)}
-                    >
-                      <div className={styles.orderCardHeader}>
-                        <span className={styles.orderId}>
-                          {order[DISPLAY_FIELDS[0].name]}
-                        </span>
-                        <span className={styles.orderTime}>
-                          🕐 {getTimeAgo(order['Timestamp'])}
-                        </span>
-                      </div>
-                      <div className={styles.orderCardBody}>
-                        <div className={styles.orderInfo}>
-                          {DISPLAY_FIELDS.slice(1, 3).map((field, idx) => (
-                            <div key={idx} className={styles.infoItem}>
-                              <strong>{field.name}:</strong> {renderField(field, order[field.name])}
-                            </div>
-                          ))}
+                  {filteredOrders.map((order, index) => {
+                    const completed = isOrderCompleted(order);
+                    const isNew = newOrderIds.has(order['Oder ID']);
+                    
+                    return (
+                      <div 
+                        key={index} 
+                        className={`${styles.orderCard} ${completed ? styles.completed : ''}`}
+                        onClick={() => handleOrderClick(order)}
+                      >
+                        <div className={styles.orderCardHeader}>
+                          <div className={styles.orderIdContainer}>
+                            <span className={styles.orderId}>
+                              {order[DISPLAY_FIELDS[0].name]}
+                            </span>
+                            {isNew && (
+                              <span className={styles.newBadge}>NEW</span>
+                            )}
+                          </div>
+                          <span className={styles.orderTime}>
+                            🕐 {getTimeAgo(order['Timestamp'])}
+                          </span>
                         </div>
-                        <div className={styles.orderMeta}>
-                          {DISPLAY_FIELDS.slice(3).map((field, idx) => (
-                            <div key={idx} className={styles.metaItem}>
-                              <strong>{field.name}</strong>
-                              {renderField(field, order[field.name])}
-                            </div>
-                          ))}
+                        <div className={styles.orderCardBody}>
+                          <div className={styles.orderInfo}>
+                            {DISPLAY_FIELDS.slice(1).map((field, idx) => (
+                              <div key={idx} className={styles.infoItem}>
+                                <strong>{field.name}:</strong> {renderField(field, order[field.name], order)}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                        <div className={styles.orderCardFooter}>
+                          <button className={styles.reviewBtn}>
+                            {completed ? 'View Details →' : 'Review Now →'}
+                          </button>
                         </div>
                       </div>
-                      <div className={styles.orderCardFooter}>
-                        <button className={styles.reviewBtn}>Review Now →</button>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </>
@@ -714,6 +857,13 @@ const getTimeAgo = (timestamp) => {
                 ← Back to Orders
               </button>
 
+              {isCompleted && (
+                <div className={styles.completedAlert}>
+                  <span className={styles.alertIcon}>✅</span>
+                  <span className={styles.alertText}>This order has been completed and locked for editing.</span>
+                </div>
+              )}
+
               {/* Order Details Card - Non Editable Fields */}
               <div className={styles.detailCard}>
                 <h3 className={styles.cardTitle}>Order Information</h3>
@@ -722,7 +872,7 @@ const getTimeAgo = (timestamp) => {
                     <div key={idx} className={styles.detailItem}>
                       <span className={styles.detailLabel}>{field.name}</span>
                       <span className={styles.detailValue}>
-                        {renderField(field, selectedOrder[field.name])}
+                        {renderField(field, selectedOrder[field.name], selectedOrder)}
                       </span>
                     </div>
                   ))}
@@ -730,7 +880,7 @@ const getTimeAgo = (timestamp) => {
               </div>
 
               {/* Order Status Selection */}
-              {!selectedStatus && (
+              {!selectedStatus && !isCompleted && (
                 <div className={styles.detailCard}>
                   <h3 className={styles.cardTitle}>Select Action</h3>
                   <p className={styles.actionDescription}>Choose an action to update this order:</p>
@@ -760,7 +910,7 @@ const getTimeAgo = (timestamp) => {
               )}
 
               {/* Editable Fields Card */}
-              {selectedStatus && actionFieldsConfig.length > 0 && (
+              {selectedStatus && actionFieldsConfig.length > 0 && !isCompleted && (
                 <div className={styles.detailCard}>
                   <h3 className={styles.cardTitle}>✏️ Update Order - {selectedStatus}</h3>
                   <div className={`${styles.infoBox} ${
