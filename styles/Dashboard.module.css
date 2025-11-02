@@ -16,6 +16,7 @@
   display: flex;
   flex-direction: column;
   z-index: 100;
+  transition: transform 0.3s ease;
 }
 
 .logoSection {
@@ -61,6 +62,7 @@
 
 .navIcon {
   font-size: 20px;
+  min-width: 20px;
 }
 
 .navText {
@@ -87,6 +89,7 @@
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  width: calc(100% - 240px);
 }
 
 /* Header */
@@ -139,6 +142,7 @@
   flex: 1;
   font-size: 14px;
   color: #1e293b;
+  min-width: 0;
 }
 
 .searchInput::placeholder {
@@ -197,6 +201,7 @@
   justify-content: center;
   font-weight: 600;
   font-size: 14px;
+  flex-shrink: 0;
 }
 
 .userInfo {
@@ -208,11 +213,13 @@
   font-size: 14px;
   font-weight: 600;
   color: #1e293b;
+  white-space: nowrap;
 }
 
 .userRole {
   font-size: 12px;
   color: #64748b;
+  white-space: nowrap;
 }
 
 .logoutBtn {
@@ -225,6 +232,7 @@
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
+  white-space: nowrap;
 }
 
 .logoutBtn:hover {
@@ -308,10 +316,12 @@
 
 .statIcon {
   font-size: 40px;
+  flex-shrink: 0;
 }
 
 .statInfo {
   flex: 1;
+  min-width: 0;
 }
 
 .statLabel {
@@ -415,10 +425,12 @@
 
 .activityIcon {
   font-size: 32px;
+  flex-shrink: 0;
 }
 
 .activityContent {
   flex: 1;
+  min-width: 0;
 }
 
 .activityTitle {
@@ -426,6 +438,9 @@
   font-weight: 600;
   color: #1e293b;
   margin-bottom: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .activityTime {
@@ -437,6 +452,7 @@
   font-size: 16px;
   font-weight: 700;
   color: #10b981;
+  flex-shrink: 0;
 }
 
 .emptyActivity {
@@ -470,28 +486,42 @@
   .quickActionsGrid {
     grid-template-columns: repeat(2, 1fr);
   }
+  
+  .searchBox {
+    width: 200px;
+  }
 }
 
 @media (max-width: 768px) {
+  /* Hide sidebar by default on mobile */
   .sidebar {
-    width: 60px;
+    transform: translateX(-100%);
+    width: 240px;
   }
-
-  .logoText,
-  .navText {
-    display: none;
+  
+  .sidebar.open {
+    transform: translateX(0);
   }
 
   .mainContent {
-    margin-left: 60px;
+    margin-left: 0;
+    width: 100%;
   }
 
   .header {
     padding: 12px 16px;
   }
+  
+  .pageTitle {
+    font-size: 18px;
+  }
 
   .searchBox {
-    width: 200px;
+    width: 150px;
+  }
+  
+  .headerActions {
+    gap: 8px;
   }
 
   .content {
@@ -500,6 +530,19 @@
 
   .statsGrid {
     grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  
+  .statCard {
+    padding: 16px;
+  }
+  
+  .statIcon {
+    font-size: 32px;
+  }
+  
+  .statValue {
+    font-size: 28px;
   }
   
   .quickActionsGrid {
@@ -509,11 +552,33 @@
   .welcomeSection h2 {
     font-size: 24px;
   }
+  
+  .welcomeSection p {
+    font-size: 14px;
+  }
+  
+  .quickActionsSection,
+  .recentActivitySection {
+    padding: 16px;
+  }
+  
+  .activityItem {
+    padding: 12px;
+    gap: 12px;
+  }
+  
+  .activityIcon {
+    font-size: 24px;
+  }
+  
+  .activityTitle {
+    font-size: 13px;
+  }
 }
 
 @media (max-width: 480px) {
   .headerActions {
-    gap: 8px;
+    gap: 6px;
   }
   
   .searchBox {
@@ -522,5 +587,68 @@
   
   .userInfo {
     display: none;
+  }
+  
+  .logoutBtn {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+  
+  .notificationBtn {
+    padding: 6px 10px;
+    font-size: 16px;
+  }
+  
+  .content {
+    padding: 12px;
+  }
+  
+  .welcomeSection {
+    margin-bottom: 20px;
+  }
+  
+  .welcomeSection h2 {
+    font-size: 20px;
+  }
+  
+  .statsGrid {
+    gap: 10px;
+  }
+  
+  .statCard {
+    padding: 12px;
+    gap: 12px;
+  }
+  
+  .statIcon {
+    font-size: 28px;
+  }
+  
+  .statValue {
+    font-size: 24px;
+  }
+  
+  .statLabel {
+    font-size: 12px;
+  }
+  
+  .statTrend {
+    font-size: 11px;
+  }
+  
+  .actionCard {
+    padding: 16px;
+  }
+  
+  .actionIcon {
+    font-size: 36px;
+  }
+  
+  .actionTitle {
+    font-size: 14px;
+  }
+  
+  .actionDesc {
+    font-size: 12px;
   }
 }
