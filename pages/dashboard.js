@@ -135,6 +135,43 @@ export default function Dashboard() {
     );
   }
 
+  const parseSheetDate = (dateValue) => {
+  if (!dateValue || dateValue === '' || dateValue === ' ') return null;
+  
+  try {
+    const value = dateValue.toString().trim();
+    
+    // Format: DD/MM/YYYY HH:MM:SS or DD/MM/YYYY
+    if (value.includes('/')) {
+      const parts = value.split(' ');
+      const datePart = parts[0];
+      const timePart = parts[1];
+      
+      const datePieces = datePart.split('/');
+      if (datePieces.length === 3) {
+        const day = parseInt(datePieces[0]);
+        const month = parseInt(datePieces[1]) - 1;
+        const year = parseInt(datePieces[2]);
+        
+        if (timePart) {
+          const timePieces = timePart.split(':');
+          const hours = parseInt(timePieces[0]);
+          const minutes = parseInt(timePieces[1]);
+          const seconds = timePieces[2] ? parseInt(timePieces[2]) : 0;
+          
+          return new Date(year, month, day, hours, minutes, seconds);
+        } else {
+          return new Date(year, month, day);
+        }
+      }
+    }
+    
+    return null;
+  } catch (e) {
+    return null;
+  }
+};
+
   return (
     <div className={styles.pageContainer}>
       {/* Mobile Menu Toggle */}
@@ -352,9 +389,19 @@ export default function Dashboard() {
                       <div className={styles.activityTitle}>
                         Order {order['Oder ID']} - {order['Name of Client']}
                       </div>
-                      <div className={styles.activityTime}>
-                        {order['Timestamp'] ? new Date(order['Timestamp']).toLocaleString() : 'Recently'}
-                      </div>
+  <div className={styles.activityTime}>
+  {order['Timestamp'] ? (() => {
+    const date = parseSheetDate(order['Timestamp']);
+    return date ? date.toLocaleString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    }) : 'Recently';
+  })() : 'Recently'}
+</div>
                     </div>
                     <div className={styles.activityAmount}>
                       ₹{order['Invoice Amount'] || '0'}
