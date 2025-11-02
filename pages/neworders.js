@@ -199,6 +199,15 @@ export default function NewOrders() {
     setFilteredOrders(filtered);
   }, [orders, searchTerm]);
 
+
+  useEffect(() => {
+  if (orders.length > 0) {
+    console.log('Sample order:', orders[0]);
+    console.log('Timestamp value:', orders[0]['Timestamp']);
+    console.log('Timestamp type:', typeof orders[0]['Timestamp']);
+  }
+}, [orders]);
+  
   const handleOrderClick = (order) => {
     setSelectedOrder(order);
     setShowDetailView(true);
