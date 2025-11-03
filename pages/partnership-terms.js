@@ -15,22 +15,30 @@ export default function PartnershipTerms() {
   });
 
   useEffect(() => {
-    const userData = localStorage.getItem('user');
-    if (!userData) {
+    const userSession = localStorage.getItem('userSession');
+    if (!userSession) {
       router.push('/login');
       return;
     }
-    setUser(JSON.parse(userData));
     
-    // Get pre-loaded data
-    if (SetupDataService.isLoaded()) {
-      setData({
-        productList: SetupDataService.getProductList(),
-        discountStructure: SetupDataService.getDiscountStructure(),
-        distributorList: SetupDataService.getDistributorList()
-      });
+    try {
+      const userData = JSON.parse(userSession);
+      setUser(userData);
+      
+      // Get pre-loaded data
+      if (SetupDataService.isLoaded()) {
+        setData({
+          productList: SetupDataService.getProductList(),
+          discountStructure: SetupDataService.getDiscountStructure(),
+          distributorList: SetupDataService.getDistributorList()
+        });
+      }
+    } catch (error) {
+      console.error('Error parsing user session:', error);
+      localStorage.removeItem('userSession');
+      router.push('/login');
     }
-  }, []);
+  }, [router]);
 
   const getFilteredData = () => {
     if (!activeView) return [];
