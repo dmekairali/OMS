@@ -4,7 +4,8 @@ class SetupDataService {
     this.data = {
       productList: { headers: [], rows: [] },
       discountStructure: { headers: [], rows: [] },
-      distributorList: { headers: [], rows: [] }
+      distributorList: { headers: [], rows: [] },
+      employeeList: { headers: [], rows: [] }
     };
     this.loaded = false;
   }
@@ -33,7 +34,8 @@ class SetupDataService {
         console.log('✓ Setup data loaded:', {
           productList: this.data.productList.rows.length + ' rows',
           discountStructure: this.data.discountStructure.rows.length + ' rows',
-          distributorList: this.data.distributorList.rows.length + ' rows'
+          distributorList: this.data.distributorList.rows.length + ' rows',
+          employeeList: this.data.employeeList.rows.length + ' rows'
         });
       }
     } catch (error) {
@@ -65,6 +67,10 @@ class SetupDataService {
 
   getDistributorList() {
     return this.data.distributorList;
+  }
+
+  getEmployeeList() {
+    return this.data.employeeList;
   }
 
   isLoaded() {
