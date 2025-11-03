@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import styles from '../styles/EditOrderForm.module.css';
 
 export default function EditOrderForm({ order, products, onSave, onCancel }) {
-  // Client Information
+  // Client Information  
   const [clientName, setClientName] = useState('');
   const [mobile, setMobile] = useState('');
   const [email, setEmail] = useState('');
@@ -15,9 +15,6 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
   const [shippingAddress, setShippingAddress] = useState('');
   const [billingPincode, setBillingPincode] = useState('');
   const [shippingPincode, setShippingPincode] = useState('');
-  const [taluk, setTaluk] = useState('');
-  const [district, setDistrict] = useState('');
-  const [state, setState] = useState('');
   
   // Order Details
   const [orderType, setOrderType] = useState('');
@@ -31,42 +28,19 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
   const [deliveryParty, setDeliveryParty] = useState('');
   const [paymentTerms, setPaymentTerms] = useState('');
   const [paymentMode, setPaymentMode] = useState('');
-  const [paymentDates, setPaymentDates] = useState(['', '', '', '', '']);
-  
-  // Call Times
-  const [callTime1, setCallTime1] = useState('');
-  const [callTime2, setCallTime2] = useState('');
+  const [paymentDate, setPaymentDate] = useState('');
   
   // Products
   const [productList, setProductList] = useState([]);
-  
-  // Charges & Taxes
-  const [shippingCharge, setShippingCharge] = useState('0');
-  const [shippingRemark, setShippingRemark] = useState('');
-  const [shippingTax, setShippingTax] = useState('0');
-  const [shippingTaxRemark, setShippingTaxRemark] = useState('');
-  const [shippingTaxPer, setShippingTaxPer] = useState('0');
-  const [shippingTaxPerRem, setShippingTaxPerRem] = useState('');
-  
-  // Remarks
-  const [saleTermRemark, setSaleTermRemark] = useState('');
-  const [invoiceRemark, setInvoiceRemark] = useState('');
-  const [warehouseRemark, setWarehouseRemark] = useState('');
   
   // Repeat Order
   const [reoccurance, setReoccurance] = useState('');
   const [nextOrderDate, setNextOrderDate] = useState('');
   const [endOrderDate, setEndOrderDate] = useState('');
   const [priority, setPriority] = useState('');
-  
-  // File Upload
-  const [fileData, setFileData] = useState(null);
-  const [fileName, setFileName] = useState('');
-  const [fileMimeType, setFileMimeType] = useState('');
 
   useEffect(() => {
     if (order) {
-      // Load order data
       setClientName(order['Name of Client'] || '');
       setMobile(order['Mobile'] || '');
       setEmail(order['Email'] || '');
@@ -90,17 +64,7 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
       setPaymentMode(order['Payment Mode'] || '');
       
       const payDates = (order['Payment Date (to be paid)'] || '').split(',').map(d => d.trim());
-      setPaymentDates([
-        payDates[0] || '',
-        payDates[1] || '',
-        payDates[2] || '',
-        payDates[3] || '',
-        payDates[4] || ''
-      ]);
-      
-      const callTimes = (order['Preffered Call time'] || '').split('-').map(t => t.trim());
-      setCallTime1(callTimes[0] || '');
-      setCallTime2(callTimes[1] || '');
+      setPaymentDate(payDates[0] || '');
     }
     
     if (products && products.length > 0) {
@@ -125,20 +89,6 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
       })));
     }
   }, [order, products]);
-
-  const handleFileUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64 = reader.result.split(',')[1];
-        setFileData(base64);
-        setFileName(file.name);
-        setFileMimeType(file.type);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
 
   const addProduct = () => {
     setProductList([...productList, {
@@ -170,7 +120,6 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
     const updated = [...productList];
     updated[index][field] = value;
     
-    // Auto-calculate amounts
     if (field === 'quantity' || field === 'mrp' || field === 'discountPer') {
       const qty = parseFloat(updated[index].quantity) || 0;
       const mrp = parseFloat(updated[index].mrp) || 0;
@@ -184,7 +133,6 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
       updated[index].discountAmt = discAmt.toFixed(2);
       updated[index].afterDiscount = afterDisc.toFixed(2);
       
-      // Calculate GST
       const cgst = parseFloat(updated[index].cgst) || 0;
       const sgst = parseFloat(updated[index].sgst) || 0;
       const igst = parseFloat(updated[index].igst) || 0;
@@ -206,7 +154,6 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
     e.preventDefault();
     
     const formData = {
-      // Client Info
       clientname: clientName,
       mobile: mobile,
       email: email,
@@ -214,33 +161,28 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
       clientcategory1: clientCategory,
       GSTNO: gstNo,
       
-      // Addresses
       Baddress: billingAddress,
       saddress: shippingAddress,
       BPINCODE: billingPincode,
-      talukname: taluk,
-      districtname: district,
-      state: state,
+      talukname: null,
+      districtname: null,
+      state: null,
       
-      // Order
       ordertype: orderType,
       partyname: partyName,
       partystatename: partyState,
       mrname_name: mrName,
       
-      // Delivery & Payment
       Deliverydate: deliveryDate,
       Deliverytime: deliveryTime,
       deliverydatebyname: deliveryParty,
       paymentterm: paymentTerms,
       paymentmodename: paymentMode,
-      paymentdate: paymentDates,
+      paymentdate: [paymentDate, '', '', '', ''],
       
-      // Call Times
-      calltime1: callTime1,
-      calltime2: callTime2,
+      calltime1: null,
+      calltime2: null,
       
-      // Products
       productname: productList.map(p => p.productName),
       MRP: productList.map(p => p.mrp),
       PACKINGSIZE: productList.map(p => p.packingSize),
@@ -259,37 +201,30 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
       TOTAL: productList.map(p => p.total),
       SplitQTY: productList.map(p => p.splitQty),
       
-      // Charges
-      scharge: shippingCharge,
-      sremark: shippingRemark,
-      Stax: shippingTax,
-      Staxremark: shippingTaxRemark,
-      staxper: shippingTaxPer,
-      staxperrem: shippingTaxPerRem,
+      scharge: null,
+      sremark: null,
+      Stax: null,
+      Staxremark: null,
+      staxper: null,
+      staxperrem: null,
       
-      // Remarks
-      saletermremark: saleTermRemark,
-      invoiceremark: invoiceRemark,
-      warehouseremark: warehouseRemark,
+      saletermremark: null,
+      invoiceremark: null,
+      warehouseremark: null,
       
-      // Repeat
       reoccurance: reoccurance,
       NextOrderDate: nextOrderDate,
       EndOrderDate: endOrderDate,
       Priority: priority,
       
-      // File
-      data: fileData,
-      filename: fileName,
-      mimetype: fileMimeType,
+      data: null,
+      filename: null,
+      mimetype: null,
       
-      // Totals
       taxbeforetotal: productList.reduce((sum, p) => sum + parseFloat(p.beforeTax || 0), 0).toFixed(2),
       distotal: productList.reduce((sum, p) => sum + parseFloat(p.discountAmt || 0), 0).toFixed(2),
       Beforeamt: productList.reduce((sum, p) => sum + parseFloat(p.beforeTax || 0), 0).toFixed(2),
-      Afteramt: (productList.reduce((sum, p) => sum + parseFloat(p.total || 0), 0) + 
-                 parseFloat(shippingCharge || 0) + 
-                 parseFloat(shippingTax || 0)).toFixed(2)
+      Afteramt: productList.reduce((sum, p) => sum + parseFloat(p.total || 0), 0).toFixed(2)
     };
     
     onSave(formData);
@@ -303,11 +238,11 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
         <div className={styles.grid2}>
           <div className={styles.field}>
             <label>Client Name *</label>
-            <input type="text" value={clientName} onChange={(e) => setClientName(e.target.value)} required />
+            <input type="text" value={clientName} readOnly className={styles.readonly} />
           </div>
           <div className={styles.field}>
             <label>Mobile *</label>
-            <input type="tel" value={mobile} onChange={(e) => setMobile(e.target.value)} required />
+            <input type="tel" value={mobile} readOnly className={styles.readonly} />
           </div>
           <div className={styles.field}>
             <label>Email</label>
@@ -315,19 +250,11 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
           </div>
           <div className={styles.field}>
             <label>Client Type *</label>
-            <select value={clientType} onChange={(e) => setClientType(e.target.value)} required>
-              <option value="">Select</option>
-              <option value="Super Stockist">Super Stockist</option>
-              <option value="Stockist">Stockist</option>
-              <option value="Distributor">Distributor</option>
-              <option value="PCD">PCD</option>
-              <option value="Retailer">Retailer</option>
-              <option value="Doctor">Doctor</option>
-            </select>
+            <input type="text" value={clientType} readOnly className={styles.readonly} />
           </div>
           <div className={styles.field}>
             <label>Client Category</label>
-            <input type="text" value={clientCategory} onChange={(e) => setClientCategory(e.target.value)} />
+            <input type="text" value={clientCategory} readOnly className={styles.readonly} />
           </div>
           <div className={styles.field}>
             <label>GST No</label>
@@ -355,18 +282,6 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
           <div className={styles.field}>
             <label>Shipping Pincode</label>
             <input type="text" value={shippingPincode} onChange={(e) => setShippingPincode(e.target.value)} />
-          </div>
-          <div className={styles.field}>
-            <label>Taluk</label>
-            <input type="text" value={taluk} onChange={(e) => setTaluk(e.target.value)} />
-          </div>
-          <div className={styles.field}>
-            <label>District</label>
-            <input type="text" value={district} onChange={(e) => setDistrict(e.target.value)} />
-          </div>
-          <div className={styles.field}>
-            <label>State</label>
-            <input type="text" value={state} onChange={(e) => setState(e.target.value)} />
           </div>
         </div>
       </div>
@@ -580,37 +495,6 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
         </div>
       </div>
 
-      {/* Charges & Taxes */}
-      <div className={styles.section}>
-        <h3>Additional Charges</h3>
-        <div className={styles.grid3}>
-          <div className={styles.field}>
-            <label>Shipping Charge</label>
-            <input type="number" value={shippingCharge} onChange={(e) => setShippingCharge(e.target.value)} step="0.01" />
-          </div>
-          <div className={styles.field}>
-            <label>Shipping Remark</label>
-            <input type="text" value={shippingRemark} onChange={(e) => setShippingRemark(e.target.value)} />
-          </div>
-          <div className={styles.field}>
-            <label>Shipping Tax</label>
-            <input type="number" value={shippingTax} onChange={(e) => setShippingTax(e.target.value)} step="0.01" />
-          </div>
-          <div className={styles.field}>
-            <label>Shipping Tax Remark</label>
-            <input type="text" value={shippingTaxRemark} onChange={(e) => setShippingTaxRemark(e.target.value)} />
-          </div>
-          <div className={styles.field}>
-            <label>Shipping Tax %</label>
-            <input type="number" value={shippingTaxPer} onChange={(e) => setShippingTaxPer(e.target.value)} step="0.01" />
-          </div>
-          <div className={styles.field}>
-            <label>Shipping Tax % Remark</label>
-            <input type="text" value={shippingTaxPerRem} onChange={(e) => setShippingTaxPerRem(e.target.value)} />
-          </div>
-        </div>
-      </div>
-
       {/* Delivery & Payment */}
       <div className={styles.section}>
         <h3>Delivery & Payment</h3>
@@ -635,82 +519,9 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
             <label>Payment Mode</label>
             <input type="text" value={paymentMode} onChange={(e) => setPaymentMode(e.target.value)} />
           </div>
-        </div>
-        
-        <div className={styles.grid3}>
           <div className={styles.field}>
-            <label>Payment Date 1 *</label>
-            <input type="date" value={paymentDates[0]} onChange={(e) => {
-              const updated = [...paymentDates];
-              updated[0] = e.target.value;
-              setPaymentDates(updated);
-            }} required />
-          </div>
-          <div className={styles.field}>
-            <label>Payment Date 2</label>
-            <input type="date" value={paymentDates[1]} onChange={(e) => {
-              const updated = [...paymentDates];
-              updated[1] = e.target.value;
-              setPaymentDates(updated);
-            }} />
-          </div>
-          <div className={styles.field}>
-            <label>Payment Date 3</label>
-            <input type="date" value={paymentDates[2]} onChange={(e) => {
-              const updated = [...paymentDates];
-              updated[2] = e.target.value;
-              setPaymentDates(updated);
-            }} />
-          </div>
-          <div className={styles.field}>
-            <label>Payment Date 4</label>
-            <input type="date" value={paymentDates[3]} onChange={(e) => {
-              const updated = [...paymentDates];
-              updated[3] = e.target.value;
-              setPaymentDates(updated);
-            }} />
-          </div>
-          <div className={styles.field}>
-            <label>Payment Date 5</label>
-            <input type="date" value={paymentDates[4]} onChange={(e) => {
-              const updated = [...paymentDates];
-              updated[4] = e.target.value;
-              setPaymentDates(updated);
-            }} />
-          </div>
-        </div>
-      </div>
-
-      {/* Call Time */}
-      <div className={styles.section}>
-        <h3>Preferred Call Time</h3>
-        <div className={styles.grid2}>
-          <div className={styles.field}>
-            <label>From</label>
-            <input type="time" value={callTime1} onChange={(e) => setCallTime1(e.target.value)} />
-          </div>
-          <div className={styles.field}>
-            <label>To</label>
-            <input type="time" value={callTime2} onChange={(e) => setCallTime2(e.target.value)} />
-          </div>
-        </div>
-      </div>
-
-      {/* Remarks */}
-      <div className={styles.section}>
-        <h3>Remarks</h3>
-        <div className={styles.grid1}>
-          <div className={styles.field}>
-            <label>Sale Term Remark</label>
-            <textarea value={saleTermRemark} onChange={(e) => setSaleTermRemark(e.target.value)} rows="2" />
-          </div>
-          <div className={styles.field}>
-            <label>Invoice Remark</label>
-            <textarea value={invoiceRemark} onChange={(e) => setInvoiceRemark(e.target.value)} rows="2" />
-          </div>
-          <div className={styles.field}>
-            <label>Warehouse Remark</label>
-            <textarea value={warehouseRemark} onChange={(e) => setWarehouseRemark(e.target.value)} rows="2" />
+            <label>Payment Date *</label>
+            <input type="date" value={paymentDate} onChange={(e) => setPaymentDate(e.target.value)} required />
           </div>
         </div>
       </div>
@@ -740,16 +551,6 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
             <label>Priority</label>
             <input type="text" value={priority} onChange={(e) => setPriority(e.target.value)} />
           </div>
-        </div>
-      </div>
-
-      {/* File Upload */}
-      <div className={styles.section}>
-        <h3>Attachment</h3>
-        <div className={styles.field}>
-          <label>Upload File</label>
-          <input type="file" onChange={handleFileUpload} />
-          {fileName && <span className={styles.fileName}>📎 {fileName}</span>}
         </div>
       </div>
 
