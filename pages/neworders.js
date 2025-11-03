@@ -1131,6 +1131,11 @@ export default function NewOrders() {
               <span className={styles.navText}>Payment</span>
             </div>
           )}
+
+            <div className={styles.navItem} onClick={() => router.push('/partnership-terms')}>
+  <span className={styles.navIcon}>🤝</span>
+  <span className={styles.navText}>Partnership & Terms</span>
+</div>
         </nav>
 
         <div className={styles.sidebarFooter}>
