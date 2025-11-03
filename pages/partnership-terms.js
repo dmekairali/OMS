@@ -9,11 +9,14 @@ export default function PartnershipTerms() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeView, setActiveView] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(50); // 50 items per page for Client List
   const [data, setData] = useState({
     productList: { headers: [], rows: [] },
     discountStructure: { headers: [], rows: [] },
     distributorList: { headers: [], rows: [] },
-    employeeList: { headers: [], rows: [] }
+    employeeList: { headers: [], rows: [] },
+    clientList: { headers: [], rows: [] }
   });
 
   useEffect(() => {
@@ -33,7 +36,8 @@ export default function PartnershipTerms() {
           productList: SetupDataService.getProductList(),
           discountStructure: SetupDataService.getDiscountStructure(),
           distributorList: SetupDataService.getDistributorList(),
-          employeeList: SetupDataService.getEmployeeList()
+          employeeList: SetupDataService.getEmployeeList(),
+          clientList: SetupDataService.getClientList()
         });
       }
     } catch (error) {
@@ -42,6 +46,12 @@ export default function PartnershipTerms() {
       router.push('/login');
     }
   }, [router]);
+
+  useEffect(() => {
+    // Reset to page 1 when view changes
+    setCurrentPage(1);
+    setSearchTerm('');
+  }, [activeView]);
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
@@ -56,6 +66,74 @@ export default function PartnershipTerms() {
     const currentData = data[activeView];
     if (!searchTerm) return currentData.rows;
     return SetupDataService.searchData(currentData, searchTerm);
+  };
+
+  const getPaginatedData = () => {
+    const filteredRows = getFilteredData();
+    
+    // Only apply pagination for clientList
+    if (activeView === 'clientList') {
+      const startIndex = (currentPage - 1) * itemsPerPage;
+      const endIndex = startIndex + itemsPerPage;
+      return filteredRows.slice(startIndex, endIndex);
+    }
+    
+    return filteredRows;
+  };
+
+  const getTotalPages = () => {
+    if (activeView !== 'clientList') return 1;
+    const filteredRows = getFilteredData();
+    return Math.ceil(filteredRows.length / itemsPerPage);
+  };
+
+  const handleNextPage = () => {
+    const totalPages = getTotalPages();
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  const handlePrevPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
+  const renderPagination = () => {
+    if (activeView !== 'clientList') return null;
+    
+    const totalPages = getTotalPages();
+    const filteredRows = getFilteredData();
+    const startIndex = (currentPage - 1) * itemsPerPage + 1;
+    const endIndex = Math.min(currentPage * itemsPerPage, filteredRows.length);
+    
+    return (
+      <div className={styles.paginationContainer}>
+        <div className={styles.paginationInfo}>
+          Showing {startIndex} to {endIndex} of {filteredRows.length} entries
+        </div>
+        <div className={styles.paginationButtons}>
+          <button 
+            className={styles.paginationButton}
+            onClick={handlePrevPage}
+            disabled={currentPage === 1}
+          >
+            ← Previous
+          </button>
+          <span className={styles.pageInfo}>
+            Page {currentPage} of {totalPages}
+          </span>
+          <button 
+            className={styles.paginationButton}
+            onClick={handleNextPage}
+            disabled={currentPage === totalPages}
+          >
+            Next →
+          </button>
+        </div>
+      </div>
+    );
   };
 
   const renderTable = (headers, rows) => {
@@ -87,6 +165,7 @@ export default function PartnershipTerms() {
             )}
           </tbody>
         </table>
+        {renderPagination()}
       </div>
     );
   };
@@ -96,7 +175,7 @@ export default function PartnershipTerms() {
   }
 
   const currentData = activeView ? data[activeView] : null;
-  const filteredRows = getFilteredData();
+  const paginatedRows = getPaginatedData();
 
   return (
     <div className={styles.pageContainer}>
@@ -177,6 +256,7 @@ export default function PartnershipTerms() {
             {activeView === 'discountStructure' && '💰 Discount Structure'}
             {activeView === 'distributorList' && '🤝 Distributor List'}
             {activeView === 'employeeList' && '👥 Employee List'}
+            {activeView === 'clientList' && '👤 Client List'}
           </h1>
           <div className={styles.headerActions}>
             {activeView && (
@@ -186,13 +266,17 @@ export default function PartnershipTerms() {
                   placeholder="Search..."
                   className={styles.searchBox}
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                    setCurrentPage(1); // Reset to page 1 on search
+                  }}
                 />
                 <button 
                   className={styles.backButton}
                   onClick={() => {
                     setActiveView(null);
                     setSearchTerm('');
+                    setCurrentPage(1);
                   }}
                 >
                   ← Back
@@ -254,10 +338,22 @@ export default function PartnershipTerms() {
                   </div>
                   <span className={styles.arrow}>→</span>
                 </li>
+
+                <li 
+                  className={styles.bulletItem}
+                  onClick={() => setActiveView('clientList')}
+                >
+                  <span className={styles.bulletIcon}>👤</span>
+                  <div className={styles.bulletContent}>
+                    <h3>Client List</h3>
+                    <p>View all clients with pagination</p>
+                  </div>
+                  <span className={styles.arrow}>→</span>
+                </li>
               </ul>
             </div>
           ) : (
-            renderTable(currentData.headers, filteredRows)
+            renderTable(currentData.headers, paginatedRows)
           )}
         </div>
       </div>
