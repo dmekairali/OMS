@@ -10,10 +10,11 @@ const DISPLAY_FIELDS = [
   { name: 'Name of Client', type: 'text' },
   { name: 'Client Type', type: 'text' },
   { name: 'Mobile', type: 'text' },
-  { name: 'Email', type: 'text' },
+  { name: 'Discount %', type: 'number' },
   { name: 'Invoice Amount', type: 'currency' },
   { name: 'Dispatch Party From*', type: 'text' },
   { name: 'Remarks*', type: 'text' },
+  { name: 'POB URL*', type: 'url' },
 ];
 
 // All non-editable fields for detail view
