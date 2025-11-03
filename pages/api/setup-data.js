@@ -31,8 +31,8 @@ export default async function handler(req, res) {
 
     const sheets = google.sheets({ version: 'v4', auth });
     
-    // Fetch all three datasets in parallel
-    const [productListResponse, discountResponse, distributorResponse] = await Promise.all([
+    // Fetch all four datasets in parallel
+    const [productListResponse, discountResponse, distributorResponse, employeeResponse] = await Promise.all([
       sheets.spreadsheets.values.get({
         spreadsheetId: setupSheetId,
         range: 'Product List!A1:H',
@@ -44,6 +44,10 @@ export default async function handler(req, res) {
       sheets.spreadsheets.values.get({
         spreadsheetId: setupSheetId,
         range: 'Distributor List!A1:H',
+      }),
+      sheets.spreadsheets.values.get({
+        spreadsheetId: setupSheetId,
+        range: 'Employee List!A1:C',
       })
     ]);
 
@@ -67,7 +71,8 @@ export default async function handler(req, res) {
       data: {
         productList: parseData(productListResponse.data.values),
         discountStructure: parseData(discountResponse.data.values),
-        distributorList: parseData(distributorResponse.data.values)
+        distributorList: parseData(distributorResponse.data.values),
+        employeeList: parseData(employeeResponse.data.values)
       }
     });
 
