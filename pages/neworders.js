@@ -347,6 +347,12 @@ export default function NewOrders() {
     }
   };
 
+  const handleCancelEdit = () => {
+  setShowEditView(false);
+  setEditRemark('');
+  setSelectedStatus('');
+};
+
   const handleSaveEditOrder = async (formData) => {
   // Send to /api/orders/save-edit with doPost format
 }
