@@ -48,16 +48,18 @@ const NON_EDITABLE_FIELDS = [
   { name: 'Remarks*', type: 'text' },
 ];
 
-// Order Status options
+// Order Status options - UPDATED with Edit Order options
 const ORDER_STATUS_OPTIONS = [
   'Order Confirmed',
   'Cancel Order',
   'False Order',
   'Hold',
   'Stock Transfer',
+  'Edit Order',
+  'Edit and Split',
 ];
 
-// Status categories for filtering
+// Status categories for filtering - UPDATED
 const STATUS_CATEGORIES = [
   { value: 'All', label: 'All', icon: '📋' },
   { value: 'Pending', label: 'Pending', icon: '⏳' },
@@ -66,6 +68,8 @@ const STATUS_CATEGORIES = [
   { value: 'False Order', label: 'False', icon: '⚠️' },
   { value: 'Hold', label: 'On Hold', icon: '⏸️' },
   { value: 'Stock Transfer', label: 'Transfer', icon: '🔄' },
+  { value: 'Edit Order', label: 'Edit', icon: '✏️' },
+  { value: 'Edit and Split', label: 'Split', icon: '✂️' },
 ];
 
 // Dispatch Party options
@@ -89,7 +93,6 @@ const PAYMENT_TYPE_OPTIONS = [
 ];
 
 // Action field configurations based on Order Status
-// Each field now includes columnNumber for direct mapping
 const ACTION_FIELDS = {
   'Order Confirmed': [
     { name: 'Order Status', type: 'dropdown', defaultValue: 'Order Confirmed', readOnly: true, required: true, options: ORDER_STATUS_OPTIONS, columnNumber: 45 },
@@ -152,6 +155,14 @@ export default function NewOrders() {
   const [showUpdateSummary, setShowUpdateSummary] = useState(false);
   const [updateSummaryData, setUpdateSummaryData] = useState(null);
   const pollingIntervalRef = useRef(null);
+  
+  // NEW: Edit Order states
+  const [showEditView, setShowEditView] = useState(false);
+  const [editOrderData, setEditOrderData] = useState(null);
+  const [editProducts, setEditProducts] = useState([]);
+  const [loadingEdit, setLoadingEdit] = useState(false);
+  const [editRemark, setEditRemark] = useState('');
+  const [editMode, setEditMode] = useState('');
 
   useEffect(() => {
     const userSession = localStorage.getItem('userSession');
@@ -177,11 +188,10 @@ export default function NewOrders() {
       }
 
       setUser(userData);
-      loadOrders(true); // Initial load with loading state
+      loadOrders(true);
       
-      // Start polling for new orders every 5 minutes (300000ms)
       pollingIntervalRef.current = setInterval(() => {
-        loadOrders(false); // Silent updates without loading state
+        loadOrders(false);
       }, 300000);
     } catch (error) {
       console.error('Error parsing user session:', error);
@@ -206,30 +216,24 @@ export default function NewOrders() {
         const data = await response.json();
         let ordersList = data.orders || [];
         
-        // Reverse order so latest is at top
         ordersList = ordersList.reverse();
         
-        // If we have existing orders, only add new ones at the top
         if (orders.length > 0 && !showLoading) {
           const existingOrderIds = new Set(orders.map(o => o['Oder ID']));
           const newOrders = ordersList.filter(o => !existingOrderIds.has(o['Oder ID']));
           
           if (newOrders.length > 0) {
-            // Add new orders to the top and mark them as new
             const newIds = new Set(newOrders.map(o => o['Oder ID']));
             setNewOrderIds(prev => new Set([...prev, ...newIds]));
             
-            // Merge: new orders at top + existing orders
             const mergedOrders = [...newOrders, ...orders];
             setOrders(mergedOrders);
             setLastUpdated(new Date());
             filterOrders(mergedOrders, activeFilter, searchTerm);
           } else {
-            // No new orders, just update timestamp
             setLastUpdated(new Date());
           }
         } else {
-          // First load or manual refresh - replace all data
           setOrders(ordersList);
           setLastUpdated(new Date());
           filterOrders(ordersList, activeFilter, searchTerm);
@@ -247,10 +251,8 @@ export default function NewOrders() {
   const filterOrders = (ordersList, statusFilter, search) => {
     let filtered = [...ordersList];
 
-    // Filter by status
     if (statusFilter !== 'All') {
       if (statusFilter === 'Pending') {
-        // Pending means Order Status is blank or null
         filtered = filtered.filter(order => 
           !order['Order Status'] || order['Order Status'].trim() === ''
         );
@@ -259,7 +261,6 @@ export default function NewOrders() {
       }
     }
 
-    // Filter by search term
     if (search) {
       const term = search.toLowerCase();
       filtered = filtered.filter(order => {
@@ -285,8 +286,9 @@ export default function NewOrders() {
     setSelectedOrder(order);
     setShowDetailView(true);
     setSelectedStatus('');
+    setShowEditView(false);
+    setEditRemark('');
     
-    // Remove 'new' badge when order is viewed
     if (newOrderIds.has(order['Oder ID'])) {
       setNewOrderIds(prev => {
         const newSet = new Set(prev);
@@ -302,12 +304,122 @@ export default function NewOrders() {
     setSelectedOrder(null);
     setShowDetailView(false);
     setSelectedStatus('');
-    // Silent reload to ensure fresh data without showing loading
+    setShowEditView(false);
+    setEditRemark('');
     loadOrders(false);
   };
 
   const handleStatusSelect = (status) => {
     setSelectedStatus(status);
+    setShowEditView(false);
+    if (status !== 'Edit Order' && status !== 'Edit and Split') {
+      setEditRemark('');
+    }
+  };
+
+  // NEW: Handle Edit Order button click
+  const handleEditOrderClick = async (mode) => {
+    if (!editRemark || editRemark.trim() === '') {
+      alert('Please enter remarks before editing');
+      return;
+    }
+
+    setLoadingEdit(true);
+    setEditMode(mode);
+
+    try {
+      const response = await fetch(`/api/orders/edit?orderId=${selectedOrder['Oder ID']}`);
+      
+      if (response.ok) {
+        const data = await response.json();
+        setEditOrderData(data.order);
+        setEditProducts(data.products || []);
+        setShowEditView(true);
+      } else {
+        alert('Failed to load order details');
+      }
+    } catch (error) {
+      console.error('Error loading edit data:', error);
+      alert('Error loading order data');
+    } finally {
+      setLoadingEdit(false);
+    }
+  };
+
+  // NEW: Handle product quantity change
+  const handleProductQtyChange = (productIndex, newQty) => {
+    const updatedProducts = [...editProducts];
+    const product = updatedProducts[productIndex];
+    const originalQty = parseFloat(product['Quantity'] || product['QNT'] || 0);
+    
+    updatedProducts[productIndex] = {
+      ...product,
+      'New Quantity': newQty,
+      'Split Quantity': editMode === 'split' ? originalQty - newQty : 0
+    };
+    
+    setEditProducts(updatedProducts);
+  };
+
+  // NEW: Save edited order
+  const handleSaveEditedOrder = async () => {
+    try {
+      setLoadingEdit(true);
+
+      const saveData = {
+        orderId: selectedOrder['Oder ID'],
+        rowIndex: selectedOrder._rowIndex,
+        editStatus: editMode === 'split' ? 'Edit and Split' : 'Edit Order',
+        remarks: editRemark,
+        username: user.username,
+        products: editProducts,
+        editMode: editMode
+      };
+
+      const response = await fetch('/api/orders/edit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(saveData),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        
+        alert(`Order ${editMode === 'split' ? 'split' : 'edited'} successfully!\n\nNote: Status and remarks updated in NewOrders sheet. Product changes saved for processing.`);
+        
+        const updatedOrders = orders.map(order => {
+          if (order['Oder ID'] === selectedOrder['Oder ID']) {
+            return {
+              ...order,
+              'Order Status': result.updatedFields['Order Status'],
+              'Remarks*': result.updatedFields['Remarks*'],
+              'Last Edited By': result.updatedFields['Last Edited By'],
+              'Last Edited At': result.updatedFields['Last Edited At']
+            };
+          }
+          return order;
+        });
+        
+        setOrders(updatedOrders);
+        setShowEditView(false);
+        setEditRemark('');
+        handleBackToDashboard();
+        
+        setTimeout(() => {
+          loadOrders(false);
+        }, 500);
+      } else {
+        const error = await response.json();
+        alert('Failed to update order: ' + (error.error || 'Unknown error'));
+      }
+    } catch (error) {
+      console.error('Error saving edited order:', error);
+      alert('Error saving changes');
+    } finally {
+      setLoadingEdit(false);
+    }
   };
 
   const handleFormSubmit = async (e) => {
@@ -317,10 +429,8 @@ export default function NewOrders() {
     const updates = {};
     const columnUpdates = {};
     
-    // Get field configurations for current status
     const fieldConfigs = ACTION_FIELDS[selectedStatus] || [];
     
-    // First, process all form fields
     for (let [key, value] of formData.entries()) {
       const fieldConfig = fieldConfigs.find(f => f.name === key);
       
@@ -330,14 +440,11 @@ export default function NewOrders() {
         updates[key] = value;
       }
       
-      // Add column number mapping
       if (fieldConfig && fieldConfig.columnNumber) {
         columnUpdates[fieldConfig.columnNumber] = updates[key];
       }
     }
     
-    // IMPORTANT: Add readonly/disabled fields that aren't in FormData
-    // Find Order Status field (it's readonly, so not in FormData)
     const orderStatusField = fieldConfigs.find(f => f.name === 'Order Status');
     if (orderStatusField) {
       const orderStatusValue = orderStatusField.defaultValue || selectedStatus;
@@ -347,14 +454,10 @@ export default function NewOrders() {
       }
     }
 
-    // Add Last Edited metadata
     updates['Last Edited By'] = user.username;
     updates['Last Edited At'] = new Date().toISOString();
-    columnUpdates[78] = user.username; // Last Edited By
-    columnUpdates[79] = new Date().toISOString(); // Last Edited At
-
-    console.log('Submitting updates:', updates);
-    console.log('Column updates:', columnUpdates);
+    columnUpdates[78] = user.username;
+    columnUpdates[79] = new Date().toISOString();
 
     try {
       const response = await fetch('/api/orders', {
@@ -366,15 +469,13 @@ export default function NewOrders() {
           orderId: selectedOrder['Oder ID'],
           rowIndex: selectedOrder._rowIndex,
           updates: updates,
-          columnUpdates: columnUpdates // Send column-based updates
+          columnUpdates: columnUpdates
         }),
       });
 
       if (response.ok) {
-        // IMMEDIATELY update the order in local state
         const updatedOrders = orders.map(order => {
           if (order['Oder ID'] === selectedOrder['Oder ID']) {
-            // Merge updates into the order
             return { ...order, ...updates };
           }
           return order;
@@ -382,23 +483,18 @@ export default function NewOrders() {
         
         setOrders(updatedOrders);
         
-        // Determine which filter the updated order should be in
         const newStatus = updates['Order Status'];
         let targetFilter = 'All';
         
         if (newStatus && newStatus.trim() !== '') {
-          // If status is set, use that as filter
           targetFilter = newStatus;
         } else {
-          // If status is blank, it's Pending
           targetFilter = 'Pending';
         }
         
-        // Switch to the appropriate filter so user can see the updated order
         setActiveFilter(targetFilter);
         filterOrders(updatedOrders, targetFilter, searchTerm);
         
-        // Prepare update summary
         const summary = {
           orderId: selectedOrder['Oder ID'],
           status: selectedStatus,
@@ -418,13 +514,11 @@ export default function NewOrders() {
         setUpdateSummaryData(summary);
         setShowUpdateSummary(true);
         
-        // Auto-close after 5 seconds and return to list
         setTimeout(() => {
           setShowUpdateSummary(false);
           handleBackToDashboard();
         }, 5000);
         
-        // Also do a silent background refresh to ensure sync with server
         setTimeout(() => {
           loadOrders(false);
         }, 1000);
@@ -517,17 +611,21 @@ export default function NewOrders() {
   const getStatusBadgeColor = (status) => {
     switch(status) {
       case 'Order Confirmed':
-        return '#10b981'; // green
+        return '#10b981';
       case 'Cancel Order':
-        return '#ef4444'; // red
+        return '#ef4444';
       case 'False Order':
-        return '#f59e0b'; // orange
+        return '#f59e0b';
       case 'Hold':
-        return '#6366f1'; // indigo
+        return '#6366f1';
       case 'Stock Transfer':
-        return '#8b5cf6'; // purple
+        return '#8b5cf6';
+      case 'Edit Order':
+        return '#3b82f6';
+      case 'Edit and Split':
+        return '#f97316';
       default:
-        return '#64748b'; // gray
+        return '#64748b';
     }
   };
 
@@ -667,7 +765,6 @@ export default function NewOrders() {
       if (cat.value === 'All') {
         counts[cat.value] = orders.length;
       } else if (cat.value === 'Pending') {
-        // Count orders with blank or null status
         counts[cat.value] = orders.filter(o => 
           !o['Order Status'] || o['Order Status'].trim() === ''
         ).length;
@@ -770,6 +867,186 @@ export default function NewOrders() {
     );
   };
 
+  // NEW: Render Edit Order View
+  const renderEditOrderView = () => {
+    if (!editOrderData) return null;
+
+    return (
+      <div className={styles.editOrderView}>
+        <div className={styles.editHeader}>
+          <button onClick={() => setShowEditView(false)} className={styles.backBtn}>
+            ← Back
+          </button>
+          <h2>
+            {editMode === 'split' ? '✂️ Edit and Split Order' : '✏️ Edit Order'} - {selectedOrder['Oder ID']}
+          </h2>
+        </div>
+
+        <div className={styles.detailCard}>
+          <div className={`${styles.infoBox} ${styles.infoconfirm}`}>
+            <span className={styles.infoIcon}>ℹ️</span>
+            <div className={styles.infoText}>
+              <p><strong>Current Implementation:</strong></p>
+              <ul style={{marginTop: '8px', paddingLeft: '20px'}}>
+                <li>✅ Status and remarks updated in NewOrders sheet</li>
+                <li>✅ Product quantities can be edited here for review</li>
+                <li>⏳ Actual product updates will be saved to separate sheet (implement later)</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div className={styles.detailCard}>
+          <h3 className={styles.cardTitle}>📋 Order Summary</h3>
+          <div className={styles.detailGrid}>
+            <div className={styles.detailItem}>
+              <span className={styles.detailLabel}>Order ID</span>
+              <span className={styles.detailValue}>{editOrderData['Oder ID']}</span>
+            </div>
+            <div className={styles.detailItem}>
+              <span className={styles.detailLabel}>Customer Name</span>
+              <span className={styles.detailValue}>{editOrderData['Name of Client']}</span>
+            </div>
+            <div className={styles.detailItem}>
+              <span className={styles.detailLabel}>Mobile</span>
+              <span className={styles.detailValue}>{editOrderData['Mobile']}</span>
+            </div>
+            <div className={styles.detailItem}>
+              <span className={styles.detailLabel}>Current Status</span>
+              <span className={styles.detailValue}>{editOrderData['Order Status'] || 'Pending'}</span>
+            </div>
+          </div>
+        </div>
+
+        <div className={styles.detailCard}>
+          <h3 className={styles.cardTitle}>
+            📦 Products {editMode === 'split' ? '(Adjust quantities to split)' : '(Review and modify)'}
+          </h3>
+          
+          <div className={styles.productsTable}>
+            <table style={{width: '100%', borderCollapse: 'collapse'}}>
+              <thead>
+                <tr style={{background: '#f9faf7', borderBottom: '2px solid #e5e9d8'}}>
+                  <th style={{padding: '12px', textAlign: 'left', width: '35%'}}>Product Name</th>
+                  <th style={{padding: '12px', textAlign: 'center', width: '8%'}}>SKU</th>
+                  <th style={{padding: '12px', textAlign: 'center', width: '10%'}}>Original Qty</th>
+                  <th style={{padding: '12px', textAlign: 'right', width: '10%'}}>Price</th>
+                  <th style={{padding: '12px', textAlign: 'center', width: '12%'}}>New Qty</th>
+                  {editMode === 'split' && <th style={{padding: '12px', textAlign: 'center', width: '12%'}}>Split Qty</th>}
+                  <th style={{padding: '12px', textAlign: 'right', width: '13%'}}>Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {editProducts.length === 0 ? (
+                  <tr>
+                    <td colSpan={editMode === 'split' ? "7" : "6"} style={{padding: '20px', textAlign: 'center', color: '#7a8450'}}>
+                      No products found. SKUWise-Orders sheet may not be set up yet.
+                    </td>
+                  </tr>
+                ) : (
+                  editProducts.map((product, idx) => {
+                    const originalQty = parseFloat(product['Quantity'] || product['QNT'] || 0);
+                    const price = parseFloat(product['MRP'] || product['Price'] || product['Unit Price'] || 0);
+                    const newQty = product['New Quantity'] !== undefined ? product['New Quantity'] : originalQty;
+                    const splitQty = product['Split Quantity'] || 0;
+                    const sku = product['SKU'] || product['Product Code'] || '-';
+                    
+                    return (
+                      <tr key={idx} style={{borderBottom: '1px solid #e5e9d8'}}>
+                        <td style={{padding: '12px', fontWeight: 500}}>{product['Product Name'] || product['Product'] || 'Unknown'}</td>
+                        <td style={{padding: '12px', textAlign: 'center'}}>{sku}</td>
+                        <td style={{padding: '12px', textAlign: 'center'}}>{originalQty}</td>
+                        <td style={{padding: '12px', textAlign: 'right'}}>₹{price.toFixed(2)}</td>
+                        <td style={{padding: '12px', textAlign: 'center'}}>
+                          <input
+                            type="number"
+                            min="0"
+                            max={originalQty}
+                            step="1"
+                            value={newQty}
+                            onChange={(e) => handleProductQtyChange(idx, parseFloat(e.target.value) || 0)}
+                            style={{
+                              width: '70px',
+                              padding: '6px',
+                              border: '1px solid #e5e9d8',
+                              borderRadius: '4px',
+                              textAlign: 'center'
+                            }}
+                          />
+                        </td>
+                        {editMode === 'split' && (
+                          <td style={{padding: '12px', textAlign: 'center', fontWeight: 600, color: '#f97316'}}>
+                            {splitQty}
+                          </td>
+                        )}
+                        <td style={{padding: '12px', textAlign: 'right', fontWeight: 600}}>₹{(newQty * price).toFixed(2)}</td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+              {editProducts.length > 0 && (
+                <tfoot>
+                  <tr style={{background: '#f9faf7', borderTop: '2px solid #e5e9d8'}}>
+                    <td colSpan={editMode === 'split' ? "6" : "5"} style={{padding: '12px', textAlign: 'right'}}>
+                      <strong>Total Amount:</strong>
+                    </td>
+                    <td style={{padding: '12px', textAlign: 'right'}}>
+                      <strong>
+                        ₹{editProducts.reduce((sum, p) => {
+                          const price = parseFloat(p['MRP'] || p['Price'] || p['Unit Price'] || 0);
+                          const qty = p['New Quantity'] !== undefined ? p['New Quantity'] : parseFloat(p['Quantity'] || p['QNT'] || 0);
+                          return sum + (qty * price);
+                        }, 0).toFixed(2)}
+                      </strong>
+                    </td>
+                  </tr>
+                </tfoot>
+              )}
+            </table>
+          </div>
+
+          {editMode === 'split' && editProducts.length > 0 && (
+            <div style={{marginTop: '16px'}}>
+              <div className={`${styles.infoBox}`} style={{backgroundColor: '#fff3cd', borderColor: '#ffc107'}}>
+                <span className={styles.infoIcon}>ℹ️</span>
+                <span className={styles.infoText}>
+                  Split quantities will be recorded. Adjust "New Qty" to keep in current order.
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className={styles.detailCard}>
+          <h3 className={styles.cardTitle}>📝 Edit Remarks</h3>
+          <div style={{padding: '12px', background: '#f9faf7', borderRadius: '6px', marginTop: '8px'}}>
+            <p style={{margin: 0}}>{editRemark}</p>
+          </div>
+        </div>
+
+        <div className={styles.formActions}>
+          <button
+            type="button"
+            onClick={() => setShowEditView(false)}
+            className={styles.btnSecondary}
+            disabled={loadingEdit}
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={handleSaveEditedOrder}
+            className={styles.btnSuccess}
+            disabled={loadingEdit}
+          >
+            {loadingEdit ? 'Saving...' : '💾 Save Changes'}
+          </button>
+        </div>
+      </div>
+    );
+  };
+
   if (!user || loading) {
     return (
       <div className={styles.loadingContainer}>
@@ -784,18 +1061,15 @@ export default function NewOrders() {
 
   return (
     <div className={styles.pageContainer}>
-      {/* Mobile Menu Toggle */}
       <button className={styles.menuToggle} onClick={toggleSidebar}>
         ☰
       </button>
 
-      {/* Sidebar Overlay */}
       <div 
         className={`${styles.sidebarOverlay} ${sidebarOpen ? styles.show : ''}`}
         onClick={closeSidebar}
       ></div>
 
-      {/* Sidebar */}
       <aside className={`${styles.sidebar} ${sidebarOpen ? styles.open : ''}`}>
         <div className={styles.logoSection}>
           <img 
@@ -856,12 +1130,10 @@ export default function NewOrders() {
         </div>
       </aside>
 
-      {/* Main Content */}
       <div className={styles.mainContent}>
-        {/* Header */}
         <header className={styles.header}>
           <h1 className={styles.pageTitle}>
-            {showDetailView ? 'Order Details' : 'New Orders'}
+            {showDetailView ? (showEditView ? 'Edit Order' : 'Order Details') : 'New Orders'}
           </h1>
           <div className={styles.headerActions}>
             <div className={styles.searchBox}>
@@ -889,11 +1161,9 @@ export default function NewOrders() {
           </div>
         </header>
 
-        {/* Content */}
         <div className={styles.content}>
           {!showDetailView ? (
             <>
-              {/* Status Filter Pills */}
               <div className={styles.statusFilters}>
                 {STATUS_CATEGORIES.map((category) => {
                   const count = statusCounts[category.value];
@@ -913,7 +1183,6 @@ export default function NewOrders() {
                 })}
               </div>
 
-              {/* Section Header */}
               <div className={styles.sectionHeader}>
                 <h2>
                   {activeFilter === 'All' ? '📋 All Orders' : `${STATUS_CATEGORIES.find(c => c.value === activeFilter)?.icon} ${activeFilter}`} ({filteredOrders.length})
@@ -930,7 +1199,6 @@ export default function NewOrders() {
                 </div>
               </div>
 
-              {/* Orders List */}
               {filteredOrders.length === 0 ? (
                 <div className={styles.emptyState}>
                   <p className={styles.emptyIcon}>📦</p>
@@ -983,8 +1251,9 @@ export default function NewOrders() {
                 </div>
               )}
             </>
+          ) : showEditView ? (
+            renderEditOrderView()
           ) : (
-            /* Order Detail View */
             <div className={styles.detailView}>
               <button onClick={handleBackToDashboard} className={styles.backBtn}>
                 ← Back to Orders
@@ -997,7 +1266,6 @@ export default function NewOrders() {
                 </div>
               )}
 
-              {/* Order Details Card - Non Editable Fields */}
               <div className={styles.detailCard}>
                 <h3 className={styles.cardTitle}>Order Information</h3>
                 <div className={styles.detailGrid}>
@@ -1012,7 +1280,6 @@ export default function NewOrders() {
                 </div>
               </div>
 
-              {/* Order Status Selection */}
               {!selectedStatus && !isCompleted && (
                 <div className={styles.detailCard}>
                   <h3 className={styles.cardTitle}>Select Action</h3>
@@ -1027,6 +1294,7 @@ export default function NewOrders() {
                           status === 'Cancel Order' ? styles.statusDanger :
                           status === 'False Order' ? styles.statusWarning :
                           status === 'Hold' ? styles.statusInfo :
+                          status === 'Edit Order' || status === 'Edit and Split' ? styles.statusInfo :
                           styles.statusDisabled
                         }`}
                       >
@@ -1035,6 +1303,8 @@ export default function NewOrders() {
                         {status === 'False Order' && '⚠️ '}
                         {status === 'Hold' && '⏸ '}
                         {status === 'Stock Transfer' && '🔄 '}
+                        {status === 'Edit Order' && '✏️ '}
+                        {status === 'Edit and Split' && '✂️ '}
                         {status}
                       </button>
                     ))}
@@ -1042,8 +1312,61 @@ export default function NewOrders() {
                 </div>
               )}
 
-              {/* Editable Fields Card */}
-              {selectedStatus && actionFieldsConfig.length > 0 && !isCompleted && (
+              {(selectedStatus === 'Edit Order' || selectedStatus === 'Edit and Split') && !isCompleted && (
+                <div className={styles.detailCard}>
+                  <h3 className={styles.cardTitle}>
+                    {selectedStatus === 'Edit and Split' ? '✂️ Edit and Split Order' : '✏️ Edit Order'}
+                  </h3>
+                  
+                  <div className={`${styles.infoBox} ${styles.infoconfirm}`}>
+                    <span className={styles.infoIcon}>ℹ️</span>
+                    <div className={styles.infoText}>
+                      <p>Please provide remarks before editing the order</p>
+                      <p style={{fontSize: '12px', marginTop: '8px', opacity: 0.8}}>
+                        Note: Status and remarks will be updated. Product edits prepared for separate sheet.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className={styles.formGrid}>
+                    <div className={`${styles.formField} ${styles.fullWidth}`}>
+                      <label>
+                        Remarks* <span className={styles.required}>*</span>
+                      </label>
+                      <textarea
+                        value={editRemark}
+                        onChange={(e) => setEditRemark(e.target.value)}
+                        required
+                        rows="3"
+                        placeholder="Enter reason for editing this order..."
+                      />
+                    </div>
+                  </div>
+
+                  <div className={styles.formActions}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedStatus('');
+                        setEditRemark('');
+                      }}
+                      className={styles.btnSecondary}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleEditOrderClick(selectedStatus === 'Edit and Split' ? 'split' : 'edit')}
+                      className={styles.btnSuccess}
+                      disabled={!editRemark || editRemark.trim() === '' || loadingEdit}
+                    >
+                      {loadingEdit ? 'Loading...' : '✏️ Edit Order Details'}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {selectedStatus && actionFieldsConfig.length > 0 && !isCompleted && selectedStatus !== 'Edit Order' && selectedStatus !== 'Edit and Split' && (
                 <div className={styles.detailCard}>
                   <h3 className={styles.cardTitle}>✏️ Update Order - {selectedStatus}</h3>
                   <div className={`${styles.infoBox} ${
@@ -1096,7 +1419,6 @@ export default function NewOrders() {
         </div>
       </div>
 
-      {/* Update Summary Modal */}
       {showUpdateSummary && updateSummaryData && (
         <div className={styles.modalOverlay}>
           <div className={styles.updateSummaryModal}>
