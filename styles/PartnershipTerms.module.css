@@ -3,7 +3,7 @@
 .pageContainer {
   display: flex;
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #f9faf7;
 }
 
 .menuToggle {
@@ -12,13 +12,14 @@
   top: 20px;
   left: 20px;
   z-index: 1001;
-  background: white;
+  background: #7a8450;
+  color: white;
   border: none;
   border-radius: 8px;
   padding: 10px 15px;
   font-size: 24px;
   cursor: pointer;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 10px rgba(122, 132, 80, 0.3);
 }
 
 .sidebarOverlay {
@@ -39,21 +40,22 @@
 /* Sidebar */
 .sidebar {
   width: 260px;
-  background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+  background: linear-gradient(180deg, #7a8450 0%, #6a7345 100%);
   color: white;
   display: flex;
   flex-direction: column;
   position: fixed;
   height: 100vh;
   overflow-y: auto;
-  box-shadow: 4px 0 10px rgba(0, 0, 0, 0.1);
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.15);
   transition: transform 0.3s ease;
 }
 
 .logoSection {
   padding: 20px;
   text-align: center;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .logoImage {
@@ -93,14 +95,14 @@
 }
 
 .navItem:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.12);
   color: white;
 }
 
 .navItem.active {
-  background: linear-gradient(90deg, rgba(59, 130, 246, 0.3) 0%, transparent 100%);
+  background: rgba(255, 255, 255, 0.18);
   color: white;
-  border-left: 4px solid #3b82f6;
+  border-left: 4px solid #f6b93b;
 }
 
 .navIcon {
@@ -116,21 +118,28 @@
 }
 
 .sidebarFooter {
-  padding: 20px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 16px 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(0, 0, 0, 0.1);
+  text-align: center;
+  margin-top: auto;
 }
 
 .sidebarWatermark {
-  text-align: center;
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.5);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.7);
 }
 
 .sidebarWatermark strong {
   display: block;
-  font-size: 14px;
-  color: rgba(255, 255, 255, 0.8);
-  margin-top: 4px;
+  font-size: 13px;
+  color: #f6b93b;
+  letter-spacing: 0.5px;
+  font-weight: 700;
 }
 
 /* Main Content */
@@ -183,7 +192,7 @@
 
 .backButton {
   padding: 10px 20px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #7a8450;
   color: white;
   border: none;
   border-radius: 8px;
@@ -194,8 +203,9 @@
 }
 
 .backButton:hover {
+  background: #6a7345;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 4px 12px rgba(122, 132, 80, 0.4);
 }
 
 /* Content */
@@ -214,7 +224,7 @@
 .menuTitle {
   font-size: 24px;
   font-weight: 600;
-  color: white;
+  color: #3d4522;
   margin-bottom: 30px;
   text-align: center;
 }
@@ -235,13 +245,15 @@
   align-items: center;
   gap: 20px;
   cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s;
+  box-shadow: 0 2px 10px rgba(122, 132, 80, 0.08);
+  border: 1px solid #f0f2ea;
 }
 
 .bulletItem:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(122, 132, 80, 0.15);
+  border-color: #7a8450;
 }
 
 .bulletIcon {
@@ -269,7 +281,7 @@
 
 .arrow {
   font-size: 24px;
-  color: #3b82f6;
+  color: #7a8450;
   transition: transform 0.3s ease;
 }
 
@@ -282,35 +294,52 @@
   background: white;
   border-radius: 12px;
   padding: 20px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 10px rgba(122, 132, 80, 0.08);
   overflow-x: auto;
+  border: 1px solid #f0f2ea;
+  max-width: 100%;
 }
 
 .dataTable {
   width: 100%;
   border-collapse: collapse;
-  font-size: 14px;
+  font-size: 13px;
+  min-width: 800px;
 }
 
 .dataTable thead {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #7a8450;
   color: white;
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 
 .dataTable th {
-  padding: 15px;
+  padding: 10px 12px;
   text-align: left;
   font-weight: 600;
   white-space: nowrap;
+  font-size: 12px;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.dataTable th:last-child {
+  border-right: none;
 }
 
 .dataTable td {
-  padding: 12px 15px;
-  border-bottom: 1px solid #e2e8f0;
+  padding: 8px 12px;
+  border-bottom: 1px solid #e5e9d8;
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
 }
 
 .dataTable tbody tr:hover {
-  background: #f8fafc;
+  background: #f0f2ea;
 }
 
 .noData {
@@ -346,7 +375,7 @@
 
 .paginationButton {
   padding: 8px 16px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #7a8450;
   color: white;
   border: none;
   border-radius: 6px;
@@ -357,8 +386,9 @@
 }
 
 .paginationButton:hover:not(:disabled) {
+  background: #6a7345;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 4px 12px rgba(122, 132, 80, 0.4);
 }
 
 .paginationButton:disabled {
@@ -382,7 +412,8 @@
   min-height: 100vh;
   font-size: 20px;
   font-weight: 600;
-  color: #667eea;
+  color: #7a8450;
+  background: #f9faf7;
 }
 
 /* Responsive Design */
