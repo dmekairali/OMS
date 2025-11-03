@@ -5,56 +5,31 @@ class SetupDataService {
       productList: { headers: [], rows: [] },
       discountStructure: { headers: [], rows: [] },
       distributorList: { headers: [], rows: [] },
-      employeeList: { headers: [], rows: [] }
+      employeeList: { headers: [], rows: [] },
+      clientList: { headers: [], rows: [] }
     };
     this.loaded = false;
   }
 
-  async loadAllData() {
-    if (this.loaded) {
-      console.log('Data already loaded');
-      return this.data;
-    }
-
-    console.log('Loading setup data from API...');
-    
+  async loadData() {
     try {
       const response = await fetch('/api/setup-data');
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch setup data');
-      }
-      
       const result = await response.json();
       
       if (result.success) {
         this.data = result.data;
         this.loaded = true;
-        
-        console.log('✓ Setup data loaded:', {
-          productList: this.data.productList.rows.length + ' rows',
-          discountStructure: this.data.discountStructure.rows.length + ' rows',
-          distributorList: this.data.distributorList.rows.length + ' rows',
-          employeeList: this.data.employeeList.rows.length + ' rows'
-        });
+        return true;
       }
+      return false;
     } catch (error) {
       console.error('Error loading setup data:', error);
-      this.loaded = true; // Mark as loaded to prevent retry loops
+      return false;
     }
-
-    return this.data;
   }
 
-  searchData(dataset, searchTerm) {
-    if (!searchTerm) return dataset.rows;
-    
-    const term = searchTerm.toLowerCase();
-    return dataset.rows.filter(row => 
-      Object.values(row).some(value => 
-        String(value).toLowerCase().includes(term)
-      )
-    );
+  isLoaded() {
+    return this.loaded;
   }
 
   getProductList() {
@@ -73,9 +48,22 @@ class SetupDataService {
     return this.data.employeeList;
   }
 
-  isLoaded() {
-    return this.loaded;
+  getClientList() {
+    return this.data.clientList;
+  }
+
+  searchData(dataObj, searchTerm) {
+    if (!searchTerm) return dataObj.rows;
+    
+    const lowerSearchTerm = searchTerm.toLowerCase();
+    return dataObj.rows.filter(row => {
+      return Object.values(row).some(value => 
+        String(value).toLowerCase().includes(lowerSearchTerm)
+      );
+    });
   }
 }
 
-export default new SetupDataService();
+// Export a singleton instance
+const setupDataServiceInstance = new SetupDataService();
+export default setupDataServiceInstance;
