@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
 import styles from '../styles/NewOrders.module.css';
+import EditOrderForm from '../components/EditOrderForm';
 
 // Non-editable display fields for order cards
 const DISPLAY_FIELDS = [
@@ -328,7 +329,7 @@ export default function NewOrders() {
     setEditMode(mode);
 
     try {
-      const response = await fetch(`/api/orders/edit?orderId=${selectedOrder['Oder ID']}`);
+      const response = await fetch(`/api/orders/load-edit?orderId=${selectedOrder['Oder ID']}`);
       
       if (response.ok) {
         const data = await response.json();
@@ -345,6 +346,10 @@ export default function NewOrders() {
       setLoadingEdit(false);
     }
   };
+
+  const handleSaveEditOrder = async (formData) => {
+  // Send to /api/orders/save-edit with doPost format
+}
 
   // NEW: Handle product quantity change
   const handleProductQtyChange = (productIndex, newQty) => {
@@ -1251,8 +1256,16 @@ export default function NewOrders() {
                 </div>
               )}
             </>
-          ) : showEditView ? (
-            renderEditOrderView()
+          ) : showEditView ? 
+           (
+  <div className={styles.editOrderView}>
+    <EditOrderForm
+      order={editOrderData}
+      products={editProducts}
+      onSave={handleSaveEditOrder}
+      onCancel={handleCancelEdit}
+    />
+  </div>
           ) : (
             <div className={styles.detailView}>
               <button onClick={handleBackToDashboard} className={styles.backBtn}>
