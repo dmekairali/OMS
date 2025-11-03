@@ -240,6 +240,11 @@ export default function Dashboard() {
               )}
             </div>
           )}
+
+            <div className={styles.navItem} onClick={() => router.push('/partnership-terms')}>
+  <span className={styles.navIcon}>🤝</span>
+  <span className={styles.navText}>Partnership & Terms</span>
+</div>
         </nav>
 
             {/* Add this new section at the bottom */}
