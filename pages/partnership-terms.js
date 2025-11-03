@@ -139,32 +139,34 @@ export default function PartnershipTerms() {
   const renderTable = (headers, rows) => {
     return (
       <div className={styles.tableContainer}>
-        <table className={styles.dataTable}>
-          <thead>
-            <tr>
-              {headers.map((header, idx) => (
-                <th key={idx}>{header}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {rows.length === 0 ? (
+        <div className={styles.tableWrapper}>
+          <table className={styles.dataTable}>
+            <thead>
               <tr>
-                <td colSpan={headers.length} className={styles.noData}>
-                  No data found
-                </td>
+                {headers.map((header, idx) => (
+                  <th key={idx}>{header}</th>
+                ))}
               </tr>
-            ) : (
-              rows.map((row, idx) => (
-                <tr key={idx}>
-                  {headers.map((header, colIdx) => (
-                    <td key={colIdx}>{row[header]}</td>
-                  ))}
+            </thead>
+            <tbody>
+              {rows.length === 0 ? (
+                <tr>
+                  <td colSpan={headers.length} className={styles.noData}>
+                    No data found
+                  </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : (
+                rows.map((row, idx) => (
+                  <tr key={idx}>
+                    {headers.map((header, colIdx) => (
+                      <td key={colIdx}>{row[header]}</td>
+                    ))}
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
         {renderPagination()}
       </div>
     );
