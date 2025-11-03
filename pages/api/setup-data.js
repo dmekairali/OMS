@@ -14,6 +14,7 @@ export default async function handler(req, res) {
 
   try {
     const setupSheetId = process.env.GOOGLE_SHEETS_SPREADSHEET_ID_SETUPSHEET;
+    const clientListSheetId = '1h-isMnQYpfEAfX_W-TvuP7pN50dBLMbltVFYh5_qFMc';
     
     if (!setupSheetId) {
       return res.status(500).json({ error: 'Setup spreadsheet configuration missing' });
@@ -31,8 +32,14 @@ export default async function handler(req, res) {
 
     const sheets = google.sheets({ version: 'v4', auth });
     
-    // Fetch all four datasets in parallel
-    const [productListResponse, discountResponse, distributorResponse, employeeResponse] = await Promise.all([
+    // Fetch all five datasets in parallel
+    const [
+      productListResponse, 
+      discountResponse, 
+      distributorResponse, 
+      employeeResponse,
+      clientListResponse
+    ] = await Promise.all([
       sheets.spreadsheets.values.get({
         spreadsheetId: setupSheetId,
         range: 'Product List!A1:H',
@@ -48,6 +55,10 @@ export default async function handler(req, res) {
       sheets.spreadsheets.values.get({
         spreadsheetId: setupSheetId,
         range: 'Employee List!A1:C',
+      }),
+      sheets.spreadsheets.values.get({
+        spreadsheetId: clientListSheetId,
+        range: 'Sheet1!A1:AK',
       })
     ]);
 
@@ -72,7 +83,8 @@ export default async function handler(req, res) {
         productList: parseData(productListResponse.data.values),
         discountStructure: parseData(discountResponse.data.values),
         distributorList: parseData(distributorResponse.data.values),
-        employeeList: parseData(employeeResponse.data.values)
+        employeeList: parseData(employeeResponse.data.values),
+        clientList: parseData(clientListResponse.data.values)
       }
     });
 
