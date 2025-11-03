@@ -1,4 +1,22 @@
 // services/SetupDataService.js
+
+// CONFIGURE YOUR ACTUAL SHEET NAMES HERE
+// Open your Google Sheet and check the exact tab names at the bottom
+const SHEET_CONFIG = {
+  productList: {
+    sheetName: 'Product List',  // Change if different
+    range: 'A1:H'
+  },
+  discountStructure: {
+    sheetName: 'Discount Module',  // Change if different
+    range: 'A1:N'
+  },
+  distributorList: {
+    sheetName: 'Distributor List',  // Change if different
+    range: 'A1:H'
+  }
+};
+
 class SetupDataService {
   constructor() {
     this.data = {
@@ -13,31 +31,64 @@ class SetupDataService {
     const spreadsheetId = process.env.REACT_APP_GOOGLE_SHEETS_SPREADSHEET_ID_SETUPSHEET;
     const apiKey = process.env.REACT_APP_GOOGLE_API_KEY;
     
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${sheetName}!${range}?key=${apiKey}`;
+    if (!spreadsheetId || !apiKey) {
+      console.error('Missing environment variables');
+      return [];
+    }
+
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(sheetName)}!${range}?key=${apiKey}`;
     
-    const response = await fetch(url);
-    if (!response.ok) throw new Error(`Failed to fetch ${sheetName}`);
+    console.log(`Fetching: ${sheetName}`);
     
-    const data = await response.json();
-    return data.values || [];
+    try {
+      const response = await fetch(url);
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`Failed to fetch "${sheetName}":`, response.status, errorText);
+        return [];
+      }
+      
+      const data = await response.json();
+      console.log(`✓ Successfully fetched "${sheetName}": ${data.values?.length || 0} rows`);
+      return data.values || [];
+    } catch (error) {
+      console.error(`Error fetching "${sheetName}":`, error);
+      return [];
+    }
   }
 
   async loadAllData() {
-    if (this.loaded) return this.data;
+    if (this.loaded) {
+      console.log('Data already loaded');
+      return this.data;
+    }
 
-    const [productList, discountStructure, distributorList] = await Promise.all([
-      this.fetchSheetData('Product List', 'A1:H'),
-      this.fetchSheetData('Discount Module', 'A1:N'),
-      this.fetchSheetData('Distributor List', 'A1:H')
-    ]);
+    console.log('Loading setup data...');
+    
+    try {
+      const [productList, discountStructure, distributorList] = await Promise.all([
+        this.fetchSheetData(SHEET_CONFIG.productList.sheetName, SHEET_CONFIG.productList.range),
+        this.fetchSheetData(SHEET_CONFIG.discountStructure.sheetName, SHEET_CONFIG.discountStructure.range),
+        this.fetchSheetData(SHEET_CONFIG.distributorList.sheetName, SHEET_CONFIG.distributorList.range)
+      ]);
 
-    this.data = {
-      productList: this.parseData(productList),
-      discountStructure: this.parseData(discountStructure),
-      distributorList: this.parseData(distributorList)
-    };
+      this.data = {
+        productList: this.parseData(productList),
+        discountStructure: this.parseData(discountStructure),
+        distributorList: this.parseData(distributorList)
+      };
 
-    this.loaded = true;
+      this.loaded = true;
+      console.log('✓ Setup data loaded:', {
+        productList: this.data.productList.rows.length + ' rows',
+        discountStructure: this.data.discountStructure.rows.length + ' rows',
+        distributorList: this.data.distributorList.rows.length + ' rows'
+      });
+    } catch (error) {
+      console.error('Error in loadAllData:', error);
+      this.loaded = true;
+    }
+
     return this.data;
   }
 
@@ -84,6 +135,25 @@ class SetupDataService {
 
   isLoaded() {
     return this.loaded;
+  }
+
+  // Debug helper - call this to see available sheets
+  async listAvailableSheets() {
+    const spreadsheetId = process.env.REACT_APP_GOOGLE_SHEETS_SPREADSHEET_ID_SETUPSHEET;
+    const apiKey = process.env.REACT_APP_GOOGLE_API_KEY;
+    
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}?key=${apiKey}`;
+    
+    try {
+      const response = await fetch(url);
+      const data = await response.json();
+      const sheets = data.sheets.map(s => s.properties.title);
+      console.log('📋 Available sheets in your spreadsheet:', sheets);
+      return sheets;
+    } catch (error) {
+      console.error('Error listing sheets:', error);
+      return [];
+    }
   }
 }
 
