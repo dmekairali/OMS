@@ -6,6 +6,7 @@ import styles from '../styles/PartnershipTerms.module.css';
 export default function PartnershipTerms() {
   const router = useRouter();
   const [user, setUser] = useState(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeView, setActiveView] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [data, setData] = useState({
@@ -39,6 +40,14 @@ export default function PartnershipTerms() {
       router.push('/login');
     }
   }, [router]);
+
+  const toggleSidebar = () => {
+    setSidebarOpen(!sidebarOpen);
+  };
+
+  const closeSidebar = () => {
+    setSidebarOpen(false);
+  };
 
   const getFilteredData = () => {
     if (!activeView) return [];
@@ -89,7 +98,18 @@ export default function PartnershipTerms() {
 
   return (
     <div className={styles.pageContainer}>
-      <aside className={styles.sidebar}>
+      {/* Mobile Menu Toggle */}
+      <button className={styles.menuToggle} onClick={toggleSidebar}>
+        ☰
+      </button>
+
+      {/* Sidebar Overlay */}
+      <div 
+        className={`${styles.sidebarOverlay} ${sidebarOpen ? styles.show : ''}`}
+        onClick={closeSidebar}
+      ></div>
+
+      <aside className={`${styles.sidebar} ${sidebarOpen ? styles.open : ''}`}>
         <div className={styles.logoSection}>
           <img src="/kairali-logo.png" alt="Kairali Products" className={styles.logoImage} />
         </div>
@@ -100,17 +120,40 @@ export default function PartnershipTerms() {
         </div>
 
         <nav className={styles.navMenu}>
-          <div className={styles.navItem} onClick={() => router.push('/dashboard')}>
+          <div className={styles.navItem} onClick={() => { router.push('/dashboard'); closeSidebar(); }}>
             <span className={styles.navIcon}>📊</span>
             <span className={styles.navText}>Dashboard</span>
           </div>
           
-          <div className={styles.navItem} onClick={() => router.push('/neworders')}>
-            <span className={styles.navIcon}>📋</span>
-            <span className={styles.navText}>New Orders</span>
-          </div>
+          {user.moduleAccess?.newOrders && (
+            <div className={styles.navItem} onClick={() => { router.push('/neworders'); closeSidebar(); }}>
+              <span className={styles.navIcon}>📋</span>
+              <span className={styles.navText}>New Orders</span>
+            </div>
+          )}
 
-          <div className={`${styles.navItem} ${styles.active}`}>
+          {user.moduleAccess?.dispatch && (
+            <div className={styles.navItem} onClick={() => { router.push('/dispatch'); closeSidebar(); }}>
+              <span className={styles.navIcon}>🚚</span>
+              <span className={styles.navText}>Dispatch</span>
+            </div>
+          )}
+
+          {user.moduleAccess?.delivery && (
+            <div className={styles.navItem} onClick={() => { router.push('/delivery'); closeSidebar(); }}>
+              <span className={styles.navIcon}>📦</span>
+              <span className={styles.navText}>Delivery</span>
+            </div>
+          )}
+
+          {user.moduleAccess?.payment && (
+            <div className={styles.navItem} onClick={() => { router.push('/payment'); closeSidebar(); }}>
+              <span className={styles.navIcon}>💰</span>
+              <span className={styles.navText}>Payment</span>
+            </div>
+          )}
+
+          <div className={`${styles.navItem} ${styles.active}`} onClick={closeSidebar}>
             <span className={styles.navIcon}>🤝</span>
             <span className={styles.navText}>Partnership & Terms</span>
           </div>
