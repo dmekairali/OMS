@@ -15,6 +15,10 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
   const [shippingAddress, setShippingAddress] = useState('');
   const [billingPincode, setBillingPincode] = useState('');
   const [shippingPincode, setShippingPincode] = useState('');
+  const [taluk, setTaluk] = useState('');
+  const [district, setDistrict] = useState('');
+  const [state, setState] = useState('');
+  const [isShippingSameAsBilling, setIsShippingSameAsBilling] = useState(false);
   
   // Order Details
   const [orderType, setOrderType] = useState('');
@@ -38,6 +42,34 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
   const [nextOrderDate, setNextOrderDate] = useState('');
   const [endOrderDate, setEndOrderDate] = useState('');
   const [priority, setPriority] = useState('');
+
+  // Discounts
+  const [discountTier, setDiscountTier] = useState('');
+  const [discounts, setDiscounts] = useState([{ category: '', percentage: '' }]);
+
+  // Additional Details
+  const [shippingCharges, setShippingCharges] = useState('');
+  const [shippingChargesRemark, setShippingChargesRemark] = useState('');
+  const [shippingTaxPercent, setShippingTaxPercent] = useState('');
+  const [shippingTaxPercentRemark, setShippingTaxPercentRemark] = useState('');
+  const [totalShippingCharge, setTotalShippingCharge] = useState('');
+  const [totalShippingChargeRemark, setTotalShippingChargeRemark] = useState('');
+
+  // Payment, Delivery, and Remarks
+  const [preferredCallTime1, setPreferredCallTime1] = useState('');
+  const [preferredCallTime2, setPreferredCallTime2] = useState('');
+  const [dispatchDate, setDispatchDate] = useState('');
+  const [dispatchTime, setDispatchTime] = useState('');
+  const [saleTermRemark, setSaleTermRemark] = useState('');
+  const [invoiceRemark, setInvoiceRemark] = useState('');
+  const [warehouseRemark, setWarehouseRemark] = useState('');
+
+  // File Upload, Order By, and Otif
+  const [file, setFile] = useState(null);
+  const [fileData, setFileData] = useState(null);
+  const [orderBy, setOrderBy] = useState('');
+  const [orderInFull, setOrderInFull] = useState('');
+  const [orderInFullReason, setOrderInFullReason] = useState('');
 
   useEffect(() => {
     if (order) {
@@ -65,6 +97,27 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
       
       const payDates = (order['Payment Date (to be paid)'] || '').split(',').map(d => d.trim());
       setPaymentDate(payDates[0] || '');
+
+      setTaluk(order['Taluk'] || '');
+      setDistrict(order['District'] || '');
+      setState(order['State'] || '');
+      setDiscountTier(order['Discount Tier'] || '');
+      setShippingCharges(order['Shipping Charges'] || '');
+      setShippingChargesRemark(order['Shipping Charges Remark'] || '');
+      setShippingTaxPercent(order['Shipping Tax Percent'] || '');
+      setShippingTaxPercentRemark(order['Shipping Tax Percent Remark'] || '');
+      setTotalShippingCharge(order['Total Shipping Charge'] || '');
+      setTotalShippingChargeRemark(order['Total Shipping Charge Remark'] || '');
+      setPreferredCallTime1(order['Preferred Call Time 1'] || '');
+      setPreferredCallTime2(order['Preferred Call Time 2'] || '');
+      setDispatchDate(order['Dispatch Date'] || '');
+      setDispatchTime(order['Dispatch Time'] || '');
+      setSaleTermRemark(order['Sale Term Remark'] || '');
+      setInvoiceRemark(order['Invoice Remark'] || '');
+      setWarehouseRemark(order['Warehouse Remark'] || '');
+      setOrderBy(order['Order By'] || '');
+      setOrderInFull(order['Order In Full'] || '');
+      setOrderInFullReason(order['Order In Full Reason'] || '');
     }
     
     if (products && products.length > 0) {
@@ -164,9 +217,9 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
       Baddress: billingAddress,
       saddress: shippingAddress,
       BPINCODE: billingPincode,
-      talukname: null,
-      districtname: null,
-      state: null,
+      talukname: taluk,
+      districtname: district,
+      state: state,
       
       ordertype: orderType,
       partyname: partyName,
@@ -201,25 +254,32 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
       TOTAL: productList.map(p => p.total),
       SplitQTY: productList.map(p => p.splitQty),
       
-      scharge: null,
-      sremark: null,
-      Stax: null,
-      Staxremark: null,
-      staxper: null,
-      staxperrem: null,
+      discounttiername: discountTier,
+      discountcategory: discounts.map(d => d.category),
+      discount: discounts.map(d => d.percentage),
+
+      scharge: shippingCharges,
+      sremark: shippingChargesRemark,
+      Stax: totalShippingCharge,
+      Staxremark: totalShippingChargeRemark,
+      staxper: shippingTaxPercent,
+      staxperrem: shippingTaxPercentRemark,
       
-      saletermremark: null,
-      invoiceremark: null,
-      warehouseremark: null,
+      saletermremark: saleTermRemark,
+      invoiceremark: invoiceRemark,
+      warehouseremark: warehouseRemark,
       
       reoccurance: reoccurance,
       NextOrderDate: nextOrderDate,
       EndOrderDate: endOrderDate,
       Priority: priority,
       
-      data: null,
-      filename: null,
-      mimetype: null,
+      data: fileData,
+      filename: file ? file.name : null,
+      mimetype: file ? file.type : null,
+      orderby: orderBy,
+      otifyesno: orderInFull,
+      otifreason: orderInFullReason,
       
       taxbeforetotal: productList.reduce((sum, p) => sum + parseFloat(p.beforeTax || 0), 0).toFixed(2),
       distotal: productList.reduce((sum, p) => sum + parseFloat(p.discountAmt || 0), 0).toFixed(2),
@@ -273,6 +333,19 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
           </div>
           <div className={styles.field}>
             <label>Shipping Address *</label>
+            <div>
+              <input
+                type="checkbox"
+                checked={isShippingSameAsBilling}
+                onChange={() => {
+                  setIsShippingSameAsBilling(!isShippingSameAsBilling);
+                  if (!isShippingSameAsBilling) {
+                    setShippingAddress(billingAddress);
+                  }
+                }}
+              />
+              <label style={{ marginLeft: '8px' }}>Same as Billing Address</label>
+            </div>
             <textarea value={shippingAddress} onChange={(e) => setShippingAddress(e.target.value)} required rows="2" />
           </div>
           <div className={styles.field}>
@@ -282,6 +355,18 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
           <div className={styles.field}>
             <label>Shipping Pincode</label>
             <input type="text" value={shippingPincode} onChange={(e) => setShippingPincode(e.target.value)} />
+          </div>
+          <div className={styles.field}>
+            <label>Taluk</label>
+            <input type="text" value={taluk} onChange={(e) => setTaluk(e.target.value)} />
+          </div>
+          <div className={styles.field}>
+            <label>District</label>
+            <input type="text" value={district} onChange={(e) => setDistrict(e.target.value)} />
+          </div>
+          <div className={styles.field}>
+            <label>State</label>
+            <input type="text" value={state} onChange={(e) => setState(e.target.value)} />
           </div>
         </div>
       </div>
@@ -307,6 +392,75 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
             <input type="text" value={mrName} onChange={(e) => setMrName(e.target.value)} />
           </div>
         </div>
+      </div>
+
+      {/* Discounts */}
+      <div className={styles.section}>
+        <h3>Discounts</h3>
+        <div className={styles.grid2}>
+          <div className={styles.field}>
+            <label>Discount Tier *</label>
+            <select value={discountTier} onChange={(e) => setDiscountTier(e.target.value)} required>
+              <option value="">-- select --</option>
+              {/* Add discount tier options here */}
+            </select>
+          </div>
+        </div>
+        <table className={styles.table}>
+          <thead>
+            <tr>
+              <th>Discount Category</th>
+              <th>Discount %</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {discounts.map((d, i) => (
+              <tr key={i}>
+                <td>
+                  <input
+                    type="text"
+                    value={d.category}
+                    onChange={(e) => {
+                      const newDiscounts = [...discounts];
+                      newDiscounts[i].category = e.target.value;
+                      setDiscounts(newDiscounts);
+                    }}
+                  />
+                </td>
+                <td>
+                  <input
+                    type="number"
+                    value={d.percentage}
+                    onChange={(e) => {
+                      const newDiscounts = [...discounts];
+                      newDiscounts[i].percentage = e.target.value;
+                      setDiscounts(newDiscounts);
+                    }}
+                  />
+                </td>
+                <td>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDiscounts(discounts.filter((_, index) => index !== i));
+                    }}
+                  >
+                    Remove
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <button
+          type="button"
+          onClick={() => {
+            setDiscounts([...discounts, { category: '', percentage: '' }]);
+          }}
+        >
+          + Add More
+        </button>
       </div>
 
       {/* Products */}
@@ -495,6 +649,37 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
         </div>
       </div>
 
+      {/* Additional Details */}
+      <div className={styles.section}>
+        <h3>Additional Details</h3>
+        <div className={styles.grid2}>
+          <div className={styles.field}>
+            <label>Shipping, Packing and Delivery Charges (Amount):</label>
+            <input type="text" value={shippingCharges} onChange={(e) => setShippingCharges(e.target.value)} />
+          </div>
+          <div className={styles.field}>
+            <label>Note (Remarks)</label>
+            <input type="text" value={shippingChargesRemark} onChange={(e) => setShippingChargesRemark(e.target.value)} />
+          </div>
+          <div className={styles.field}>
+            <label>Shipping Tax (%):</label>
+            <input type="text" value={shippingTaxPercent} onChange={(e) => setShippingTaxPercent(e.target.value)} />
+          </div>
+          <div className={styles.field}>
+            <label>Type of (Remarks)</label>
+            <input type="text" value={shippingTaxPercentRemark} onChange={(e) => setShippingTaxPercentRemark(e.target.value)} />
+          </div>
+          <div className={styles.field}>
+            <label>Total Shipping Charge (Amount):</label>
+            <input type="text" value={totalShippingCharge} onChange={(e) => setTotalShippingCharge(e.target.value)} />
+          </div>
+          <div className={styles.field}>
+            <label>Type of (Remarks)</label>
+            <input type="text" value={totalShippingChargeRemark} onChange={(e) => setTotalShippingChargeRemark(e.target.value)} />
+          </div>
+        </div>
+      </div>
+
       {/* Delivery & Payment */}
       <div className={styles.section}>
         <h3>Delivery & Payment</h3>
@@ -550,6 +735,98 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
           <div className={styles.field}>
             <label>Priority</label>
             <input type="text" value={priority} onChange={(e) => setPriority(e.target.value)} />
+          </div>
+        </div>
+      </div>
+
+      {/* Payment, Delivery, and Remarks */}
+      <div className={styles.section}>
+        <h3>Payment, Delivery, and Remarks</h3>
+        <div className={styles.grid2}>
+          <div className={styles.field}>
+            <label>Preferred Call Time 1</label>
+            <input type="time" value={preferredCallTime1} onChange={(e) => setPreferredCallTime1(e.target.value)} />
+          </div>
+          <div className={styles.field}>
+            <label>Preferred Call Time 2</label>
+            <input type="time" value={preferredCallTime2} onChange={(e) => setPreferredCallTime2(e.target.value)} />
+          </div>
+          <div className={styles.field}>
+            <label>Expected Date of Dispatch</label>
+            <input type="date" value={dispatchDate} onChange={(e) => setDispatchDate(e.target.value)} />
+          </div>
+          <div className={styles.field}>
+            <label>Expected Time of Dispatch</label>
+            <input type="time" value={dispatchTime} onChange={(e) => setDispatchTime(e.target.value)} />
+          </div>
+          <div className={styles.field}>
+            <label>Remarks - Show to Kairali Team</label>
+            <input type="text" value={saleTermRemark} onChange={(e) => setSaleTermRemark(e.target.value)} />
+          </div>
+          <div className={styles.field}>
+            <label>Remarks - Show in Invoice</label>
+            <input type="text" value={invoiceRemark} onChange={(e) => setInvoiceRemark(e.target.value)} />
+          </div>
+          <div className={styles.field}>
+            <label>Remarks - Show to Dispatch Team</label>
+            <input type="text" value={warehouseRemark} onChange={(e) => setWarehouseRemark(e.target.value)} />
+          </div>
+        </div>
+      </div>
+
+      {/* File Upload, Order By, and Otif */}
+      <div className={styles.section}>
+        <h3>File Upload, Order By, and Otif</h3>
+        <div className={styles.grid2}>
+          <div className={styles.field}>
+            <label>Images/Invoice Upload</label>
+            <input type="file" onChange={(e) => {
+              const file = e.target.files[0];
+              if (file) {
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                  setFileData(reader.result.split(',')[1]);
+                  setFile(file);
+                };
+                reader.readAsDataURL(file);
+              }
+            }} />
+          </div>
+          <div className={styles.field}>
+            <label>Order Place by</label>
+            <select value={orderBy} onChange={(e) => setOrderBy(e.target.value)}>
+              <option value="Radhika">Radhika</option>
+            </select>
+          </div>
+          <div className={styles.field}>
+            <label>Is order in Full - Yes/No *</label>
+            <select value={orderInFull} onChange={(e) => setOrderInFull(e.target.value)} required>
+              <option value="">--Select--</option>
+              <option value="Yes">Yes</option>
+              <option value="No">No</option>
+            </select>
+          </div>
+          <div className={styles.field}>
+            <label>Reason (If No)</label>
+            <select value={orderInFullReason} onChange={(e) => setOrderInFullReason(e.target.value)}>
+              <option value="">--Select--</option>
+              <option value="Shortage of Stock">Shortage of Stock</option>
+              <option value="Incorrect Discount">Incorrect Discount</option>
+              <option value="Payment issue">Payment issue</option>
+              <option value="Shippers issue">Shippers issue</option>
+              <option value="Employee issue such as leave, absent etc">Employee issue such as leave, absent etc</option>
+              <option value="Technical Issues">Technical Issues</option>
+              <option value="Short Expiry">Short Expiry</option>
+              <option value="Duplicate Order">Duplicate Order</option>
+              <option value="Edited and Reorderd">Edited and Reorderd</option>
+              <option value="Labelling issue">Labelling issue</option>
+              <option value="Botteling issue">Botteling issue</option>
+              <option value="Packaging issue">Packaging issue</option>
+              <option value="Raw material supply issue">Raw material supply issue</option>
+              <option value="Production damage">Production damage</option>
+              <option value="Storage damage">Storage damage</option>
+              <option value="Others">Others</option>
+            </select>
           </div>
         </div>
       </div>
