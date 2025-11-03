@@ -1,12 +1,11 @@
 /**
- * Order Edit API Endpoint
- * Handles edit operations for orders including product details
- * Pre-loads all necessary data for faster editing
+ * Edit Order API Endpoint
+ * Handles loading order details with products and updating order status for Edit/Split actions
  */
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
   if (req.method === 'OPTIONS') {
@@ -32,7 +31,7 @@ export default async function handler(req, res) {
 
     const sheets = google.sheets({ version: 'v4', auth });
 
-    // GET - Load order details with product information
+    // GET - Load order with products
     if (req.method === 'GET') {
       const { orderId } = req.query;
 
@@ -40,118 +39,143 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'orderId is required' });
       }
 
-      // Get main order from NewOrders sheet
-      const orderResponse = await sheets.spreadsheets.values.get({
+      // Read order from NewOrders sheet
+      const ordersResponse = await sheets.spreadsheets.values.get({
         spreadsheetId: orderSheetId,
         range: 'NewOrders!A8:CF1000',
       });
 
-      const orderData = orderResponse.data.values;
+      const ordersData = ordersResponse.data.values;
       
-      if (!orderData || orderData.length === 0) {
+      if (!ordersData || ordersData.length === 0) {
         return res.status(404).json({ error: 'Order not found' });
       }
 
-      const headers = orderData[0];
-      const rows = orderData.slice(1);
+      const headers = ordersData[0];
+      const rows = ordersData.slice(1);
       
-      // Find the specific order
-      const orderRow = rows.find(row => row[2] === orderId); // Oder ID is column C (index 2)
+      // Find the order
+      const orderRow = rows.find(row => row[headers.indexOf('Oder ID')] === orderId);
       
       if (!orderRow) {
         return res.status(404).json({ error: 'Order not found' });
       }
 
-      // Convert to object
       const order = {};
       headers.forEach((header, index) => {
         order[header] = orderRow[index] || '';
       });
 
-      // Get SKU-wise order details from SKUWise-Orders sheet
-      const skuSheetId = '14cRB5X8pT5ehb-kjRGOQ7qZfA-Sx1XzLCibwptU_DPQ';
-      const skuResponse = await sheets.spreadsheets.values.get({
-        spreadsheetId: skuSheetId,
-        range: 'SKUWise-Orders!B2:BA1000',
-      });
-
-      const skuData = skuResponse.data.values;
-      const skuHeaders = skuData[0];
-      const skuRows = skuData.slice(1);
-
-      // Filter products for this order
-      const products = skuRows
-        .filter(row => row[1] === orderId) // Column C in SKU sheet
-        .map(row => {
-          const product = {};
-          skuHeaders.forEach((header, index) => {
-            product[header] = row[index] || '';
-          });
-          return product;
+      // Try to read products from SKUWise-Orders sheet
+      let products = [];
+      
+      try {
+        const productsResponse = await sheets.spreadsheets.values.get({
+          spreadsheetId: orderSheetId,
+          range: 'SKUWise-Orders!A1:Z1000', // Adjust range as needed
         });
+
+        const productsData = productsResponse.data.values;
+        
+        if (productsData && productsData.length > 0) {
+          const productHeaders = productsData[0];
+          const productRows = productsData.slice(1);
+          
+          // Filter products for this order ID
+          const orderProducts = productRows.filter(row => {
+            const orderIdCol = productHeaders.indexOf('Order ID') !== -1 ? 
+              productHeaders.indexOf('Order ID') : 
+              productHeaders.indexOf('Oder ID');
+            return row[orderIdCol] === orderId;
+          });
+
+          products = orderProducts.map(row => {
+            const product = {};
+            productHeaders.forEach((header, index) => {
+              product[header] = row[index] || '';
+            });
+            return product;
+          });
+        }
+      } catch (error) {
+        console.log('SKUWise-Orders sheet not found or error reading:', error.message);
+        // Continue without products - not a critical error
+      }
 
       return res.status(200).json({
         success: true,
         order: order,
-        products: products,
-        rowIndex: rows.indexOf(orderRow) + 9 // Actual row in sheet
+        products: products
       });
     }
 
-    // POST - Save edited order
+    // POST - Save edited order (only updates NewOrders: status, remarks, audit fields)
     if (req.method === 'POST') {
-      const { orderId, rowIndex, orderUpdates, products, splitProducts } = req.body;
+      const { orderId, rowIndex, editStatus, remarks, username, products, editMode } = req.body;
 
-      if (!orderId || !rowIndex) {
-        return res.status(400).json({ error: 'orderId and rowIndex are required' });
+      if (!orderId || !rowIndex || !editStatus || !remarks) {
+        return res.status(400).json({ error: 'orderId, rowIndex, editStatus, and remarks are required' });
       }
 
-      // Update main order details
-      if (orderUpdates && Object.keys(orderUpdates).length > 0) {
-        // Get headers to find column positions
-        const headersResponse = await sheets.spreadsheets.values.get({
-          spreadsheetId: orderSheetId,
-          range: 'NewOrders!A8:CF8',
+      // Prepare column updates
+      const columnUpdates = {};
+      
+      // Update Order Status (column 45 = AS)
+      columnUpdates[45] = editStatus;
+      
+      // Update Remarks (column 47 = AU)
+      columnUpdates[47] = remarks;
+      
+      // Update Last Edited By (column 78 = BZ)
+      columnUpdates[78] = username;
+      
+      // Update Last Edited At (column 79 = CA)
+      columnUpdates[79] = new Date().toISOString();
+
+      // Build update requests
+      const updateData = [];
+      Object.keys(columnUpdates).forEach(columnNumber => {
+        const colLetter = columnIndexToLetter(parseInt(columnNumber) - 1);
+        updateData.push({
+          range: `NewOrders!${colLetter}${rowIndex}`,
+          values: [[columnUpdates[columnNumber]]]
         });
+      });
 
-        const headers = headersResponse.data.values[0];
-        const updateData = [];
-
-        Object.keys(orderUpdates).forEach(fieldName => {
-          const colIndex = headers.indexOf(fieldName);
-          if (colIndex !== -1) {
-            const colLetter = columnIndexToLetter(colIndex);
-            updateData.push({
-              range: `NewOrders!${colLetter}${rowIndex}`,
-              values: [[orderUpdates[fieldName]]]
-            });
-          }
-        });
-
-        if (updateData.length > 0) {
-          await sheets.spreadsheets.values.batchUpdate({
-            spreadsheetId: orderSheetId,
-            requestBody: {
-              valueInputOption: 'USER_ENTERED',
-              data: updateData
-            }
-          });
+      // Batch update NewOrders sheet
+      const result = await sheets.spreadsheets.values.batchUpdate({
+        spreadsheetId: orderSheetId,
+        requestBody: {
+          valueInputOption: 'USER_ENTERED',
+          data: updateData
         }
-      }
+      });
 
-      // Handle product updates (if needed in SKUWise-Orders sheet)
-      // This would require additional logic based on your requirements
+      // TODO: In future, save products to separate "Order Edits" sheet
+      // For now, just acknowledge product data was received
+      console.log('Products data received for future processing:', {
+        orderId: orderId,
+        editMode: editMode,
+        productCount: products ? products.length : 0
+      });
 
       return res.status(200).json({
         success: true,
-        message: 'Order updated successfully'
+        message: 'Order updated successfully',
+        updatedCells: result.data.totalUpdatedCells,
+        updatedFields: {
+          'Order Status': editStatus,
+          'Remarks*': remarks,
+          'Last Edited By': username,
+          'Last Edited At': columnUpdates[79]
+        }
       });
     }
 
     return res.status(405).json({ error: 'Method not allowed' });
 
   } catch (error) {
-    console.error('Order Edit API error:', error);
+    console.error('Edit Order API error:', error);
     return res.status(500).json({ 
       error: 'Failed to process request',
       details: error.message 
@@ -159,6 +183,9 @@ export default async function handler(req, res) {
   }
 }
 
+/**
+ * Convert column index (0-based) to Excel-style letter
+ */
 function columnIndexToLetter(index) {
   let letter = '';
   while (index >= 0) {
