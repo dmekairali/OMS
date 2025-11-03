@@ -12,7 +12,8 @@ export default function PartnershipTerms() {
   const [data, setData] = useState({
     productList: { headers: [], rows: [] },
     discountStructure: { headers: [], rows: [] },
-    distributorList: { headers: [], rows: [] }
+    distributorList: { headers: [], rows: [] },
+    employeeList: { headers: [], rows: [] }
   });
 
   useEffect(() => {
@@ -31,7 +32,8 @@ export default function PartnershipTerms() {
         setData({
           productList: SetupDataService.getProductList(),
           discountStructure: SetupDataService.getDiscountStructure(),
-          distributorList: SetupDataService.getDistributorList()
+          distributorList: SetupDataService.getDistributorList(),
+          employeeList: SetupDataService.getEmployeeList()
         });
       }
     } catch (error) {
@@ -174,6 +176,7 @@ export default function PartnershipTerms() {
             {activeView === 'productList' && '📦 Product List'}
             {activeView === 'discountStructure' && '💰 Discount Structure'}
             {activeView === 'distributorList' && '🤝 Distributor List'}
+            {activeView === 'employeeList' && '👥 Employee List'}
           </h1>
           <div className={styles.headerActions}>
             {activeView && (
@@ -236,6 +239,18 @@ export default function PartnershipTerms() {
                   <div className={styles.bulletContent}>
                     <h3>Distributor List</h3>
                     <p>View all distributors and partners</p>
+                  </div>
+                  <span className={styles.arrow}>→</span>
+                </li>
+
+                <li 
+                  className={styles.bulletItem}
+                  onClick={() => setActiveView('employeeList')}
+                >
+                  <span className={styles.bulletIcon}>👥</span>
+                  <div className={styles.bulletContent}>
+                    <h3>Employee List</h3>
+                    <p>View all employees and staff</p>
                   </div>
                   <span className={styles.arrow}>→</span>
                 </li>
