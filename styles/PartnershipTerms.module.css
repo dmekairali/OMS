@@ -148,6 +148,8 @@
   margin-left: 260px;
   display: flex;
   flex-direction: column;
+  max-width: calc(100vw - 260px);
+  overflow-x: hidden;
 }
 
 .header {
@@ -213,6 +215,8 @@
   flex: 1;
   padding: 30px;
   overflow-y: auto;
+  overflow-x: hidden;
+  max-width: 100%;
 }
 
 /* Menu List */
@@ -295,16 +299,29 @@
   border-radius: 12px;
   padding: 20px;
   box-shadow: 0 2px 10px rgba(122, 132, 80, 0.08);
-  overflow-x: auto;
   border: 1px solid #f0f2ea;
   max-width: 100%;
+  position: relative;
+}
+
+.tableWrapper {
+  overflow-x: auto;
+  overflow-y: auto;
+  max-width: 100%;
+  max-height: 600px;
+  border: 1px solid #e5e9d8;
+  border-radius: 8px;
+  -webkit-overflow-scrolling: touch;
+  position: relative;
 }
 
 .dataTable {
   width: 100%;
   border-collapse: collapse;
   font-size: 13px;
-  min-width: 800px;
+  min-width: fit-content;
+  table-layout: auto;
+  margin: 0;
 }
 
 .dataTable thead {
@@ -322,6 +339,7 @@
   white-space: nowrap;
   font-size: 12px;
   border-right: 1px solid rgba(255, 255, 255, 0.1);
+  background: #7a8450;
 }
 
 .dataTable th:last-child {
@@ -333,9 +351,7 @@
   border-bottom: 1px solid #e5e9d8;
   font-size: 12px;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 200px;
+  background: white;
 }
 
 .dataTable tbody tr:hover {
@@ -457,6 +473,10 @@
 
   .tableContainer {
     overflow-x: scroll;
+  }
+
+  .tableWrapper {
+    max-height: 500px;
   }
 
   .paginationContainer {
