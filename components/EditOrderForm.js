@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import styles from '../styles/NewEditOrderForm.module.css';
+import proStyles from '../styles/ProfessionalForm.module.css';
 import SetupDataService from '../services/SetupDataService';
 
-export default function EditOrderForm({ order, products, onSave, onCancel }) {
+export default function EditOrderForm({ order, products, onSave, onCancel, selectedStatus }) {
   // Client Information
   const [clientName, setClientName] = useState('');
   const [mobile, setMobile] = useState('');
@@ -46,6 +47,7 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
   // Discounts
   const [discountTier, setDiscountTier] = useState('');
   const [discounts, setDiscounts] = useState([{ category: '', percentage: '' }]);
+  const [discountsOpen, setDiscountsOpen] = useState(false);
 
   // Shipping Charges
   const [shippingCharges, setShippingCharges] = useState('');
@@ -94,7 +96,7 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
   // Load order data first
   useEffect(() => {
     if (order) {
-      setEditOrderStatus(order['Order Status'] || order['Status'] || '');
+      setEditOrderStatus(selectedStatus || order['Order Status'] || order['Status'] || '');
       setClientName(order['Name of Client'] || '');
       setMobile(order['Mobile'] || '');
       setEmail(order['Email'] || '');
@@ -407,20 +409,21 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
             <form name="aspnetForm" onSubmit={handleSubmit}>
               <div className={`container ${styles.bgwhite} ${styles.formContainer}`}>
 
-                <div className="row mb-4">
+                <div className={`row mb-4 ${proStyles.formHeader}`}>
                   <div className="col-12 text-center">
-                    <img src="https://www.kairali.com/images/kairali-logo.png" alt="Kairali Logo" className="mb-3" style={{ maxWidth: '200px' }} />
+                    <img src="https://www.kairali.com/images/kairali-logo.png" alt="Kairali Logo" className="mb-3" style={{ maxWidth: '150px' }} />
                     <h4 className="mb-0"><strong>New Order Form (POB)</strong></h4>
                   </div>
                 </div>
 
-                {errorMessage && (
-                  <div className="alert alert-danger">{errorMessage}</div>
-                )}
+                <div className={proStyles.formBody}>
+                  {errorMessage && (
+                    <div className="alert alert-danger">{errorMessage}</div>
+                  )}
 
-                <div className="row">
-                  <div className="col-md-12"><h5>Buyer Details</h5><hr /></div>
-                </div>
+                  <div className={`row ${proStyles.section}`}>
+                    <div className="col-md-12"><h5>Buyer Details</h5></div>
+                  </div>
 
                 <div className="row">
                   <div className="col-md-12">
@@ -560,42 +563,55 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
                 </div>
 
                 {/* Discounts */}
-                <div className="row"><div className="col-md-12"><h5>Discounts</h5><hr /></div></div>
-                <div className="row">
-                  <div className="col-md-3"></div>
-                  <div className="col-md-6">
-                    <div className="form-group">
-                      <label htmlFor="discounttier">Discount Tier <span className="text-danger">*</span></label>
-                      <select id="discounttier" className="form-control" name="discounttiername" value={discountTier} readOnly required>
-                        <option value={discountTier}>{discountTier}</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-                <div className="row">
+                <div className={`row ${proStyles.section}`}>
                   <div className="col-md-12">
-                    <table className="mx-auto" style={{width: '49%'}}>
-                      <thead>
-                        <tr style={{color:"#8e9e34", backgroundColor:"#f0f0f0"}}>
-                          <th>Discount Category</th>
-                          <th>Discount %</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {discounts.map((d, i) => (
-                          <tr key={i}>
-                            <td><input type="text" className="form-control" value={d.category} readOnly /></td>
-                            <td><input type="number" className="form-control" value={d.percentage} readOnly /></td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                    <h5 className="d-flex justify-content-between align-items-center">
+                      Discounts
+                      <button type="button" className={`btn ${proStyles.btnLink}`} onClick={() => setDiscountsOpen(!discountsOpen)}>
+                        {discountsOpen ? 'Collapse' : 'Expand'}
+                      </button>
+                    </h5>
                   </div>
                 </div>
+                {discountsOpen && (
+                  <>
+                    <div className="row">
+                      <div className="col-md-3"></div>
+                      <div className="col-md-6">
+                        <div className="form-group">
+                          <label htmlFor="discounttier">Discount Tier <span className="text-danger">*</span></label>
+                          <select id="discounttier" className="form-control" name="discounttiername" value={discountTier} readOnly required>
+                            <option value={discountTier}>{discountTier}</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="row">
+                      <div className="col-md-12">
+                        <table className="mx-auto" style={{width: '49%'}}>
+                          <thead>
+                            <tr style={{color:"#8e9e34", backgroundColor:"#f0f0f0"}}>
+                              <th>Discount Category</th>
+                              <th>Discount %</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {discounts.map((d, i) => (
+                              <tr key={i}>
+                                <td><input type="text" className="form-control" value={d.category} readOnly /></td>
+                                <td><input type="number" className="form-control" value={d.percentage} readOnly /></td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </>
+                )}
                 <br />
 
                 {/* Add Product Details */}
-                <div className="row"><div className="col-md-12"><h5>Add Product Details</h5><hr /></div></div>
+                <div className={`row ${proStyles.section}`}><div className="col-md-12"><h5>Add Product Details</h5></div></div>
                 <div className="row">
                   <div className="col-md-12">
                     <div className="table-responsive">
@@ -648,7 +664,7 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
                 </div>
 
                 {/* Additional Details */}
-                <div className="row"><div className="col-md-12"><h5>Additional Details</h5><hr /></div></div>
+                <div className={`row ${proStyles.section}`}><div className="col-md-12"><h5>Additional Details</h5></div></div>
                 <div className="form-group row">
                   <div className="col-sm-4"><label>Shipping, Packing and Delivery Charges (Amount):</label></div>
                   <div className="col-sm-2"><input type="text" className="form-control" value={shippingCharges} onChange={e => setShippingCharges(e.target.value)} /></div>
@@ -674,7 +690,7 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
                 {/* Payment & Delivery */}
                 <div className="row">
                   <div className="col-md-6">
-                    <h5>Payment and Delivery</h5><hr />
+                    <div className={proStyles.section}><h5>Payment and Delivery</h5></div>
                     <label>Prefered Call Time</label>
                     <div className="row">
                       <div className="col-md-6"><input type="time" className="form-control" value={preferredCallTime1} onChange={e => setPreferredCallTime1(e.target.value)} /></div>
@@ -795,10 +811,10 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
                 <div className="row">
                   <div className="col-md-12 text-center">
                     <button type="button" onClick={onCancel} className="btn btn-secondary mr-2">Cancel</button>
-                    <button type="submit" className="btn btn-primary" disabled={clientNotFound || loading}>Save</button><br /><br />
+                    <button type="submit" className={`btn ${proStyles.btnPrimary}`} disabled={clientNotFound || loading}>Save</button><br /><br />
                   </div>
                 </div>
-              </div>
+                </div>
             </form>
           </div>
         </div>
