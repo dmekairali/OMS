@@ -403,18 +403,11 @@ export default function EditOrderForm({ order, products, onSave, onCancel, selec
         <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" />
       </Head>
 
-      <div className={styles.generalquestionbox}>
+      <div>
         <div className="cover">
           <div className="rightpart">
             <form name="aspnetForm" onSubmit={handleSubmit}>
               <div className={`container ${styles.bgwhite} ${styles.formContainer}`}>
-
-                <div className={`row mb-4 ${proStyles.formHeader}`}>
-                  <div className="col-12 text-center">
-                    <img src="https://www.kairali.com/images/kairali-logo.png" alt="Kairali Logo" className="mb-3" style={{ maxWidth: '150px' }} />
-                    <h4 className="mb-0"><strong>New Order Form (POB)</strong></h4>
-                  </div>
-                </div>
 
                 <div className={proStyles.formBody}>
                   {errorMessage && (
