@@ -1,81 +1,62 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import styles from '../styles/EditOrderForm.module.css';
 import SetupDataService from '../services/SetupDataService';
 
-const EditOrderForm = ({ orderId, onClose, onSave }) => {
-  const [loading, setLoading] = useState(true);
-  const [errorMessage, setErrorMessage] = useState('');
-  
-  // Setup Data
-  const [setupData, setSetupData] = useState(null);
-  const [productListOptions, setProductListOptions] = useState([]);
-  const [discountStructure, setDiscountStructure] = useState([]);
-  const [employeeList, setEmployeeList] = useState([]);
-  const [deliveryParties, setDeliveryParties] = useState([]);
-  
-  // Form State
-  const [editOrderStatus, setEditOrderStatus] = useState('');
+export default function EditOrderForm({ order, products, onSave, onCancel }) {
+  // Client Information
   const [clientName, setClientName] = useState('');
   const [mobile, setMobile] = useState('');
   const [email, setEmail] = useState('');
   const [clientType, setClientType] = useState('');
   const [clientCategory, setClientCategory] = useState('');
-  const [gstNumber, setGstNumber] = useState('');
-  const [orderType, setOrderType] = useState('');
-  const [deliveryParty, setDeliveryParty] = useState('');
+  const [gstNo, setGstNo] = useState('');
+  
+  // Addresses
   const [billingAddress, setBillingAddress] = useState('');
   const [shippingAddress, setShippingAddress] = useState('');
-  const [pincode, setPincode] = useState('');
+  const [billingPincode, setBillingPincode] = useState('');
+  const [shippingPincode, setShippingPincode] = useState('');
   const [taluk, setTaluk] = useState('');
   const [district, setDistrict] = useState('');
   const [state, setState] = useState('');
+  const [isShippingSameAsBilling, setIsShippingSameAsBilling] = useState(false);
+  
+  // Order Details
+  const [orderType, setOrderType] = useState('New Order');
+  const [partyName, setPartyName] = useState('');
   const [partyState, setPartyState] = useState('');
   const [mrName, setMrName] = useState('');
+  
+  // Delivery & Payment
   const [deliveryDate, setDeliveryDate] = useState('');
   const [deliveryTime, setDeliveryTime] = useState('');
+  const [deliveryParty, setDeliveryParty] = useState('');
   const [paymentTerms, setPaymentTerms] = useState('');
   const [paymentMode, setPaymentMode] = useState('');
-  const [orderBy, setOrderBy] = useState('');
   const [paymentDate, setPaymentDate] = useState('');
+  
+  // Products
+  const [productList, setProductList] = useState([]);
+  
+  // Repeat Order
   const [reoccurance, setReoccurance] = useState('');
   const [nextOrderDate, setNextOrderDate] = useState('');
   const [endOrderDate, setEndOrderDate] = useState('');
   const [priority, setPriority] = useState('');
+
+  // Discounts
   const [discountTier, setDiscountTier] = useState('');
-  
-  // Products
-  const [productList, setProductList] = useState([{
-    productName: '',
-    sku: '',
-    mrp: '0',
-    packingSize: '',
-    quantity: '0',
-    discountPer: '0',
-    discountAmt: '0',
-    beforeTax: '0',
-    afterDiscount: '0',
-    cgst: '0',
-    cgstAmt: '0',
-    sgst: '0',
-    sgstAmt: '0',
-    igst: '0',
-    igstAmt: '0',
-    total: '0',
-    orderQty: '0',
-    splitQty: '0',
-    productCategory: '',
-    taxRate: '0'
-  }]);
-  
-  // Shipping
+  const [discounts, setDiscounts] = useState([{ category: '', percentage: '' }]);
+
+  // Shipping Charges
   const [shippingCharges, setShippingCharges] = useState('');
   const [shippingChargesRemark, setShippingChargesRemark] = useState('');
   const [shippingTaxPercent, setShippingTaxPercent] = useState('');
   const [shippingTaxPercentRemark, setShippingTaxPercentRemark] = useState('');
   const [totalShippingCharge, setTotalShippingCharge] = useState('');
   const [totalShippingChargeRemark, setTotalShippingChargeRemark] = useState('');
-  
-  // Other Fields
+
+  // Payment, Delivery, and Remarks
   const [preferredCallTime1, setPreferredCallTime1] = useState('');
   const [preferredCallTime2, setPreferredCallTime2] = useState('');
   const [dispatchDate, setDispatchDate] = useState('');
@@ -83,220 +64,313 @@ const EditOrderForm = ({ orderId, onClose, onSave }) => {
   const [saleTermRemark, setSaleTermRemark] = useState('');
   const [invoiceRemark, setInvoiceRemark] = useState('');
   const [warehouseRemark, setWarehouseRemark] = useState('');
+
+  // File Upload and OTIF
+  const [file, setFile] = useState(null);
+  const [fileData, setFileData] = useState(null);
+  const [orderBy, setOrderBy] = useState('');
   const [orderInFull, setOrderInFull] = useState('');
   const [orderInFullReason, setOrderInFullReason] = useState('');
-  const [file, setFile] = useState(null);
 
-  // Process Employee List
-  const processEmployeeList = (employeeData) => {
-    if (!employeeData || !Array.isArray(employeeData)) return [];
-    return employeeData.map(emp => emp['Name'] || '').filter(Boolean);
-  };
+  // Edit Order Status
+  const [editOrderStatus, setEditOrderStatus] = useState('');
 
-  // Process Delivery Parties
-  const processDeliveryParties = (distributorData) => {
-    if (!distributorData || !Array.isArray(distributorData)) return [];
-    return distributorData.map(dist => dist['Dispatch Party'] || '').filter(Boolean);
-  };
+  // API data and validation
+  const [setupData, setSetupData] = useState(null);
+  const [deliveryParties, setDeliveryParties] = useState([]);
+  const [employeeList, setEmployeeList] = useState([]);
+  const [productListOptions, setProductListOptions] = useState([]);
+  const [discountStructure, setDiscountStructure] = useState([]);
+  const [clientNotFound, setClientNotFound] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
-  // Process Product List
-  const processProductList = (productData) => {
-    if (!productData || !Array.isArray(productData)) return [];
-    
-    return productData.map(p => ({
-      combinedName: p['Combined Name'] || '',
-      productSKU: p['ProductSKU'] || '',
-      pack: p['Pack'] || '',
-      price: p['Price As Per Factory'] || '0',
-      status: p['Status'] || '',
-      productCategory: p['Products Category'] || '',
-      taxRate: p['TAX RATE'] || '0'
-    })).filter(p => p.combinedName); // Filter out empty entries
-  };
-
-  // Process Discount Structure
-  const processDiscountStructure = (discountData) => {
-    if (!discountData || !Array.isArray(discountData)) return [];
-    
-    return discountData.map(d => ({
-      'Discount Category': d['Discount Category'] || '',
-      'Discount %': d['Discount %'] || '0',
-      'Max Discount %': d['Max Discount %'] || d['Discount %'] || '100'
-    })).filter(d => d['Discount Category']); // Filter out empty entries
-  };
-
-  // Load Setup Data
+  // Load order data first
   useEffect(() => {
-    const loadSetupData = async () => {
-      try {
-        const data = await SetupDataService.loadAllData();
-        setSetupData(data);
-        
-        // Process Employee List
-        const employees = processEmployeeList(data.employeeList);
-        setEmployeeList(employees);
-        
-        // Process Delivery Parties from Distributor List
-        const parties = processDeliveryParties(data.distributorList);
-        setDeliveryParties(parties);
-        
-        // Process Product List
-        const products = processProductList(data.productList);
-        setProductListOptions(products);
-        
-        // Process Discount Structure
-        const discounts = processDiscountStructure(data.discountList);
-        setDiscountStructure(discounts);
-        
-      } catch (error) {
-        console.error('Error loading setup data:', error);
-        setErrorMessage('Failed to load setup data');
-      }
-    };
-    
-    loadSetupData();
-  }, []);
-
-  // Load Order Data
-  useEffect(() => {
-    const loadOrderData = async () => {
-      if (!setupData || productListOptions.length === 0) return;
+    if (order) {
+      setEditOrderStatus(order['Order Status'] || order['Status'] || '');
+      setClientName(order['Name of Client'] || '');
+      setMobile(order['Mobile'] || '');
+      setEmail(order['Email'] || '');
+      setClientType(order['Client Type'] || '');
+      setClientCategory(order['Client Category'] || '');
+      setGstNo(order['GST No'] || '');
       
-      try {
-        setLoading(true);
-        const response = await fetch(`/api/orders/load-edit?orderId=${orderId}`);
-        const data = await response.json();
-        
-        if (data.success) {
-          const order = data.order;
-          const products = data.products;
-          
-          // Set all form fields
-          setEditOrderStatus(order['Edit Order Status'] || '');
-          setClientName(order['Client Name'] || '');
-          setMobile(order['Mobile'] || '');
-          setEmail(order['Email ID'] || '');
-          setClientType(order['Client Type'] || '');
-          setClientCategory(order['Client Category'] || '');
-          setGstNumber(order['GST Number'] || '');
-          setOrderType(order['Order Type'] || '');
-          setDeliveryParty(order['Delivery Party'] || '');
-          setBillingAddress(order['Bill Address'] || '');
-          setShippingAddress(order['Shipping Address'] || '');
-          setPincode(order['Pin Code'] || '');
-          setTaluk(order['Taluk'] || '');
-          setDistrict(order['District'] || '');
-          setState(order['State'] || '');
-          setPartyState(order['Party State'] || '');
-          setMrName(order['MR Name'] || '');
-          setDeliveryDate(order['Delivery Required Date']?.split(' ')[0] || '');
-          setDeliveryTime(order['Delivery Required Date']?.split(' ')[1] || '');
-          setPaymentTerms(order['Payment Terms'] || '');
-          setPaymentMode(order['Payment Mode'] || '');
-          setOrderBy(order['Order Taken By'] || '');
-          
-          const payDates = (order['Payment Date (to be paid)'] || '').split(',').map(d => d.trim());
-          setPaymentDate(payDates[0] || '');
-          
-          setReoccurance(order['Reoccurance'] || '');
-          setNextOrderDate(order['Next Order Date'] || '');
-          setEndOrderDate(order['End Order Date'] || '');
-          setPriority(order['Priority'] || '');
-          setDiscountTier(order['Discount Tier'] || '');
-          setShippingCharges(order['Shipping Charges'] || '');
-          setShippingChargesRemark(order['Shipping Charges Remark'] || '');
-          setShippingTaxPercent(order['Shipping Tax Percent'] || '');
-          setShippingTaxPercentRemark(order['Shipping Tax Percent Remark'] || '');
-          setTotalShippingCharge(order['Total Shipping Charge'] || '');
-          setTotalShippingChargeRemark(order['Total Shipping Charge Remark'] || '');
-          setPreferredCallTime1(order['Preferred Call Time 1'] || '');
-          setPreferredCallTime2(order['Preferred Call Time 2'] || '');
-          setDispatchDate(order['Dispatch Date'] || '');
-          setDispatchTime(order['Dispatch Time'] || '');
-          setSaleTermRemark(order['Sale Term Remark'] || '');
-          setInvoiceRemark(order['Invoice Remark'] || '');
-          setWarehouseRemark(order['Warehouse Remark'] || '');
-          setOrderInFull(order['Order In Full'] || '');
-          setOrderInFullReason(order['Order In Full Reason'] || '');
-          
-          // Map products
-          if (products && products.length > 0) {
-            const mappedProducts = products.map(p => {
-              // Find matching product from product list
-              const productFromList = productListOptions.find(pl => 
-                pl.combinedName === p['Product Name'] || 
-                pl.productSKU === p['SKU Code']
-              );
-              
-              const productCategory = productFromList?.productCategory || '';
-              
-              // Get preset discount based on category
-              const presetDiscount = getPresetDiscountForCategory(productCategory);
-              const discountPer = p['Discount %'] || presetDiscount;
-              
-              return {
-                productName: p['Product Name'] || '',
-                sku: p['SKU Code'] || '',
-                mrp: p['MRP'] || '0',
-                packingSize: p['Packing Size'] || '',
-                quantity: p['Quantity'] || p['QNT'] || '0',
-                discountPer: discountPer,
-                discountAmt: p['Discount Amount'] || '0',
-                beforeTax: p['Before Tax'] || '0',
-                afterDiscount: p['After Discount'] || '0',
-                cgst: p['CGST %'] || '0',
-                cgstAmt: p['CGST Amount'] || '0',
-                sgst: p['SGST %'] || '0',
-                sgstAmt: p['SGST Amount'] || '0',
-                igst: p['IGST %'] || '0',
-                igstAmt: p['IGST Amount'] || '0',
-                total: p['Total'] || '0',
-                orderQty: p['Order QTY'] || p['Quantity'] || '0',
-                splitQty: p['Split Quantity'] || '0',
-                productCategory: productCategory,
-                taxRate: productFromList?.taxRate || p['CGST %'] || '0'
-              };
-            });
-            setProductList(mappedProducts);
-          }
-        }
-        
-        setLoading(false);
-      } catch (error) {
-        console.error('Error loading order:', error);
-        setErrorMessage('Failed to load order data');
-        setLoading(false);
-      }
-    };
-    
-    if (orderId && setupData && productListOptions.length > 0) {
-      loadOrderData();
+      setBillingAddress(order['Billing Address'] || '');
+      setShippingAddress(order['Shipping Address'] || '');
+      setBillingPincode(order['Pin code'] || '');
+      setShippingPincode(order['Pin code'] || '');
+      setTaluk(order['Taluk'] || '');
+      setDistrict(order['District'] || '');
+      setState(order['State'] || '');
+      
+      setMrName(order['MR Name'] || '');
+      
+      setDeliveryDate(order['Delivery Required Date']?.split(' ')[0] || '');
+      setDeliveryTime(order['Delivery Required Date']?.split(' ')[1] || '');
+      
+      setPaymentTerms(order['Payment Terms'] || '');
+      setPaymentMode(order['Payment Mode'] || '');
+      setOrderBy(order['Order Taken By'] || '');
+      
+      const payDates = (order['Payment Date (to be paid)'] || '').split(',').map(d => d.trim());
+      setPaymentDate(payDates[0] || '');
+      
+      setReoccurance(order['Reoccurance'] || '');
+      setNextOrderDate(order['Next Order Date'] || '');
+      setEndOrderDate(order['End Order Date'] || '');
+      setPriority(order['Priority'] || '');
+      
+      setDiscountTier(order['Discount Tier'] || '');
+      setShippingCharges(order['Shipping Charges'] || '');
+      setShippingChargesRemark(order['Shipping Charges Remark'] || '');
+      setShippingTaxPercent(order['Shipping Tax Percent'] || '');
+      setShippingTaxPercentRemark(order['Shipping Tax Percent Remark'] || '');
+      setTotalShippingCharge(order['Total Shipping Charge'] || '');
+      setTotalShippingChargeRemark(order['Total Shipping Charge Remark'] || '');
+      
+      setPreferredCallTime1(order['Preferred Call Time 1'] || '');
+      setPreferredCallTime2(order['Preferred Call Time 2'] || '');
+      setDispatchDate(order['Dispatch Date'] || '');
+      setDispatchTime(order['Dispatch Time'] || '');
+      setSaleTermRemark(order['Sale Term Remark'] || '');
+      setInvoiceRemark(order['Invoice Remark'] || '');
+      setWarehouseRemark(order['Warehouse Remark'] || '');
+      setOrderInFull(order['Order In Full'] || '');
+      setOrderInFullReason(order['Order In Full Reason'] || '');
     }
-  }, [orderId, setupData, productListOptions]);
+    
+    if (products && products.length > 0) {
+      setProductList(products.map(p => ({
+        productName: p['Product Name'] || '',
+        sku: p['SKU Code'] || '',
+        mrp: p['MRP'] || '0',
+        packingSize: p['Packing Size'] || '',
+        quantity: p['Quantity'] || p['QNT'] || '0',
+        orderQty: p['Order QTY'] || p['Quantity'] || p['QNT'] || '0',
+        discountPer: p['Discount %'] || '0',
+        discountAmt: p['Discount Amount'] || '0',
+        beforeTax: p['Before Tax'] || '0',
+        afterDiscount: p['After Discount'] || '0',
+        cgst: p['CGST %'] || '0',
+        cgstAmt: p['CGST Amount'] || '0',
+        sgst: p['SGST %'] || '0',
+        sgstAmt: p['SGST Amount'] || '0',
+        igst: p['IGST %'] || '0',
+        igstAmt: p['IGST Amount'] || '0',
+        total: p['Total'] || '0',
+        splitQty: '0',
+        productCategory: ''
+      })));
+    }
+  }, [order, products]);
 
-  // Get preset discount for a product category
-  const getPresetDiscountForCategory = (productCategory) => {
-    if (!productCategory || discountStructure.length === 0) return '0';
-    
-    const discount = discountStructure.find(d => 
-      d['Discount Category'] === productCategory
-    );
-    
-    return discount ? (discount['Discount %'] || '0') : '0';
+  // Fetch setup data after order is loaded
+  useEffect(() => {
+    if (order && mobile) {
+      fetchSetupData();
+    }
+  }, [order, mobile, clientType]);
+
+  const fetchSetupData = async () => {
+    setLoading(true);
+    setClientNotFound(false);
+    setErrorMessage('');
+
+    try {
+      const data = await SetupDataService.loadAllData();
+      setSetupData(data);
+
+      // Process Client List data - FILTER BY "Active/Non Active" = "Verified"
+      const clientData = processClientList(data.clientList, mobile);
+
+      // Process Employee List
+      const employees = processEmployeeList(data.employeeList);
+      setEmployeeList(employees);
+
+      // Process Delivery Parties from Distributor List
+      const parties = processDeliveryParties(data.distributorList);
+      setDeliveryParties(parties);
+
+      // Process Product List
+      const productOpts = processProductList(data.productList);
+      setProductListOptions(productOpts);
+
+      // Process Discount Structure for caps
+      const discountCaps = processDiscountCaps(data.discountList);
+      setDiscountStructure(discountCaps);
+
+      if (clientData.found) {
+        // Set discount tier
+        setDiscountTier(clientData.discountTier);
+
+        // Set location data from Client List
+        setTaluk(clientData.taluk);
+        setDistrict(clientData.district);
+        setState(clientData.state);
+        setMrName(clientData.mrName);
+
+        // Fetch and set discounts from Discount Module
+        const discountData = processDiscountModule(
+          data.discountStructure,
+          clientData.discountTier,
+          clientType
+        );
+
+        if (discountData.length > 0) {
+          setDiscounts(discountData);
+        }
+      } else {
+        // Client not found or not verified
+        setClientNotFound(true);
+        setErrorMessage('Client mobile number not found or not verified in Client List. This order cannot be edited.');
+      }
+    } catch (error) {
+      console.error('Error fetching setup data:', error);
+      setErrorMessage('Failed to load required data. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Get maximum allowed discount for a product category
-  const getMaxDiscountForCategory = (productCategory) => {
-    if (!productCategory || discountStructure.length === 0) return 100;
-    
-    const discount = discountStructure.find(d => 
-      d['Discount Category'] === productCategory
-    );
-    
-    return discount ? (parseFloat(discount['Max Discount %'] || discount['Discount %'] || 100)) : 100;
+  const processClientList = (clientList, mobileNumber) => {
+    if (!clientList || !clientList.rows) {
+      return { found: false };
+    }
+
+    // Find client by Company Contact No AND filter by Active/Non Active = "Verified"
+    const client = clientList.rows.find(row => {
+      const contactNo = row['Company Contact No'];
+      const activeStatus = row['Active/Non Active'];
+      
+      return (contactNo === mobileNumber || contactNo === String(mobileNumber)) && 
+             activeStatus === 'Verified';
+    });
+
+    if (client) {
+      return {
+        found: true,
+        discountTier: client['Discount Tier'] || '',
+        taluk: client['TALUK'] || '',
+        district: client['DISTRICT'] || '',
+        state: client['STATE/U.T.'] || '',
+        mrName: client['Alloted MR Name'] || ''
+      };
+    }
+
+    return { found: false };
   };
 
-  // Add Product
+  const processDiscountModule = (discountStructure, tier, type) => {
+    if (!discountStructure || !discountStructure.rows || !tier || !type) {
+      return [];
+    }
+
+    // Find ALL matching rows with same Client Type and Tier
+    const matchingDiscounts = discountStructure.rows.filter(row => {
+      const rowClientType = row['Client Type'] || '';
+      const rowTier = row['Tier'] || '';
+      
+      return rowClientType === type && rowTier === tier;
+    });
+
+    // Map to discount format
+    return matchingDiscounts.map(row => ({
+      category: row['Category'] || '',
+      percentage: row['TD'] || ''
+    }));
+  };
+
+  const processEmployeeList = (employeeList) => {
+    if (!employeeList || !employeeList.rows) {
+      return [];
+    }
+
+    // Get all unique users from ALL USERS column
+    const users = employeeList.rows
+      .map(row => row['ALL USERS'])
+      .filter(user => user && user.trim() !== '');
+
+    // Remove duplicates
+    return [...new Set(users)];
+  };
+
+  const processDeliveryParties = (distributorList) => {
+    if (!distributorList || !distributorList.rows) {
+      return [];
+    }
+
+    // Get unique delivery party names with their states from DISTRIBUTOR LIST
+    const partiesMap = new Map();
+
+    distributorList.rows.forEach(row => {
+      const partyName = row['Delivery Party Name'];
+      const state = row['State'];
+      
+      if (partyName && partyName.trim() !== '') {
+        if (!partiesMap.has(partyName)) {
+          partiesMap.set(partyName, state || '');
+        }
+      }
+    });
+
+    // Convert to array of objects
+    return Array.from(partiesMap.entries()).map(([name, state]) => ({
+      name,
+      state
+    }));
+  };
+
+  // Process Product List from Product List table
+  const processProductList = (productList) => {
+    if (!productList || !productList.rows) {
+      return [];
+    }
+
+    return productList.rows.map(row => ({
+      combinedName: row['Combined Name'] || '',
+      productSKU: row['ProductSKU'] || '',
+      pack: row['Pack'] || '',
+      price: row['Price As Per Factory'] || '0',
+      productCategory: row['Products Category'] || '',
+      taxRate: row['TAX RATE'] || '0'
+    })).filter(p => p.combinedName);
+  };
+
+  // Process Discount Caps from Discount section
+  const processDiscountCaps = (discountList) => {
+    if (!discountList || !discountList.rows) {
+      return [];
+    }
+
+    return discountList.rows.map(row => ({
+      category: row['Discount Category'] || '',
+      maxDiscount: parseFloat(row['Discount %'] || '100')
+    })).filter(d => d.category);
+  };
+
+  // Get preset discount for product category
+  const getPresetDiscount = (productCategory) => {
+    const discount = discounts.find(d => d.category === productCategory);
+    return discount ? discount.percentage : '0';
+  };
+
+  // Get max discount allowed for product category
+  const getMaxDiscount = (productCategory) => {
+    const cap = discountStructure.find(d => d.category === productCategory);
+    return cap ? cap.maxDiscount : 100;
+  };
+
+  const handlePartyNameChange = (selectedPartyName) => {
+    setPartyName(selectedPartyName);
+
+    // Auto-fill party state from Distributor List
+    const selectedParty = deliveryParties.find(p => p.name === selectedPartyName);
+    if (selectedParty) {
+      setPartyState(selectedParty.state);
+    }
+  };
+
   const addProduct = () => {
     setProductList([...productList, {
       productName: '',
@@ -304,6 +378,7 @@ const EditOrderForm = ({ orderId, onClose, onSave }) => {
       mrp: '0',
       packingSize: '',
       quantity: '0',
+      orderQty: '0',
       discountPer: '0',
       discountAmt: '0',
       beforeTax: '0',
@@ -315,234 +390,186 @@ const EditOrderForm = ({ orderId, onClose, onSave }) => {
       igst: '0',
       igstAmt: '0',
       total: '0',
-      orderQty: '0',
       splitQty: '0',
-      productCategory: '',
-      taxRate: '0'
+      productCategory: ''
     }]);
   };
 
-  // Remove Product
   const removeProduct = (index) => {
-    const updated = productList.filter((_, i) => i !== index);
-    setProductList(updated);
+    setProductList(productList.filter((_, i) => i !== index));
   };
 
-  // Update Product
   const updateProduct = (index, field, value) => {
     const updated = [...productList];
-    const product = updated[index];
     
     // Handle product selection from dropdown
     if (field === 'productName') {
       const selectedProduct = productListOptions.find(p => p.combinedName === value);
       
       if (selectedProduct) {
-        product.productName = selectedProduct.combinedName;
-        product.sku = selectedProduct.productSKU;
-        product.mrp = selectedProduct.price;
-        product.packingSize = selectedProduct.pack;
-        product.productCategory = selectedProduct.productCategory;
-        product.taxRate = selectedProduct.taxRate;
+        updated[index].productName = selectedProduct.combinedName;
+        updated[index].sku = selectedProduct.productSKU;
+        updated[index].mrp = selectedProduct.price;
+        updated[index].packingSize = selectedProduct.pack;
+        updated[index].productCategory = selectedProduct.productCategory;
         
         // Preset discount based on category
-        const presetDiscount = getPresetDiscountForCategory(selectedProduct.productCategory);
-        product.discountPer = presetDiscount;
+        const presetDiscount = getPresetDiscount(selectedProduct.productCategory);
+        updated[index].discountPer = presetDiscount;
         
-        // Split tax rate for CGST/SGST or set as IGST
+        // Set tax rate
         const taxRate = parseFloat(selectedProduct.taxRate || '0');
         if (state && partyState && state === partyState) {
-          product.cgst = (taxRate / 2).toString();
-          product.sgst = (taxRate / 2).toString();
-          product.igst = '0';
+          updated[index].cgst = (taxRate / 2).toString();
+          updated[index].sgst = (taxRate / 2).toString();
+          updated[index].igst = '0';
         } else {
-          product.cgst = '0';
-          product.sgst = '0';
-          product.igst = taxRate.toString();
+          updated[index].cgst = '0';
+          updated[index].sgst = '0';
+          updated[index].igst = taxRate.toString();
         }
-      } else {
-        product[field] = value;
       }
     } else if (field === 'discountPer') {
-      // Enforce discount cap
-      const maxDiscount = getMaxDiscountForCategory(product.productCategory);
+      // Apply discount cap
+      const maxDiscount = getMaxDiscount(updated[index].productCategory);
       const enteredDiscount = parseFloat(value) || 0;
       
       if (enteredDiscount > maxDiscount) {
-        product.discountPer = maxDiscount.toString();
+        updated[index][field] = maxDiscount.toString();
+        alert(`Maximum discount allowed for ${updated[index].productCategory} is ${maxDiscount}%`);
       } else if (enteredDiscount < 0) {
-        product.discountPer = '0';
+        updated[index][field] = '0';
       } else {
-        product.discountPer = value;
+        updated[index][field] = value;
       }
     } else {
-      product[field] = value;
+      updated[index][field] = value;
     }
     
     // Recalculate amounts
-    recalculateProduct(product);
+    if (field === 'quantity' || field === 'mrp' || field === 'discountPer' || field === 'productName') {
+      const qty = parseFloat(updated[index].quantity) || 0;
+      const mrp = parseFloat(updated[index].mrp) || 0;
+      const discPer = parseFloat(updated[index].discountPer) || 0;
+      
+      const beforeTax = qty * mrp;
+      const discAmt = (beforeTax * discPer) / 100;
+      const afterDisc = beforeTax - discAmt;
+      
+      updated[index].beforeTax = beforeTax.toFixed(2);
+      updated[index].discountAmt = discAmt.toFixed(2);
+      updated[index].afterDiscount = afterDisc.toFixed(2);
+      
+      const cgst = parseFloat(updated[index].cgst) || 0;
+      const sgst = parseFloat(updated[index].sgst) || 0;
+      const igst = parseFloat(updated[index].igst) || 0;
+      
+      const cgstAmt = (afterDisc * cgst) / 100;
+      const sgstAmt = (afterDisc * sgst) / 100;
+      const igstAmt = (afterDisc * igst) / 100;
+      
+      updated[index].cgstAmt = cgstAmt.toFixed(2);
+      updated[index].sgstAmt = sgstAmt.toFixed(2);
+      updated[index].igstAmt = igstAmt.toFixed(2);
+      updated[index].total = (afterDisc + cgstAmt + sgstAmt + igstAmt).toFixed(2);
+    }
     
     setProductList(updated);
   };
 
-  // Recalculate Product Amounts
-  const recalculateProduct = (product) => {
-    const mrp = parseFloat(product.mrp) || 0;
-    const qty = parseFloat(product.quantity) || 0;
-    const discPer = parseFloat(product.discountPer) || 0;
-    const cgstPer = parseFloat(product.cgst) || 0;
-    const sgstPer = parseFloat(product.sgst) || 0;
-    const igstPer = parseFloat(product.igst) || 0;
-    
-    // Before Tax = MRP * Quantity
-    const beforeTax = mrp * qty;
-    product.beforeTax = beforeTax.toFixed(2);
-    
-    // Discount Amount = Before Tax * (Discount % / 100)
-    const discountAmt = beforeTax * (discPer / 100);
-    product.discountAmt = discountAmt.toFixed(2);
-    
-    // After Discount = Before Tax - Discount Amount
-    const afterDiscount = beforeTax - discountAmt;
-    product.afterDiscount = afterDiscount.toFixed(2);
-    
-    // Tax Amounts = After Discount * (Tax % / 100)
-    const cgstAmt = afterDiscount * (cgstPer / 100);
-    const sgstAmt = afterDiscount * (sgstPer / 100);
-    const igstAmt = afterDiscount * (igstPer / 100);
-    
-    product.cgstAmt = cgstAmt.toFixed(2);
-    product.sgstAmt = sgstAmt.toFixed(2);
-    product.igstAmt = igstAmt.toFixed(2);
-    
-    // Total = After Discount + CGST + SGST + IGST
-    const total = afterDiscount + cgstAmt + sgstAmt + igstAmt;
-    product.total = total.toFixed(2);
-    
-    // Set Order Qty same as Quantity if not set
-    if (!product.orderQty || product.orderQty === '0') {
-      product.orderQty = product.quantity;
-    }
-    
-    // Calculate Split Qty
-    const orderQty = parseFloat(product.orderQty) || 0;
-    const currentQty = parseFloat(product.quantity) || 0;
-    if (currentQty < orderQty) {
-      product.splitQty = (orderQty - currentQty).toString();
-    } else {
-      product.splitQty = '0';
-    }
-  };
-
-  // Recalculate all products when state/party state changes
-  useEffect(() => {
-    if (productList.length > 0 && productList[0].productName) {
-      const updated = productList.map(product => {
-        const taxRate = parseFloat(product.taxRate || '0');
-        
-        if (state && partyState && state === partyState) {
-          product.cgst = (taxRate / 2).toString();
-          product.sgst = (taxRate / 2).toString();
-          product.igst = '0';
-        } else {
-          product.cgst = '0';
-          product.sgst = '0';
-          product.igst = taxRate.toString();
-        }
-        
-        recalculateProduct(product);
-        return product;
-      });
-      
-      setProductList(updated);
-    }
-  }, [state, partyState]);
-
-  // Calculate Totals
-  const calculateTotals = () => {
-    const mrpTotal = productList.reduce((sum, p) => sum + (parseFloat(p.mrp) * parseFloat(p.quantity)), 0);
-    const qtyTotal = productList.reduce((sum, p) => sum + parseFloat(p.quantity || 0), 0);
-    const discountTotal = productList.reduce((sum, p) => sum + parseFloat(p.discountAmt || 0), 0);
-    const beforeTaxTotal = productList.reduce((sum, p) => sum + parseFloat(p.beforeTax || 0), 0);
-    const taxTotal = productList.reduce((sum, p) => 
-      sum + parseFloat(p.cgstAmt || 0) + parseFloat(p.sgstAmt || 0) + parseFloat(p.igstAmt || 0), 0
-    );
-    const afterDiscountTotal = productList.reduce((sum, p) => sum + parseFloat(p.afterDiscount || 0), 0);
-    const grandTotal = productList.reduce((sum, p) => sum + parseFloat(p.total || 0), 0);
-    
-    return {
-      mrpTotal: mrpTotal.toFixed(2),
-      qtyTotal: qtyTotal.toFixed(0),
-      discountTotal: discountTotal.toFixed(2),
-      beforeTaxTotal: beforeTaxTotal.toFixed(2),
-      taxTotal: taxTotal.toFixed(2),
-      afterDiscountTotal: afterDiscountTotal.toFixed(2),
-      grandTotal: grandTotal.toFixed(2)
-    };
-  };
-
-  const totals = calculateTotals();
-
-  // Handle Submit
   const handleSubmit = (e) => {
     e.preventDefault();
     
+    // Validation
+    if (clientNotFound) {
+      alert('Cannot save order. Client mobile number not found or not verified in Client List.');
+      return;
+    }
+
     const formData = {
-      orderId: orderId,
-      editOrderStatus: editOrderStatus,
-      clientName: clientName,
+      editstatus: editOrderStatus,
+      clientname: clientName,
       mobile: mobile,
       email: email,
-      clientType: clientType,
-      clientCategory: clientCategory,
-      gstNumber: gstNumber,
-      orderType: orderType,
-      deliveryParty: deliveryParty,
-      billingAddress: billingAddress,
-      shippingAddress: shippingAddress,
-      pincode: pincode,
-      taluk: taluk,
-      district: district,
+      clienttypename: clientType,
+      clientcategory1: clientCategory,
+      GSTNO: gstNo,
+      
+      Baddress: billingAddress,
+      saddress: shippingAddress,
+      BPINCODE: billingPincode,
+      talukname: taluk,
+      districtname: district,
       state: state,
-      partyState: partyState,
-      mrName: mrName,
-      deliveryDate: deliveryDate,
-      deliveryTime: deliveryTime,
-      paymentTerms: paymentTerms,
-      paymentMode: paymentMode,
-      orderBy: orderBy,
-      paymentDate: paymentDate,
+      
+      ordertype: orderType,
+      partyname: partyName,
+      partystatename: partyState,
+      mrname_name: mrName,
+      
+      Deliverydate: deliveryDate,
+      Deliverytime: deliveryTime,
+      deliverydatebyname: deliveryParty,
+      paymentterm: paymentTerms,
+      paymentmodename: paymentMode,
+      paymentdate: [paymentDate, '', '', '', ''],
+      
+      calltime1: preferredCallTime1,
+      calltime2: preferredCallTime2,
+      
+      productname: productList.map(p => p.productName),
+      MRP: productList.map(p => p.mrp),
+      PACKINGSIZE: productList.map(p => p.packingSize),
+      QNT: productList.map(p => p.quantity),
+      OrderQTY: productList.map(p => p.orderQty),
+      DISPER: productList.map(p => p.discountPer),
+      DISOUCNT: productList.map(p => ''),
+      DISAMT: productList.map(p => p.discountAmt),
+      BEFORE: productList.map(p => p.beforeTax),
+      AFTER: productList.map(p => p.afterDiscount),
+      CGST: productList.map(p => p.cgst),
+      CGSTAMT: productList.map(p => p.cgstAmt),
+      SGST: productList.map(p => p.sgst),
+      SGSTAMT: productList.map(p => p.sgstAmt),
+      IGST: productList.map(p => p.igst),
+      IGSTAMT: productList.map(p => p.igstAmt),
+      TOTAL: productList.map(p => p.total),
+      SplitQTY: productList.map(p => p.splitQty),
+      
+      discounttiername: discountTier,
+      discountcategory: discounts.map(d => d.category),
+      discount: discounts.map(d => d.percentage),
+
+      scharge: shippingCharges,
+      sremark: shippingChargesRemark,
+      Stax: totalShippingCharge,
+      Staxremark: totalShippingChargeRemark,
+      staxper: shippingTaxPercent,
+      staxperrem: shippingTaxPercentRemark,
+      
+      saletermremark: saleTermRemark,
+      invoiceremark: invoiceRemark,
+      warehouseremark: warehouseRemark,
+      
       reoccurance: reoccurance,
-      nextOrderDate: nextOrderDate,
-      endOrderDate: endOrderDate,
-      priority: priority,
-      discountTier: discountTier,
-      products: productList,
-      shippingCharges: shippingCharges,
-      shippingChargesRemark: shippingChargesRemark,
-      shippingTaxPercent: shippingTaxPercent,
-      shippingTaxPercentRemark: shippingTaxPercentRemark,
-      totalShippingCharge: totalShippingCharge,
-      totalShippingChargeRemark: totalShippingChargeRemark,
-      preferredCallTime1: preferredCallTime1,
-      preferredCallTime2: preferredCallTime2,
-      dispatchDate: dispatchDate,
-      dispatchTime: dispatchTime,
-      saleTermRemark: saleTermRemark,
-      invoiceRemark: invoiceRemark,
-      warehouseRemark: warehouseRemark,
-      orderInFull: orderInFull,
-      orderInFullReason: orderInFullReason,
+      NextOrderDate: nextOrderDate,
+      EndOrderDate: endOrderDate,
+      Priority: priority,
+      
+      dispatchdate: dispatchDate,
+      dispatchtime: dispatchTime,
+      
+      data: fileData,
       filename: file ? file.name : null,
       mimetype: file ? file.type : null,
+      orderby: orderBy,
+      otifyesno: orderInFull,
+      otifreason: orderInFullReason,
       
-      mrpTotal: totals.mrpTotal,
-      qtyTotal: totals.qtyTotal,
-      discountTotal: totals.discountTotal,
-      beforeTaxTotal: totals.beforeTaxTotal,
-      taxTotal: totals.taxTotal,
-      afterDiscountTotal: totals.afterDiscountTotal,
-      grandTotal: totals.grandTotal
+      taxbeforetotal: productList.reduce((sum, p) => sum + parseFloat(p.beforeTax || 0), 0).toFixed(2),
+      distotal: productList.reduce((sum, p) => sum + parseFloat(p.discountAmt || 0), 0).toFixed(2),
+      Beforeamt: productList.reduce((sum, p) => sum + parseFloat(p.beforeTax || 0), 0).toFixed(2),
+      Afteramt: productList.reduce((sum, p) => sum + parseFloat(p.total || 0), 0).toFixed(2)
     };
     
     onSave(formData);
@@ -560,6 +587,7 @@ const EditOrderForm = ({ orderId, onClose, onSave }) => {
 
   return (
     <form onSubmit={handleSubmit} className={styles.editForm}>
+      {/* Error Message */}
       {errorMessage && (
         <div style={{ 
           background: '#fee', 
@@ -610,64 +638,59 @@ const EditOrderForm = ({ orderId, onClose, onSave }) => {
           </div>
           <div className={styles.field}>
             <label>Client Category</label>
-            <input type="text" value={clientCategory} onChange={(e) => setClientCategory(e.target.value)} />
+            <input type="text" value={clientCategory} readOnly className={styles.readonly} />
           </div>
           <div className={styles.field}>
-            <label>GST Number</label>
-            <input type="text" value={gstNumber} onChange={(e) => setGstNumber(e.target.value)} />
-          </div>
-          <div className={styles.field}>
-            <label>Order Type</label>
-            <select value={orderType} onChange={(e) => setOrderType(e.target.value)}>
-              <option value="">-- Select --</option>
-              <option value="Regular">Regular</option>
-              <option value="Urgent">Urgent</option>
-              <option value="Sample">Sample</option>
-            </select>
-          </div>
-          <div className={styles.field}>
-            <label>Delivery Party</label>
-            <select value={deliveryParty} onChange={(e) => setDeliveryParty(e.target.value)}>
-              <option value="">-- Select --</option>
-              {deliveryParties.map((party, index) => (
-                <option key={index} value={party}>{party}</option>
-              ))}
-            </select>
+            <label>GST No</label>
+            <input type="text" value={gstNo} onChange={(e) => setGstNo(e.target.value)} />
           </div>
         </div>
       </div>
 
-      {/* Address Information */}
+      {/* Addresses */}
       <div className={styles.section}>
-        <h3>Address Information</h3>
+        <h3>Address Details</h3>
         <div className={styles.grid2}>
           <div className={styles.field}>
-            <label>Billing Address</label>
-            <textarea value={billingAddress} onChange={(e) => setBillingAddress(e.target.value)} rows="3" />
+            <label>Billing Address *</label>
+            <textarea value={billingAddress} onChange={(e) => setBillingAddress(e.target.value)} required rows="2" />
           </div>
           <div className={styles.field}>
-            <label>Shipping Address</label>
-            <textarea value={shippingAddress} onChange={(e) => setShippingAddress(e.target.value)} rows="3" />
+            <label>Shipping Address *</label>
+            <div>
+              <input
+                type="checkbox"
+                checked={isShippingSameAsBilling}
+                onChange={() => {
+                  setIsShippingSameAsBilling(!isShippingSameAsBilling);
+                  if (!isShippingSameAsBilling) {
+                    setShippingAddress(billingAddress);
+                  }
+                }}
+              />
+              <label style={{ marginLeft: '8px' }}>Same as Billing Address</label>
+            </div>
+            <textarea value={shippingAddress} onChange={(e) => setShippingAddress(e.target.value)} required rows="2" />
           </div>
           <div className={styles.field}>
-            <label>Pin Code</label>
-            <input type="text" value={pincode} onChange={(e) => setPincode(e.target.value)} />
+            <label>Billing Pincode *</label>
+            <input type="text" value={billingPincode} onChange={(e) => setBillingPincode(e.target.value)} required />
+          </div>
+          <div className={styles.field}>
+            <label>Shipping Pincode</label>
+            <input type="text" value={shippingPincode} onChange={(e) => setShippingPincode(e.target.value)} />
           </div>
           <div className={styles.field}>
             <label>Taluk</label>
-            <input type="text" value={taluk} onChange={(e) => setTaluk(e.target.value)} />
+            <input type="text" value={taluk} readOnly className={styles.readonly} />
           </div>
           <div className={styles.field}>
             <label>District</label>
-            <input type="text" value={district} onChange={(e) => setDistrict(e.target.value)} />
+            <input type="text" value={district} readOnly className={styles.readonly} />
           </div>
           <div className={styles.field}>
             <label>State</label>
-            <input type="text" value={state} onChange={(e) => setState(e.target.value)} />
-          </div>
-          <div className={styles.field}>
-            <label>Party State</label>
-            <input type="text" value={partyState} readOnly className={styles.readonly} />
+            <input type="text" value={state} readOnly className={styles.readonly} />
           </div>
         </div>
       </div>
@@ -677,14 +700,42 @@ const EditOrderForm = ({ orderId, onClose, onSave }) => {
         <h3>Order Details</h3>
         <div className={styles.grid2}>
           <div className={styles.field}>
-            <label>MR Name</label>
-            <select value={mrName} onChange={(e) => setMrName(e.target.value)}>
+            <label>Order Type</label>
+            <select value={orderType} onChange={(e) => setOrderType(e.target.value)}>
               <option value="">-- Select --</option>
-              {employeeList.map((emp, index) => (
-                <option key={index} value={emp}>{emp}</option>
+              <option value="New Order">New Order</option>
+              <option value="Sample Order">Sample Order</option>
+            </select>
+          </div>
+          <div className={styles.field}>
+            <label>Party Name</label>
+            <select 
+              value={partyName} 
+              onChange={(e) => handlePartyNameChange(e.target.value)}
+            >
+              <option value="">-- Select Party --</option>
+              {deliveryParties.map((party, idx) => (
+                <option key={idx} value={party.name}>
+                  {party.name}
+                </option>
               ))}
             </select>
           </div>
+          <div className={styles.field}>
+            <label>Party State</label>
+            <input type="text" value={partyState} readOnly className={styles.readonly} />
+          </div>
+          <div className={styles.field}>
+            <label>MR Name</label>
+            <input type="text" value={mrName} readOnly className={styles.readonly} />
+          </div>
+        </div>
+      </div>
+
+      {/* Delivery & Payment */}
+      <div className={styles.section}>
+        <h3>Delivery & Payment</h3>
+        <div className={styles.grid2}>
           <div className={styles.field}>
             <label>Delivery Date</label>
             <input type="date" value={deliveryDate} onChange={(e) => setDeliveryDate(e.target.value)} />
@@ -695,19 +746,32 @@ const EditOrderForm = ({ orderId, onClose, onSave }) => {
           </div>
           <div className={styles.field}>
             <label>Payment Terms</label>
-            <input type="text" value={paymentTerms} onChange={(e) => setPaymentTerms(e.target.value)} />
+            <select value={paymentTerms} onChange={(e) => setPaymentTerms(e.target.value)}>
+              <option value="">-- Select Payment Terms --</option>
+              <option value="Credit">Credit</option>
+              <option value="Post Dated Cheque - Credit">Post Dated Cheque - Credit</option>
+              <option value="Advance">Advance</option>
+              <option value="Fully Paid">Fully Paid</option>
+              <option value="Sample">Sample</option>
+              <option value="Barter">Barter</option>
+              <option value="Others">Others</option>
+            </select>
           </div>
           <div className={styles.field}>
             <label>Payment Mode</label>
-            <input type="text" value={paymentMode} onChange={(e) => setPaymentMode(e.target.value)} />
-          </div>
-          <div className={styles.field}>
-            <label>Order Taken By</label>
-            <select value={orderBy} onChange={(e) => setOrderBy(e.target.value)}>
-              <option value="">-- Select --</option>
-              {employeeList.map((emp, index) => (
-                <option key={index} value={emp}>{emp}</option>
-              ))}
+            <select value={paymentMode} onChange={(e) => setPaymentMode(e.target.value)}>
+              <option value="">-- Select Payment Mode --</option>
+              <option value="Cash">Cash</option>
+              <option value="Cheque">Cheque</option>
+              <option value="COD">COD</option>
+              <option value="UPI">UPI</option>
+              <option value="Bank Transfer">Bank Transfer</option>
+              <option value="Wallet">Wallet</option>
+              <option value="Credit">Credit</option>
+              <option value="Paytm">Paytm</option>
+              <option value="Sample/Barter">Sample/Barter</option>
+              <option value="Credit Card">Credit Card</option>
+              <option value="Others">Others</option>
             </select>
           </div>
           <div className={styles.field}>
@@ -715,65 +779,67 @@ const EditOrderForm = ({ orderId, onClose, onSave }) => {
             <input type="date" value={paymentDate} onChange={(e) => setPaymentDate(e.target.value)} />
           </div>
           <div className={styles.field}>
-            <label>Reoccurance</label>
-            <input type="text" value={reoccurance} onChange={(e) => setReoccurance(e.target.value)} />
-          </div>
-          <div className={styles.field}>
-            <label>Next Order Date</label>
-            <input type="date" value={nextOrderDate} onChange={(e) => setNextOrderDate(e.target.value)} />
-          </div>
-          <div className={styles.field}>
-            <label>End Order Date</label>
-            <input type="date" value={endOrderDate} onChange={(e) => setEndOrderDate(e.target.value)} />
-          </div>
-          <div className={styles.field}>
-            <label>Priority</label>
-            <input type="text" value={priority} onChange={(e) => setPriority(e.target.value)} />
-          </div>
-          <div className={styles.field}>
-            <label>Discount Tier</label>
-            <input type="text" value={discountTier} readOnly className={styles.readonly} />
+            <label>Order Place by</label>
+            <select 
+              value={orderBy} 
+              onChange={(e) => setOrderBy(e.target.value)}
+              required
+            >
+              <option value="">-- Select Employee --</option>
+              {employeeList.map((employee, idx) => (
+                <option key={idx} value={employee}>
+                  {employee}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
       </div>
 
-      {/* Discount Structure */}
+      {/* Discounts */}
       <div className={styles.section}>
-        <h3>Discount Structure</h3>
-        <div className={styles.productsTable}>
-          <table>
-            <thead>
-              <tr>
-                <th style={{width: '92%'}}>Discount Category</th>
-                <th style={{width: '8%'}}>Discount %</th>
-              </tr>
-            </thead>
-            <tbody>
-              {discountStructure.map((discount, index) => (
-                <tr key={index}>
-                  <td>
-                    <input 
-                      type="text" 
-                      value={discount['Discount Category'] || ''} 
-                      readOnly 
-                      className={styles.readonly}
-                      style={{width: '100%'}}
-                    />
-                  </td>
-                  <td>
-                    <input 
-                      type="number" 
-                      value={discount['Discount %'] || '0'} 
-                      readOnly 
-                      className={styles.readonly}
-                      style={{width: '100%'}}
-                    />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <h3>Discounts</h3>
+        <div className={styles.grid2}>
+          <div className={styles.field}>
+            <label>Discount Tier *</label>
+            <input 
+              type="text" 
+              value={discountTier} 
+              readOnly 
+              className={styles.readonly}
+            />
+          </div>
         </div>
+        <table className={styles.table}>
+          <thead>
+            <tr>
+              <th>Discount Category</th>
+              <th>Discount %</th>
+            </tr>
+          </thead>
+          <tbody>
+            {discounts.map((d, i) => (
+              <tr key={i}>
+                <td>
+                  <input
+                    type="text"
+                    value={d.category}
+                    readOnly
+                    className={styles.readonly}
+                  />
+                </td>
+                <td>
+                  <input
+                    type="number"
+                    value={d.percentage}
+                    readOnly
+                    className={styles.readonly}
+                  />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
 
       {/* Products */}
@@ -827,46 +893,22 @@ const EditOrderForm = ({ orderId, onClose, onSave }) => {
                       ))}
                     </select>
                   </td>
-                  <td>
-                    <input 
-                      type="text" 
-                      value={product.sku}
-                      readOnly
-                      className={styles.readonly}
-                    />
-                  </td>
-                  <td>
-                    <input 
-                      type="text" 
-                      value={product.mrp}
-                      readOnly
-                      className={styles.readonly}
-                    />
-                  </td>
-                  <td>
-                    <input 
-                      type="text" 
-                      value={product.packingSize}
-                      readOnly
-                      className={styles.readonly}
-                    />
-                  </td>
+                  <td><input type="text" value={product.sku} readOnly className={styles.readonly} /></td>
+                  <td><input type="text" value={product.mrp} readOnly className={styles.readonly} /></td>
+                  <td><input type="text" value={product.packingSize} readOnly className={styles.readonly} /></td>
                   <td>
                     <input 
                       type="number" 
                       value={product.quantity}
                       onChange={(e) => updateProduct(index, 'quantity', e.target.value)}
-                      className={styles.editableInput}
                     />
                   </td>
                   <td>
                     <input 
                       type="number" 
-                      step="0.1"
                       value={product.discountPer}
                       onChange={(e) => updateProduct(index, 'discountPer', e.target.value)}
-                      className={styles.editableInput}
-                      title={`Max: ${getMaxDiscountForCategory(product.productCategory)}%`}
+                      title={`Max: ${getMaxDiscount(product.productCategory)}%`}
                     />
                   </td>
                   <td><input type="text" value={product.discountAmt} readOnly className={styles.readonly} /></td>
@@ -880,7 +922,13 @@ const EditOrderForm = ({ orderId, onClose, onSave }) => {
                   <td><input type="text" value={product.igstAmt} readOnly className={styles.readonly} /></td>
                   <td><input type="text" value={product.total} readOnly className={styles.readonly} /></td>
                   <td><input type="text" value={product.orderQty} readOnly className={styles.readonly} /></td>
-                  <td><input type="text" value={product.splitQty} readOnly className={styles.readonly} /></td>
+                  <td>
+                    <input 
+                      type="number" 
+                      value={product.splitQty}
+                      onChange={(e) => updateProduct(index, 'splitQty', e.target.value)}
+                    />
+                  </td>
                   <td>
                     <button type="button" onClick={() => removeProduct(index)} className={styles.btnRemove}>
                       Remove
@@ -889,21 +937,6 @@ const EditOrderForm = ({ orderId, onClose, onSave }) => {
                 </tr>
               ))}
             </tbody>
-            <tfoot>
-              <tr>
-                <td colSpan="3"><strong>Totals:</strong></td>
-                <td><strong>{totals.mrpTotal}</strong></td>
-                <td></td>
-                <td><strong>{totals.qtyTotal}</strong></td>
-                <td></td>
-                <td><strong>{totals.discountTotal}</strong></td>
-                <td><strong>{totals.beforeTaxTotal}</strong></td>
-                <td><strong>{totals.afterDiscountTotal}</strong></td>
-                <td colSpan="6"><strong>Tax Total: {totals.taxTotal}</strong></td>
-                <td><strong>{totals.grandTotal}</strong></td>
-                <td colSpan="3"></td>
-              </tr>
-            </tfoot>
           </table>
         </div>
       </div>
@@ -914,7 +947,7 @@ const EditOrderForm = ({ orderId, onClose, onSave }) => {
         <div className={styles.grid2}>
           <div className={styles.field}>
             <label>Shipping Charges</label>
-            <input type="text" value={shippingCharges} onChange={(e) => setShippingCharges(e.target.value)} />
+            <input type="number" value={shippingCharges} onChange={(e) => setShippingCharges(e.target.value)} />
           </div>
           <div className={styles.field}>
             <label>Shipping Charges Remark</label>
@@ -922,7 +955,7 @@ const EditOrderForm = ({ orderId, onClose, onSave }) => {
           </div>
           <div className={styles.field}>
             <label>Shipping Tax Percent</label>
-            <input type="text" value={shippingTaxPercent} onChange={(e) => setShippingTaxPercent(e.target.value)} />
+            <input type="number" value={shippingTaxPercent} readOnly className={styles.readonly} />
           </div>
           <div className={styles.field}>
             <label>Shipping Tax Percent Remark</label>
@@ -930,7 +963,7 @@ const EditOrderForm = ({ orderId, onClose, onSave }) => {
           </div>
           <div className={styles.field}>
             <label>Total Shipping Charge</label>
-            <input type="text" value={totalShippingCharge} onChange={(e) => setTotalShippingCharge(e.target.value)} />
+            <input type="number" value={totalShippingCharge} readOnly className={styles.readonly} />
           </div>
           <div className={styles.field}>
             <label>Total Shipping Charge Remark</label>
@@ -939,9 +972,45 @@ const EditOrderForm = ({ orderId, onClose, onSave }) => {
         </div>
       </div>
 
-      {/* Additional Information */}
+      {/* Repeat Order */}
       <div className={styles.section}>
-        <h3>Additional Information</h3>
+        <h3>Repeat Order</h3>
+        <div className={styles.grid2}>
+          <div className={styles.field}>
+            <label>Next Order Fixed Date</label>
+            <input type="date" value={nextOrderDate} onChange={(e) => setNextOrderDate(e.target.value)} />
+          </div>
+          <div className={styles.field}>
+            <label>Reoccurrence Interval</label>
+            <select value={reoccurance} onChange={(e) => setReoccurance(e.target.value)}>
+              <option value="">-- Select --</option>
+              <option value="Weekly">Weekly</option>
+              <option value="Monthly">Monthly</option>
+              <option value="Yearly">Yearly</option>
+            </select>
+          </div>
+          <div className={styles.field}>
+            <label>End Order Date</label>
+            <input type="date" value={endOrderDate} onChange={(e) => setEndOrderDate(e.target.value)} />
+          </div>
+          <div className={styles.field}>
+            <label>Rocket Client</label>
+            <div>
+              <input 
+                type="checkbox" 
+                id="priority" 
+                checked={priority === 'Yes'}
+                onChange={(e) => setPriority(e.target.checked ? 'Yes' : '')}
+              />
+              <label htmlFor="priority" style={{ marginLeft: '8px' }}>Yes</label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Payment, Delivery, and Remarks */}
+      <div className={styles.section}>
+        <h3>Payment, Delivery, and Remarks</h3>
         <div className={styles.grid2}>
           <div className={styles.field}>
             <label>Preferred Call Time 1</label>
@@ -952,55 +1021,116 @@ const EditOrderForm = ({ orderId, onClose, onSave }) => {
             <input type="time" value={preferredCallTime2} onChange={(e) => setPreferredCallTime2(e.target.value)} />
           </div>
           <div className={styles.field}>
-            <label>Dispatch Date</label>
+            <label>Expected Date of Dispatch</label>
             <input type="date" value={dispatchDate} onChange={(e) => setDispatchDate(e.target.value)} />
           </div>
           <div className={styles.field}>
-            <label>Dispatch Time</label>
+            <label>Expected Time of Dispatch</label>
             <input type="time" value={dispatchTime} onChange={(e) => setDispatchTime(e.target.value)} />
           </div>
+        </div>
+      </div>
+
+      {/* Remarks */}
+      <div className={styles.section}>
+        <h3>Remarks</h3>
+        <div className={styles.grid2}>
           <div className={styles.field}>
-            <label>Sale Term Remark</label>
-            <textarea value={saleTermRemark} onChange={(e) => setSaleTermRemark(e.target.value)} rows="3" />
+            <label>Remarks - Show to Kairali Team</label>
+            <input type="text" value={saleTermRemark} onChange={(e) => setSaleTermRemark(e.target.value)} />
           </div>
           <div className={styles.field}>
-            <label>Invoice Remark</label>
-            <textarea value={invoiceRemark} onChange={(e) => setInvoiceRemark(e.target.value)} rows="3" />
+            <label>Remarks - Show in Invoice</label>
+            <input type="text" value={invoiceRemark} onChange={(e) => setInvoiceRemark(e.target.value)} />
           </div>
           <div className={styles.field}>
-            <label>Warehouse Remark</label>
-            <textarea value={warehouseRemark} onChange={(e) => setWarehouseRemark(e.target.value)} rows="3" />
+            <label>Remarks - Show to Dispatch Team</label>
+            <input type="text" value={warehouseRemark} onChange={(e) => setWarehouseRemark(e.target.value)} />
+          </div>
+        </div>
+      </div>
+
+      {/* File Upload and OTIF */}
+      <div className={styles.section}>
+        <h3>File Upload and OTIF</h3>
+        <div className={styles.grid2}>
+          <div className={styles.field}>
+            <label>Images/Invoice Upload</label>
+            <input type="file" onChange={(e) => {
+              const selectedFile = e.target.files[0];
+              if (selectedFile) {
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                  setFileData(reader.result.split(',')[1]);
+                  setFile(selectedFile);
+                };
+                reader.readAsDataURL(selectedFile);
+              }
+            }} />
           </div>
           <div className={styles.field}>
-            <label>Order In Full</label>
-            <select value={orderInFull} onChange={(e) => setOrderInFull(e.target.value)}>
+            <label>Is order in Full - Yes/No *</label>
+            <select value={orderInFull} onChange={(e) => setOrderInFull(e.target.value)} required>
               <option value="">-- Select --</option>
               <option value="Yes">Yes</option>
               <option value="No">No</option>
             </select>
           </div>
           <div className={styles.field}>
-            <label>Order In Full Reason</label>
-            <textarea value={orderInFullReason} onChange={(e) => setOrderInFullReason(e.target.value)} rows="3" />
-          </div>
-          <div className={styles.field}>
-            <label>Attach File</label>
-            <input type="file" onChange={(e) => setFile(e.target.files[0])} />
+            <label>Reason (If No)</label>
+            <select value={orderInFullReason} onChange={(e) => setOrderInFullReason(e.target.value)}>
+              <option value="">-- Select --</option>
+              <option value="Shortage of Stock">Shortage of Stock</option>
+              <option value="Incorrect Discount">Incorrect Discount</option>
+              <option value="Payment issue">Payment issue</option>
+              <option value="Shippers issue">Shippers issue</option>
+              <option value="Employee issue such as leave, absent etc">Employee issue such as leave, absent etc</option>
+              <option value="Technical Issues">Technical Issues</option>
+              <option value="Short Expiry">Short Expiry</option>
+              <option value="Duplicate Order">Duplicate Order</option>
+              <option value="Edited and Reorderd">Edited and Reorderd</option>
+              <option value="Labelling issue">Labelling issue</option>
+              <option value="Botteling issue">Botteling issue</option>
+              <option value="Packaging issue">Packaging issue</option>
+              <option value="Raw material supply issue">Raw material supply issue</option>
+              <option value="Production damage">Production damage</option>
+              <option value="Storage damage">Storage damage</option>
+              <option value="Others">Others</option>
+            </select>
           </div>
         </div>
       </div>
 
-      {/* Action Buttons */}
-      <div className={styles.actions}>
-        <button type="button" onClick={onClose} className={styles.btnCancel}>
+      {/* Form Actions */}
+      <div className={styles.formActions}>
+        <button type="button" onClick={onCancel} className={styles.btnCancel}>
           Cancel
         </button>
-        <button type="submit" className={styles.btnSave}>
+        <button 
+          type="submit" 
+          className={styles.btnSubmit}
+          disabled={clientNotFound}
+          style={clientNotFound ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+        >
           Save Changes
         </button>
       </div>
+
+      {/* Validation message at bottom */}
+      {clientNotFound && (
+        <div style={{ 
+          background: '#fee', 
+          border: '1px solid #fcc', 
+          padding: '15px', 
+          borderRadius: '8px',
+          marginTop: '20px',
+          color: '#c00',
+          textAlign: 'center',
+          fontWeight: 'bold'
+        }}>
+          ⚠️ This order cannot be edited because the mobile number was not found or not verified in the Client List.
+        </div>
+      )}
     </form>
   );
-};
-
-export default EditOrderForm;
+}
