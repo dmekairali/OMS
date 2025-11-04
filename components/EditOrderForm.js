@@ -101,14 +101,12 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
       setDistrict(order['District'] || '');
       setState(order['State'] || '');
       
-      setOrderType(order['Order Type'] || '');
-      setPartyName(order['Delivery Party From'] || '');
-      setPartyState(order['Party State'] || '');
+     
       setMrName(order['MR Name'] || '');
       
       setDeliveryDate(order['Delivery Required Date']?.split(' ')[0] || '');
       setDeliveryTime(order['Delivery Required Date']?.split(' ')[1] || '');
-      setDeliveryParty(order['Delivery Party From'] || '');
+     
       
       setPaymentTerms(order['Payment Terms'] || '');
       setPaymentMode(order['Payment Mode'] || '');
