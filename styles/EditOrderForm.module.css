@@ -460,14 +460,14 @@
 /* ============================================
    Tax Amount Highlighting
    ============================================ */
-.productsTable tbody td input[style*="e8f5e9"] {
+.taxHighlightGreen {
   font-weight: 600;
-  border-left: 3px solid #4caf50;
+  border-left: 3px solid #4caf50 !important;
 }
 
-.productsTable tbody td input[style*="fff3e0"] {
+.taxHighlightOrange {
   font-weight: 600;
-  border-left: 3px solid #ff9800;
+  border-left: 3px solid #ff9800 !important;
 }
 
 /* ============================================
@@ -482,13 +482,13 @@
   margin-left: 10px;
 }
 
-.stateIndicator.sameState {
+.stateIndicatorSame {
   background-color: #e8f5e9;
   color: #2e7d32;
   border: 1px solid #4caf50;
 }
 
-.stateIndicator.differentState {
+.stateIndicatorDifferent {
   background-color: #fff3e0;
   color: #e65100;
   border: 1px solid #ff9800;
@@ -557,13 +557,13 @@
 /* ============================================
    Loading State for Table
    ============================================ */
-.productsTable.loading {
+.productsTableLoading {
   opacity: 0.6;
   pointer-events: none;
   position: relative;
 }
 
-.productsTable.loading::after {
+.productsTableLoading::after {
   content: 'Recalculating...';
   position: absolute;
   top: 50%;
@@ -592,13 +592,13 @@
   font-size: 15px;
 }
 
-.productsTable tfoot .totalLabel {
+.totalLabel {
   text-align: right;
   color: #7a8450;
   font-weight: 700;
 }
 
-.productsTable tfoot .totalAmount {
+.totalAmount {
   text-align: center;
   color: #7a8450;
   font-size: 16px;
@@ -687,23 +687,40 @@
 }
 
 /* ============================================
-   Tooltip for Max Discount
+   Focus Visible (Accessibility) - FIXED
    ============================================ */
-.productsTable input[title]:hover::after {
-  content: attr(title);
-  position: absolute;
-  bottom: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  background: #374151;
+.form button:focus-visible,
+.field input:focus-visible,
+.field select:focus-visible,
+.field textarea:focus-visible,
+.productsTable input:focus-visible,
+.productsTable select:focus-visible {
+  outline: 2px solid #7a8450;
+  outline-offset: 2px;
+}
+
+/* ============================================
+   Disabled State
+   ============================================ */
+.form button:disabled,
+.field input:disabled,
+.field select:disabled,
+.field textarea:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ============================================
+   Selection Color
+   ============================================ */
+.form ::selection {
+  background-color: #7a8450;
   color: white;
-  padding: 6px 12px;
-  border-radius: 4px;
-  font-size: 12px;
-  white-space: nowrap;
-  z-index: 1000;
-  margin-bottom: 5px;
-  pointer-events: none;
+}
+
+.form ::-moz-selection {
+  background-color: #7a8450;
+  color: white;
 }
 
 /* ============================================
@@ -735,39 +752,4 @@
 
 .loadingSpinner {
   animation: pulse 1.5s ease-in-out infinite;
-}
-
-/* ============================================
-   Focus Visible (Accessibility)
-   ============================================ */
-button:focus-visible,
-input:focus-visible,
-select:focus-visible,
-textarea:focus-visible {
-  outline: 2px solid #7a8450;
-  outline-offset: 2px;
-}
-
-/* ============================================
-   Disabled State
-   ============================================ */
-button:disabled,
-input:disabled,
-select:disabled,
-textarea:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-/* ============================================
-   Selection Color
-   ============================================ */
-::selection {
-  background-color: #7a8450;
-  color: white;
-}
-
-::-moz-selection {
-  background-color: #7a8450;
-  color: white;
 }
