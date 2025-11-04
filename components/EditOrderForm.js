@@ -71,6 +71,15 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
   const [orderInFull, setOrderInFull] = useState('');
   const [orderInFullReason, setOrderInFullReason] = useState('');
 
+  // New state for API data and validation
+  const [setupData, setSetupData] = useState(null);
+  const [deliveryParties, setDeliveryParties] = useState([]);
+  const [employeeList, setEmployeeList] = useState([]);
+  const [clientNotFound, setClientNotFound] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+
+  // Load order data first
   useEffect(() => {
     if (order) {
       setClientName(order['Name of Client'] || '');
@@ -94,54 +103,188 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
       
       setPaymentTerms(order['Payment Terms'] || '');
       setPaymentMode(order['Payment Mode'] || '');
+      setOrderBy(order['Order Taken By'] || '');
       
-      const payDates = (order['Payment Date (to be paid)'] || '').split(',').map(d => d.trim());
-      setPaymentDate(payDates[0] || '');
+      setReoccurance(order['Reoccurance'] || '');
+      setNextOrderDate(order['Next Order Date'] || '');
+      setEndOrderDate(order['End Order Date'] || '');
+      setPriority(order['Priority'] || '');
 
-      setTaluk(order['Taluk'] || '');
-      setDistrict(order['District'] || '');
-      setState(order['State'] || '');
-      setDiscountTier(order['Discount Tier'] || '');
-      setShippingCharges(order['Shipping Charges'] || '');
-      setShippingChargesRemark(order['Shipping Charges Remark'] || '');
-      setShippingTaxPercent(order['Shipping Tax Percent'] || '');
-      setShippingTaxPercentRemark(order['Shipping Tax Percent Remark'] || '');
-      setTotalShippingCharge(order['Total Shipping Charge'] || '');
-      setTotalShippingChargeRemark(order['Total Shipping Charge Remark'] || '');
-      setPreferredCallTime1(order['Preferred Call Time 1'] || '');
-      setPreferredCallTime2(order['Preferred Call Time 2'] || '');
-      setDispatchDate(order['Dispatch Date'] || '');
-      setDispatchTime(order['Dispatch Time'] || '');
-      setSaleTermRemark(order['Sale Term Remark'] || '');
-      setInvoiceRemark(order['Invoice Remark'] || '');
-      setWarehouseRemark(order['Warehouse Remark'] || '');
-      setOrderBy(order['Order By'] || '');
-      setOrderInFull(order['Order In Full'] || '');
-      setOrderInFullReason(order['Order In Full Reason'] || '');
-    }
-    
-    if (products && products.length > 0) {
-      setProductList(products.map(p => ({
-        productName: p['Product Name'] || '',
-        sku: p['SKU Code'] || '',
-        mrp: p['MRP'] || '0',
-        packingSize: p['Packing Size'] || '',
-        quantity: p['Quantity'] || p['QNT'] || '0',
-        discountPer: p['Discount %'] || '0',
-        discountAmt: p['Discount Amount'] || '0',
-        beforeTax: p['Before Tax'] || '0',
-        afterDiscount: p['After Discount'] || '0',
-        cgst: p['CGST %'] || '0',
-        cgstAmt: p['CGST Amount'] || '0',
-        sgst: p['SGST %'] || '0',
-        sgstAmt: p['SGST Amount'] || '0',
-        igst: p['IGST %'] || '0',
-        igstAmt: p['IGST Amount'] || '0',
-        total: p['Total'] || '0',
-        splitQty: '0'
-      })));
+      // Parse products if available
+      if (products && Array.isArray(products)) {
+        const parsedProducts = products.map(p => ({
+          productName: p.productName || '',
+          sku: p.sku || '',
+          mrp: p.mrp || '0',
+          packingSize: p.packingSize || '',
+          quantity: p.quantity || '0',
+          discountPer: p.discountPer || '0',
+          discountAmt: p.discountAmt || '0',
+          beforeTax: p.beforeTax || '0',
+          afterDiscount: p.afterDiscount || '0',
+          cgst: p.cgst || '0',
+          cgstAmt: p.cgstAmt || '0',
+          sgst: p.sgst || '0',
+          sgstAmt: p.sgstAmt || '0',
+          igst: p.igst || '0',
+          igstAmt: p.igstAmt || '0',
+          total: p.total || '0',
+          splitQty: p.splitQty || '0'
+        }));
+        setProductList(parsedProducts);
+      }
     }
   }, [order, products]);
+
+  // Fetch setup data after order is loaded
+  useEffect(() => {
+    if (order && mobile) {
+      fetchSetupData();
+    }
+  }, [order, mobile, clientType]);
+
+  const fetchSetupData = async () => {
+    setLoading(true);
+    setClientNotFound(false);
+    setErrorMessage('');
+
+    try {
+      const response = await fetch('/api/setup-data');
+      const data = await response.json();
+
+      if (data.success) {
+        setSetupData(data.data);
+
+        // Process Client List data
+        const clientData = processClientList(data.data.clientList, mobile);
+        
+        // Process Employee List
+        const employees = processEmployeeList(data.data.employeeList);
+        setEmployeeList(employees);
+
+        // Process Delivery Parties
+        const parties = processDeliveryParties(data.data.clientList);
+        setDeliveryParties(parties);
+
+        if (clientData.found) {
+          // Set discount tier
+          setDiscountTier(clientData.discountTier);
+
+          // Fetch and set discounts from Discount Module
+          const discountData = processDiscountModule(
+            data.data.discountStructure,
+            clientData.discountTier,
+            clientType
+          );
+          
+          if (discountData.length > 0) {
+            setDiscounts(discountData);
+          }
+        } else {
+          // Client not found
+          setClientNotFound(true);
+          setErrorMessage('Client mobile number not found in Client List. This order cannot be edited.');
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching setup data:', error);
+      setErrorMessage('Failed to load required data. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const processClientList = (clientList, mobileNumber) => {
+    if (!clientList || !clientList.rows) {
+      return { found: false };
+    }
+
+    // Find client by Company Contact No (mobile)
+    const client = clientList.rows.find(row => 
+      row['Company Contact No'] === mobileNumber || 
+      row['Company Contact No'] === String(mobileNumber)
+    );
+
+    if (client) {
+      return {
+        found: true,
+        discountTier: client['Discount Tier'] || ''
+      };
+    }
+
+    return { found: false };
+  };
+
+  const processDiscountModule = (discountStructure, tier, type) => {
+    if (!discountStructure || !discountStructure.rows || !tier || !type) {
+      return [];
+    }
+
+    // Find ALL matching rows with same Client Type and Tier
+    const matchingDiscounts = discountStructure.rows.filter(row => {
+      const rowClientType = row['Client Type'] || '';
+      const rowTier = row['Tier'] || '';
+      
+      return rowClientType === type && rowTier === tier;
+    });
+
+    // Map to discount format
+    return matchingDiscounts.map(row => ({
+      category: row['Category'] || '',
+      percentage: row['TD'] || ''
+    }));
+  };
+
+  const processEmployeeList = (employeeList) => {
+    if (!employeeList || !employeeList.rows) {
+      return [];
+    }
+
+    // Get all unique users from ALL USERS column
+    const users = employeeList.rows
+      .map(row => row['ALL USERS'])
+      .filter(user => user && user.trim() !== '');
+
+    // Remove duplicates
+    return [...new Set(users)];
+  };
+
+  const processDeliveryParties = (clientList) => {
+    if (!clientList || !clientList.rows) {
+      return [];
+    }
+
+    // Get unique delivery party names with their states
+    const partiesMap = new Map();
+
+    clientList.rows.forEach(row => {
+      const partyName = row['Delivery Party Name'];
+      const state = row['State'];
+      
+      if (partyName && partyName.trim() !== '') {
+        // Store party name with its state (in case party appears multiple times, keep first occurrence)
+        if (!partiesMap.has(partyName)) {
+          partiesMap.set(partyName, state || '');
+        }
+      }
+    });
+
+    // Convert to array of objects
+    return Array.from(partiesMap.entries()).map(([name, state]) => ({
+      name,
+      state
+    }));
+  };
+
+  const handlePartyNameChange = (selectedPartyName) => {
+    setPartyName(selectedPartyName);
+
+    // Auto-fill party state based on selected party name
+    const selectedParty = deliveryParties.find(p => p.name === selectedPartyName);
+    if (selectedParty) {
+      setPartyState(selectedParty.state);
+    }
+  };
 
   const addProduct = () => {
     setProductList([...productList, {
@@ -206,6 +349,12 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
   const handleSubmit = (e) => {
     e.preventDefault();
     
+    // Validation: Check if client was found
+    if (clientNotFound) {
+      alert('Cannot save order. Client mobile number not found in Client List.');
+      return;
+    }
+
     const formData = {
       clientname: clientName,
       mobile: mobile,
@@ -290,8 +439,32 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
     onSave(formData);
   };
 
+  if (loading) {
+    return (
+      <div className={styles.editForm}>
+        <div style={{ textAlign: 'center', padding: '40px' }}>
+          <p>Loading order data...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <form onSubmit={handleSubmit} className={styles.editForm}>
+      {/* Error Message */}
+      {errorMessage && (
+        <div style={{ 
+          background: '#fee', 
+          border: '1px solid #fcc', 
+          padding: '15px', 
+          borderRadius: '8px',
+          marginBottom: '20px',
+          color: '#c00'
+        }}>
+          {errorMessage}
+        </div>
+      )}
+
       {/* Client Information */}
       <div className={styles.section}>
         <h3>Client Information</h3>
@@ -381,11 +554,21 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
           </div>
           <div className={styles.field}>
             <label>Party Name</label>
-            <input type="text" value={partyName} onChange={(e) => setPartyName(e.target.value)} />
+            <select 
+              value={partyName} 
+              onChange={(e) => handlePartyNameChange(e.target.value)}
+            >
+              <option value="">-- Select Party --</option>
+              {deliveryParties.map((party, idx) => (
+                <option key={idx} value={party.name}>
+                  {party.name}
+                </option>
+              ))}
+            </select>
           </div>
           <div className={styles.field}>
             <label>Party State</label>
-            <input type="text" value={partyState} onChange={(e) => setPartyState(e.target.value)} />
+            <input type="text" value={partyState} readOnly className={styles.readonly} />
           </div>
           <div className={styles.field}>
             <label>MR Name</label>
@@ -400,10 +583,12 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
         <div className={styles.grid2}>
           <div className={styles.field}>
             <label>Discount Tier *</label>
-            <select value={discountTier} onChange={(e) => setDiscountTier(e.target.value)} required>
-              <option value="">-- select --</option>
-              {/* Add discount tier options here */}
-            </select>
+            <input 
+              type="text" 
+              value={discountTier} 
+              readOnly 
+              className={styles.readonly}
+            />
           </div>
         </div>
         <table className={styles.table}>
@@ -421,46 +606,63 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
                   <input
                     type="text"
                     value={d.category}
-                    onChange={(e) => {
-                      const newDiscounts = [...discounts];
-                      newDiscounts[i].category = e.target.value;
-                      setDiscounts(newDiscounts);
-                    }}
+                    readOnly
+                    className={styles.readonly}
                   />
                 </td>
                 <td>
                   <input
                     type="number"
                     value={d.percentage}
-                    onChange={(e) => {
-                      const newDiscounts = [...discounts];
-                      newDiscounts[i].percentage = e.target.value;
-                      setDiscounts(newDiscounts);
-                    }}
+                    readOnly
+                    className={styles.readonly}
                   />
                 </td>
                 <td>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setDiscounts(discounts.filter((_, index) => index !== i));
-                    }}
-                  >
-                    Remove
-                  </button>
+                  {/* Remove button disabled for auto-fetched discounts */}
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
-        <button
-          type="button"
-          onClick={() => {
-            setDiscounts([...discounts, { category: '', percentage: '' }]);
-          }}
-        >
-          + Add More
-        </button>
+      </div>
+
+      {/* Delivery & Payment */}
+      <div className={styles.section}>
+        <h3>Delivery & Payment</h3>
+        <div className={styles.grid2}>
+          <div className={styles.field}>
+            <label>Delivery Date</label>
+            <input type="date" value={deliveryDate} onChange={(e) => setDeliveryDate(e.target.value)} />
+          </div>
+          <div className={styles.field}>
+            <label>Delivery Time</label>
+            <input type="time" value={deliveryTime} onChange={(e) => setDeliveryTime(e.target.value)} />
+          </div>
+          <div className={styles.field}>
+            <label>Payment Terms</label>
+            <input type="text" value={paymentTerms} onChange={(e) => setPaymentTerms(e.target.value)} />
+          </div>
+          <div className={styles.field}>
+            <label>Payment Mode</label>
+            <input type="text" value={paymentMode} onChange={(e) => setPaymentMode(e.target.value)} />
+          </div>
+          <div className={styles.field}>
+            <label>Order Place by</label>
+            <select 
+              value={orderBy} 
+              onChange={(e) => setOrderBy(e.target.value)}
+              required
+            >
+              <option value="">-- Select Employee --</option>
+              {employeeList.map((employee, idx) => (
+                <option key={idx} value={employee}>
+                  {employee}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
       </div>
 
       {/* Products */}
@@ -475,10 +677,10 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
             <thead>
               <tr>
                 <th>#</th>
-                <th>Product Name</th>
+                <th>Product</th>
                 <th>SKU</th>
                 <th>MRP</th>
-                <th>Pack Size</th>
+                <th>Packing Size</th>
                 <th>Qty</th>
                 <th>Disc %</th>
                 <th>Disc Amt</th>
@@ -492,7 +694,7 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
                 <th>IGST Amt</th>
                 <th>Total</th>
                 <th>Split Qty</th>
-                <th>Action</th>
+                <th></th>
               </tr>
             </thead>
             <tbody>
@@ -502,144 +704,83 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
                   <td>
                     <input 
                       type="text" 
-                      value={product.productName} 
+                      value={product.productName}
                       onChange={(e) => updateProduct(index, 'productName', e.target.value)}
-                      placeholder="Product name"
                     />
                   </td>
                   <td>
                     <input 
                       type="text" 
-                      value={product.sku} 
+                      value={product.sku}
                       onChange={(e) => updateProduct(index, 'sku', e.target.value)}
-                      placeholder="SKU"
                     />
                   </td>
                   <td>
                     <input 
                       type="number" 
-                      value={product.mrp} 
+                      value={product.mrp}
                       onChange={(e) => updateProduct(index, 'mrp', e.target.value)}
-                      step="0.01"
                     />
                   </td>
                   <td>
                     <input 
                       type="text" 
-                      value={product.packingSize} 
+                      value={product.packingSize}
                       onChange={(e) => updateProduct(index, 'packingSize', e.target.value)}
-                      placeholder="Size"
                     />
                   </td>
                   <td>
                     <input 
                       type="number" 
-                      value={product.quantity} 
+                      value={product.quantity}
                       onChange={(e) => updateProduct(index, 'quantity', e.target.value)}
                     />
                   </td>
                   <td>
                     <input 
                       type="number" 
-                      value={product.discountPer} 
+                      value={product.discountPer}
                       onChange={(e) => updateProduct(index, 'discountPer', e.target.value)}
-                      step="0.01"
                     />
                   </td>
+                  <td><input type="text" value={product.discountAmt} readOnly /></td>
+                  <td><input type="text" value={product.beforeTax} readOnly /></td>
+                  <td><input type="text" value={product.afterDiscount} readOnly /></td>
                   <td>
                     <input 
                       type="number" 
-                      value={product.discountAmt} 
-                      readOnly
-                      className={styles.readonly}
-                    />
-                  </td>
-                  <td>
-                    <input 
-                      type="number" 
-                      value={product.beforeTax} 
-                      readOnly
-                      className={styles.readonly}
-                    />
-                  </td>
-                  <td>
-                    <input 
-                      type="number" 
-                      value={product.afterDiscount} 
-                      readOnly
-                      className={styles.readonly}
-                    />
-                  </td>
-                  <td>
-                    <input 
-                      type="number" 
-                      value={product.cgst} 
+                      value={product.cgst}
                       onChange={(e) => updateProduct(index, 'cgst', e.target.value)}
-                      step="0.01"
                     />
                   </td>
+                  <td><input type="text" value={product.cgstAmt} readOnly /></td>
                   <td>
                     <input 
                       type="number" 
-                      value={product.cgstAmt} 
-                      readOnly
-                      className={styles.readonly}
-                    />
-                  </td>
-                  <td>
-                    <input 
-                      type="number" 
-                      value={product.sgst} 
+                      value={product.sgst}
                       onChange={(e) => updateProduct(index, 'sgst', e.target.value)}
-                      step="0.01"
                     />
                   </td>
+                  <td><input type="text" value={product.sgstAmt} readOnly /></td>
                   <td>
                     <input 
                       type="number" 
-                      value={product.sgstAmt} 
-                      readOnly
-                      className={styles.readonly}
-                    />
-                  </td>
-                  <td>
-                    <input 
-                      type="number" 
-                      value={product.igst} 
+                      value={product.igst}
                       onChange={(e) => updateProduct(index, 'igst', e.target.value)}
-                      step="0.01"
                     />
                   </td>
+                  <td><input type="text" value={product.igstAmt} readOnly /></td>
+                  <td><input type="text" value={product.total} readOnly /></td>
                   <td>
                     <input 
                       type="number" 
-                      value={product.igstAmt} 
-                      readOnly
-                      className={styles.readonly}
-                    />
-                  </td>
-                  <td>
-                    <input 
-                      type="number" 
-                      value={product.total} 
-                      readOnly
-                      className={styles.readonly}
-                    />
-                  </td>
-                  <td>
-                    <input 
-                      type="number" 
-                      value={product.splitQty} 
+                      value={product.splitQty}
                       onChange={(e) => updateProduct(index, 'splitQty', e.target.value)}
                     />
                   </td>
                   <td>
-                    <button 
-                      type="button" 
-                      onClick={() => removeProduct(index)}
-                      className={styles.btnRemove}
-                    >
-                      ×
+                    <button type="button" onClick={() => removeProduct(index)} className={styles.btnRemove}>
+                      Remove
                     </button>
                   </td>
                 </tr>
@@ -649,197 +790,55 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
         </div>
       </div>
 
-      {/* Additional Details */}
+      {/* Remarks */}
       <div className={styles.section}>
-        <h3>Additional Details</h3>
+        <h3>Remarks</h3>
         <div className={styles.grid2}>
           <div className={styles.field}>
-            <label>Shipping, Packing and Delivery Charges (Amount):</label>
-            <input type="text" value={shippingCharges} onChange={(e) => setShippingCharges(e.target.value)} />
+            <label>Sale Term Remark</label>
+            <textarea value={saleTermRemark} onChange={(e) => setSaleTermRemark(e.target.value)} rows="2" />
           </div>
           <div className={styles.field}>
-            <label>Note (Remarks)</label>
-            <input type="text" value={shippingChargesRemark} onChange={(e) => setShippingChargesRemark(e.target.value)} />
+            <label>Invoice Remark</label>
+            <textarea value={invoiceRemark} onChange={(e) => setInvoiceRemark(e.target.value)} rows="2" />
           </div>
           <div className={styles.field}>
-            <label>Shipping Tax (%):</label>
-            <input type="text" value={shippingTaxPercent} onChange={(e) => setShippingTaxPercent(e.target.value)} />
-          </div>
-          <div className={styles.field}>
-            <label>Type of (Remarks)</label>
-            <input type="text" value={shippingTaxPercentRemark} onChange={(e) => setShippingTaxPercentRemark(e.target.value)} />
-          </div>
-          <div className={styles.field}>
-            <label>Total Shipping Charge (Amount):</label>
-            <input type="text" value={totalShippingCharge} onChange={(e) => setTotalShippingCharge(e.target.value)} />
-          </div>
-          <div className={styles.field}>
-            <label>Type of (Remarks)</label>
-            <input type="text" value={totalShippingChargeRemark} onChange={(e) => setTotalShippingChargeRemark(e.target.value)} />
+            <label>Warehouse Remark</label>
+            <textarea value={warehouseRemark} onChange={(e) => setWarehouseRemark(e.target.value)} rows="2" />
           </div>
         </div>
       </div>
 
-      {/* Delivery & Payment */}
-      <div className={styles.section}>
-        <h3>Delivery & Payment</h3>
-        <div className={styles.grid2}>
-          <div className={styles.field}>
-            <label>Delivery Date *</label>
-            <input type="date" value={deliveryDate} onChange={(e) => setDeliveryDate(e.target.value)} required />
-          </div>
-          <div className={styles.field}>
-            <label>Delivery Time</label>
-            <input type="time" value={deliveryTime} onChange={(e) => setDeliveryTime(e.target.value)} />
-          </div>
-          <div className={styles.field}>
-            <label>Delivery Party</label>
-            <input type="text" value={deliveryParty} onChange={(e) => setDeliveryParty(e.target.value)} />
-          </div>
-          <div className={styles.field}>
-            <label>Payment Terms *</label>
-            <input type="text" value={paymentTerms} onChange={(e) => setPaymentTerms(e.target.value)} required />
-          </div>
-          <div className={styles.field}>
-            <label>Payment Mode</label>
-            <input type="text" value={paymentMode} onChange={(e) => setPaymentMode(e.target.value)} />
-          </div>
-          <div className={styles.field}>
-            <label>Payment Date *</label>
-            <input type="date" value={paymentDate} onChange={(e) => setPaymentDate(e.target.value)} required />
-          </div>
-        </div>
-      </div>
-
-      {/* Repeat Order */}
-      <div className={styles.section}>
-        <h3>Repeat Order</h3>
-        <div className={styles.grid2}>
-          <div className={styles.field}>
-            <label>Reoccurance</label>
-            <select value={reoccurance} onChange={(e) => setReoccurance(e.target.value)}>
-              <option value="">None</option>
-              <option value="Weekly">Weekly</option>
-              <option value="Monthly">Monthly</option>
-              <option value="Yearly">Yearly</option>
-            </select>
-          </div>
-          <div className={styles.field}>
-            <label>Next Order Date</label>
-            <input type="date" value={nextOrderDate} onChange={(e) => setNextOrderDate(e.target.value)} />
-          </div>
-          <div className={styles.field}>
-            <label>End Order Date</label>
-            <input type="date" value={endOrderDate} onChange={(e) => setEndOrderDate(e.target.value)} />
-          </div>
-          <div className={styles.field}>
-            <label>Priority</label>
-            <input type="text" value={priority} onChange={(e) => setPriority(e.target.value)} />
-          </div>
-        </div>
-      </div>
-
-      {/* Payment, Delivery, and Remarks */}
-      <div className={styles.section}>
-        <h3>Payment, Delivery, and Remarks</h3>
-        <div className={styles.grid2}>
-          <div className={styles.field}>
-            <label>Preferred Call Time 1</label>
-            <input type="time" value={preferredCallTime1} onChange={(e) => setPreferredCallTime1(e.target.value)} />
-          </div>
-          <div className={styles.field}>
-            <label>Preferred Call Time 2</label>
-            <input type="time" value={preferredCallTime2} onChange={(e) => setPreferredCallTime2(e.target.value)} />
-          </div>
-          <div className={styles.field}>
-            <label>Expected Date of Dispatch</label>
-            <input type="date" value={dispatchDate} onChange={(e) => setDispatchDate(e.target.value)} />
-          </div>
-          <div className={styles.field}>
-            <label>Expected Time of Dispatch</label>
-            <input type="time" value={dispatchTime} onChange={(e) => setDispatchTime(e.target.value)} />
-          </div>
-          <div className={styles.field}>
-            <label>Remarks - Show to Kairali Team</label>
-            <input type="text" value={saleTermRemark} onChange={(e) => setSaleTermRemark(e.target.value)} />
-          </div>
-          <div className={styles.field}>
-            <label>Remarks - Show in Invoice</label>
-            <input type="text" value={invoiceRemark} onChange={(e) => setInvoiceRemark(e.target.value)} />
-          </div>
-          <div className={styles.field}>
-            <label>Remarks - Show to Dispatch Team</label>
-            <input type="text" value={warehouseRemark} onChange={(e) => setWarehouseRemark(e.target.value)} />
-          </div>
-        </div>
-      </div>
-
-      {/* File Upload, Order By, and Otif */}
-      <div className={styles.section}>
-        <h3>File Upload, Order By, and Otif</h3>
-        <div className={styles.grid2}>
-          <div className={styles.field}>
-            <label>Images/Invoice Upload</label>
-            <input type="file" onChange={(e) => {
-              const file = e.target.files[0];
-              if (file) {
-                const reader = new FileReader();
-                reader.onloadend = () => {
-                  setFileData(reader.result.split(',')[1]);
-                  setFile(file);
-                };
-                reader.readAsDataURL(file);
-              }
-            }} />
-          </div>
-          <div className={styles.field}>
-            <label>Order Place by</label>
-            <select value={orderBy} onChange={(e) => setOrderBy(e.target.value)}>
-              <option value="Radhika">Radhika</option>
-            </select>
-          </div>
-          <div className={styles.field}>
-            <label>Is order in Full - Yes/No *</label>
-            <select value={orderInFull} onChange={(e) => setOrderInFull(e.target.value)} required>
-              <option value="">--Select--</option>
-              <option value="Yes">Yes</option>
-              <option value="No">No</option>
-            </select>
-          </div>
-          <div className={styles.field}>
-            <label>Reason (If No)</label>
-            <select value={orderInFullReason} onChange={(e) => setOrderInFullReason(e.target.value)}>
-              <option value="">--Select--</option>
-              <option value="Shortage of Stock">Shortage of Stock</option>
-              <option value="Incorrect Discount">Incorrect Discount</option>
-              <option value="Payment issue">Payment issue</option>
-              <option value="Shippers issue">Shippers issue</option>
-              <option value="Employee issue such as leave, absent etc">Employee issue such as leave, absent etc</option>
-              <option value="Technical Issues">Technical Issues</option>
-              <option value="Short Expiry">Short Expiry</option>
-              <option value="Duplicate Order">Duplicate Order</option>
-              <option value="Edited and Reorderd">Edited and Reorderd</option>
-              <option value="Labelling issue">Labelling issue</option>
-              <option value="Botteling issue">Botteling issue</option>
-              <option value="Packaging issue">Packaging issue</option>
-              <option value="Raw material supply issue">Raw material supply issue</option>
-              <option value="Production damage">Production damage</option>
-              <option value="Storage damage">Storage damage</option>
-              <option value="Others">Others</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
-      {/* Action Buttons */}
-      <div className={styles.actions}>
+      {/* Form Actions */}
+      <div className={styles.formActions}>
         <button type="button" onClick={onCancel} className={styles.btnCancel}>
           Cancel
         </button>
-        <button type="submit" className={styles.btnSave}>
+        <button 
+          type="submit" 
+          className={styles.btnSubmit}
+          disabled={clientNotFound}
+          style={clientNotFound ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+        >
           Save Changes
         </button>
       </div>
+
+      {/* Validation message at bottom */}
+      {clientNotFound && (
+        <div style={{ 
+          background: '#fee', 
+          border: '1px solid #fcc', 
+          padding: '15px', 
+          borderRadius: '8px',
+          marginTop: '20px',
+          color: '#c00',
+          textAlign: 'center',
+          fontWeight: 'bold'
+        }}>
+          ⚠️ This order cannot be edited because the mobile number was not found in the Client List.
+        </div>
+      )}
     </form>
   );
 }
