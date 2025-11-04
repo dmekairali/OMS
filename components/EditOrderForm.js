@@ -105,38 +105,38 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
   }, [productList]);
 
   const calculateTotals = () => {
-  let mrpSum = 0;
-  let qtySum = 0;
-  let discountSum = 0;
-  let taxBeforeSum = 0;
-  let taxAfterSum = 0;
-  let totalSum = 0;
+    let mrpSum = 0;
+    let qtySum = 0;
+    let discountSum = 0;
+    let taxBeforeSum = 0;
+    let taxAfterSum = 0;
+    let totalSum = 0;
 
-  productList.forEach(product => {
-    // FIX: Calculate MRP total as (MRP * Quantity) for each product
-    const productMrpTotal = (parseFloat(product.mrp) || 0) * (parseFloat(product.quantity) || 0);
-    mrpSum += productMrpTotal;
-    
-    qtySum += parseFloat(product.quantity || 0);
-    discountSum += parseFloat(product.discountAmt || 0);
-    taxBeforeSum += parseFloat(product.beforeTax || 0);
-    taxAfterSum += parseFloat(product.afterDiscount || 0);
-    totalSum += parseFloat(product.total || 0);
-  });
+    productList.forEach(product => {
+      // FIX: Calculate MRP total as (MRP * Quantity) for each product
+      const productMrpTotal = (parseFloat(product.mrp) || 0) * (parseFloat(product.quantity) || 0);
+      mrpSum += productMrpTotal;
+      
+      qtySum += parseFloat(product.quantity || 0);
+      discountSum += parseFloat(product.discountAmt || 0);
+      taxBeforeSum += parseFloat(product.beforeTax || 0);
+      taxAfterSum += parseFloat(product.afterDiscount || 0);
+      totalSum += parseFloat(product.total || 0);
+    });
 
-  setTotals({
-    mrpTotal: mrpSum.toFixed(2),
-    qtyTotal: qtySum.toFixed(2),
-    discountTotal: discountSum.toFixed(2),
-    taxBeforeTotal: taxBeforeSum.toFixed(2),
-    taxAfterTotal: taxAfterSum.toFixed(2),
-    totalAmount: totalSum.toFixed(2)
-  });
+    setTotals({
+      mrpTotal: mrpSum.toFixed(2),
+      qtyTotal: qtySum.toFixed(2),
+      discountTotal: discountSum.toFixed(2),
+      taxBeforeTotal: taxBeforeSum.toFixed(2),
+      taxAfterTotal: taxAfterSum.toFixed(2),
+      totalAmount: totalSum.toFixed(2)
+    });
 
-  // Calculate Before and After amounts
-  setBeforeAmount(taxBeforeSum.toFixed(2));
-  setAfterAmount(totalSum.toFixed(2));
-};
+    // Calculate Before and After amounts
+    setBeforeAmount(taxBeforeSum.toFixed(2));
+    setAfterAmount(totalSum.toFixed(2));
+  };
 
   // Load order data first
   useEffect(() => {
@@ -206,11 +206,8 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
         beforeTax: p['Before Tax'] || '0',
         afterDiscount: p['After Discount'] || '0',
         cgst: p['CGST %'] || '0',
-        
         sgst: p['SGST %'] || '0',
-       
         igst: p['IGST %'] || '0',
-       
         total: p['Total'] || '0',
         splitQty: '0',
         productCategory: ''
@@ -375,24 +372,24 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
     }));
   };
 
- // Process Product List from Product List table
-const processProductList = (productList) => {
-  if (!productList || !productList.rows) {
-    return [];
-  }
+  // Process Product List from Product List table
+  const processProductList = (productList) => {
+    if (!productList || !productList.rows) {
+      return [];
+    }
 
-  return productList.rows
-    .filter(row => row['As Per Factory- Status'] !== 'Discontinue')
-    .map(row => ({
-      combinedName: row['Combined Name'] || '',
-      productSKU: row['SKU'] || '',
-      pack: row['Pack'] || '',
-      price: row['Price'] || '0',
-      productCategory: row['Products Category'] || '',
-      taxRate: row['TAX RATE'] || '0'
-    }))
-    .filter(p => p.combinedName);
-};
+    return productList.rows
+      .filter(row => row['As Per Factory- Status'] !== 'Discontinue')
+      .map(row => ({
+        combinedName: row['Combined Name'] || '',
+        productSKU: row['SKU'] || '',
+        pack: row['Pack'] || '',
+        price: row['Price'] || '0',
+        productCategory: row['Products Category'] || '',
+        taxRate: row['TAX RATE'] || '0'
+      }))
+      .filter(p => p.combinedName);
+  };
 
   // Process Discount Caps from Discount section
   const processDiscountCaps = (discountList) => {
@@ -500,7 +497,7 @@ const processProductList = (productList) => {
       updated[index][field] = value;
     }
     
-    // Recalculate amounts
+    // Recalculate amounts (REMOVED CGST/SGST/IGST AMOUNT CALCULATIONS)
     if (field === 'quantity' || field === 'mrp' || field === 'discountPer' || field === 'productName') {
       const qty = parseFloat(updated[index].quantity) || 0;
       const mrp = parseFloat(updated[index].mrp) || 0;
@@ -514,12 +511,15 @@ const processProductList = (productList) => {
       updated[index].discountAmt = discAmt.toFixed(2);
       updated[index].afterDiscount = afterDisc.toFixed(2);
       
-      const cgst = parseFloat(updated[index].cgst) || 0;
-      const sgst = parseFloat(updated[index].sgst) || 0;
-      const igst = parseFloat(updated[index].igst) || 0;
+      // Calculate total with tax (simplified)
+      const cgstRate = parseFloat(updated[index].cgst) || 0;
+      const sgstRate = parseFloat(updated[index].sgst) || 0;
+      const igstRate = parseFloat(updated[index].igst) || 0;
       
-     
-      updated[index].total = (afterDisc + cgstAmt + sgstAmt + igstAmt).toFixed(2);
+      const totalTaxPercent = cgstRate + sgstRate + igstRate;
+      const taxAmount = (afterDisc * totalTaxPercent) / 100;
+      
+      updated[index].total = (afterDisc + taxAmount).toFixed(2);
     }
     
     setProductList(updated);
@@ -576,11 +576,8 @@ const processProductList = (productList) => {
       BEFORE: productList.map(p => p.beforeTax),
       AFTER: productList.map(p => p.afterDiscount),
       CGST: productList.map(p => p.cgst),
-    
       SGST: productList.map(p => p.sgst),
-     
       IGST: productList.map(p => p.igst),
-     
       TOTAL: productList.map(p => p.total),
       SplitQTY: productList.map(p => p.splitQty),
       
@@ -895,147 +892,152 @@ const processProductList = (productList) => {
       </div>
 
       {/* Products */}
-     
-<div className={styles.productsTable}>
-  <table>
-    <thead>
-      <tr>
-        <th>#</th>
-        <th>Product</th>
-        <th>SKU</th>
-        <th>MRP</th>
-        <th>Packing Size</th>
-        <th>Qty</th>
-        <th>Disc %</th>
-        <th>Disc Amt</th>
-        <th>Before Tax</th>
-        <th>After Disc</th>
-        <th>CGST %</th>
-        <th>SGST %</th>
-        <th>IGST %</th>
-        <th>Total</th>
-        <th>Order QTY</th>
-        <th>Split Qty</th>
-        <th></th>
-      </tr>
-    </thead>
-    <tbody>
-      {productList.map((product, index) => (
-        <tr key={index}>
-          <td>{index + 1}</td>
-          <td>
-            <select 
-              value={product.productName}
-              onChange={(e) => updateProduct(index, 'productName', e.target.value)}
-              className={styles.productDropdown}
-            >
-              <option value="">-- Select Product --</option>
-              {productListOptions.map((p, i) => (
-                <option key={i} value={p.combinedName}>
-                  {p.combinedName}
-                </option>
+      <div className={styles.section}>
+        <div className={styles.sectionHeader}>
+          <h3>Products</h3>
+          <button type="button" onClick={addProduct} className={styles.btnAdd}>+ Add Product</button>
+        </div>
+        
+        <div className={styles.productsTable}>
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Product</th>
+                <th>SKU</th>
+                <th>MRP</th>
+                <th>Packing Size</th>
+                <th>Qty</th>
+                <th>Disc %</th>
+                <th>Disc Amt</th>
+                <th>Before Tax</th>
+                <th>After Disc</th>
+                <th>CGST %</th>
+                <th>SGST %</th>
+                <th>IGST %</th>
+                <th>Total</th>
+                <th>Order QTY</th>
+                <th>Split Qty</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {productList.map((product, index) => (
+                <tr key={index}>
+                  <td>{index + 1}</td>
+                  <td>
+                    <select 
+                      value={product.productName}
+                      onChange={(e) => updateProduct(index, 'productName', e.target.value)}
+                      className={styles.productDropdown}
+                    >
+                      <option value="">-- Select Product --</option>
+                      {productListOptions.map((p, i) => (
+                        <option key={i} value={p.combinedName}>
+                          {p.combinedName}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
+                  <td><input type="text" value={product.sku} readOnly className={styles.readonly} /></td>
+                  <td><input type="text" value={product.mrp} readOnly className={styles.readonly} /></td>
+                  <td><input type="text" value={product.packingSize} readOnly className={styles.readonly} /></td>
+                  <td>
+                    <input 
+                      type="number" 
+                      value={product.quantity}
+                      onChange={(e) => updateProduct(index, 'quantity', e.target.value)}
+                    />
+                  </td>
+                  <td>
+                    <input 
+                      type="number" 
+                      value={product.discountPer}
+                      onChange={(e) => updateProduct(index, 'discountPer', e.target.value)}
+                      title={`Max: ${getMaxDiscount(product.productCategory)}%`}
+                    />
+                  </td>
+                  <td><input type="text" value={product.discountAmt} readOnly className={styles.readonly} /></td>
+                  <td><input type="text" value={product.beforeTax} readOnly className={styles.readonly} /></td>
+                  <td><input type="text" value={product.afterDiscount} readOnly className={styles.readonly} /></td>
+                  <td><input type="text" value={product.cgst} readOnly className={styles.readonly} /></td>
+                  <td><input type="text" value={product.sgst} readOnly className={styles.readonly} /></td>
+                  <td><input type="text" value={product.igst} readOnly className={styles.readonly} /></td>
+                  <td><input type="text" value={product.total} readOnly className={styles.readonly} /></td>
+                  <td><input type="text" value={product.orderQty} readOnly className={styles.readonly} /></td>
+                  <td>
+                    <input 
+                      type="number" 
+                      value={product.splitQty}
+                      onChange={(e) => updateProduct(index, 'splitQty', e.target.value)}
+                    />
+                  </td>
+                  <td>
+                    <button type="button" onClick={() => removeProduct(index)} className={styles.btnRemove}>
+                      Remove
+                    </button>
+                  </td>
+                </tr>
               ))}
-            </select>
-          </td>
-          <td><input type="text" value={product.sku} readOnly className={styles.readonly} /></td>
-          <td><input type="text" value={product.mrp} readOnly className={styles.readonly} /></td>
-          <td><input type="text" value={product.packingSize} readOnly className={styles.readonly} /></td>
-          <td>
-            <input 
-              type="number" 
-              value={product.quantity}
-              onChange={(e) => updateProduct(index, 'quantity', e.target.value)}
-            />
-          </td>
-          <td>
-            <input 
-              type="number" 
-              value={product.discountPer}
-              onChange={(e) => updateProduct(index, 'discountPer', e.target.value)}
-              title={`Max: ${getMaxDiscount(product.productCategory)}%`}
-            />
-          </td>
-          <td><input type="text" value={product.discountAmt} readOnly className={styles.readonly} /></td>
-          <td><input type="text" value={product.beforeTax} readOnly className={styles.readonly} /></td>
-          <td><input type="text" value={product.afterDiscount} readOnly className={styles.readonly} /></td>
-          <td><input type="text" value={product.cgst} readOnly className={styles.readonly} /></td>
-          <td><input type="text" value={product.sgst} readOnly className={styles.readonly} /></td>
-          <td><input type="text" value={product.igst} readOnly className={styles.readonly} /></td>
-          <td><input type="text" value={product.total} readOnly className={styles.readonly} /></td>
-          <td><input type="text" value={product.orderQty} readOnly className={styles.readonly} /></td>
-          <td>
-            <input 
-              type="number" 
-              value={product.splitQty}
-              onChange={(e) => updateProduct(index, 'splitQty', e.target.value)}
-            />
-          </td>
-          <td>
-            <button type="button" onClick={() => removeProduct(index)} className={styles.btnRemove}>
-              Remove
-            </button>
-          </td>
-        </tr>
-      ))}
-      {/* Total Row - Updated to match new columns */}
-      <tr className={styles.totalRow}>
-        <td colSpan="2" className={styles.totalLabel}>Total</td>
-        <td></td>
-        <td>
-          <input 
-            type="text" 
-            value={totals.mrpTotal} 
-            readOnly 
-            className={styles.readonly}
-          />
-        </td>
-        <td></td>
-        <td>
-          <input 
-            type="text" 
-            value={totals.qtyTotal} 
-            readOnly 
-            className={styles.readonly}
-          />
-        </td>
-        <td colSpan="2">
-          <input 
-            type="text" 
-            value={totals.discountTotal} 
-            readOnly 
-            className={styles.readonly}
-          />
-        </td>
-        <td>
-          <input 
-            type="text" 
-            value={totals.taxBeforeTotal} 
-            readOnly 
-            className={styles.readonly}
-          />
-        </td>
-        <td>
-          <input 
-            type="text" 
-            value={totals.taxAfterTotal} 
-            readOnly 
-            className={styles.readonly}
-          />
-        </td>
-        <td colSpan="3"></td>
-        <td className={styles.finalTotal}>
-          <input 
-            type="text" 
-            value={totals.totalAmount} 
-            readOnly 
-            className={styles.readonly}
-          />
-        </td>
-        <td colSpan="3"></td>
-      </tr>
-    </tbody>
-  </table>
-</div>
+              {/* Total Row */}
+              <tr className={styles.totalRow}>
+                <td colSpan="2" className={styles.totalLabel}>Total</td>
+                <td></td>
+                <td>
+                  <input 
+                    type="text" 
+                    value={totals.mrpTotal} 
+                    readOnly 
+                    className={styles.readonly}
+                  />
+                </td>
+                <td></td>
+                <td>
+                  <input 
+                    type="text" 
+                    value={totals.qtyTotal} 
+                    readOnly 
+                    className={styles.readonly}
+                  />
+                </td>
+                <td colSpan="2">
+                  <input 
+                    type="text" 
+                    value={totals.discountTotal} 
+                    readOnly 
+                    className={styles.readonly}
+                  />
+                </td>
+                <td>
+                  <input 
+                    type="text" 
+                    value={totals.taxBeforeTotal} 
+                    readOnly 
+                    className={styles.readonly}
+                  />
+                </td>
+                <td>
+                  <input 
+                    type="text" 
+                    value={totals.taxAfterTotal} 
+                    readOnly 
+                    className={styles.readonly}
+                  />
+                </td>
+                <td colSpan="3"></td>
+                <td className={styles.finalTotal}>
+                  <input 
+                    type="text" 
+                    value={totals.totalAmount} 
+                    readOnly 
+                    className={styles.readonly}
+                  />
+                </td>
+                <td colSpan="3"></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
 
         {/* Total Amount Display */}
         <div className={styles.totalAmountSection}>
