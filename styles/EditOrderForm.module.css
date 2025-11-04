@@ -173,17 +173,18 @@
    Form Fields - Ultra Compact
    ============================================ */
 .field {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  grid-gap: 10px;
+  align-items: center;
 }
 
 .field label {
   font-weight: 600;
   color: var(--text-primary);
   font-size: 11px;
-  margin-bottom: 1px;
   line-height: 1.2;
+  text-align: right;
 }
 
 .mandatory {
