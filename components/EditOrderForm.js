@@ -674,27 +674,42 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
           </div>
         </div>
 
+        {/* Billing and Shipping Address - UPDATED */}
         <div className={styles.grid2}>
           <div className={styles.field}>
             <label>Billing Address <span className={styles.mandatory}>*</span></label>
-            <textarea value={billingAddress} onChange={(e) => setBillingAddress(e.target.value)} required rows="3" />
+            <textarea 
+              value={billingAddress} 
+              onChange={(e) => setBillingAddress(e.target.value)} 
+              required 
+              rows="3" 
+            />
           </div>
+          
           <div className={styles.field}>
             <label>Shipping Address <span className={styles.mandatory}>*</span></label>
-            <div className={styles.checkboxGroup}>
-              <input
-                type="checkbox"
-                checked={isShippingSameAsBilling}
-                onChange={() => {
-                  setIsShippingSameAsBilling(!isShippingSameAsBilling);
-                  if (!isShippingSameAsBilling) {
-                    setShippingAddress(billingAddress);
-                  }
-                }}
+            <div>
+              <div className={styles.checkboxGroup}>
+                <input
+                  type="checkbox"
+                  id="sameAsBilling"
+                  checked={isShippingSameAsBilling}
+                  onChange={() => {
+                    setIsShippingSameAsBilling(!isShippingSameAsBilling);
+                    if (!isShippingSameAsBilling) {
+                      setShippingAddress(billingAddress);
+                    }
+                  }}
+                />
+                <label htmlFor="sameAsBilling">Check if billing and shipping is same</label>
+              </div>
+              <textarea 
+                value={shippingAddress} 
+                onChange={(e) => setShippingAddress(e.target.value)} 
+                required 
+                rows="3" 
               />
-              <label>Check if billing and shipping is same</label>
             </div>
-            <textarea value={shippingAddress} onChange={(e) => setShippingAddress(e.target.value)} required rows="3" />
           </div>
         </div>
 
