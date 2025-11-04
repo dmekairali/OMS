@@ -405,7 +405,7 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
         <div className="cover">
           <div className="rightpart">
             <form name="aspnetForm" onSubmit={handleSubmit}>
-              <div className={`container ${styles.bgwhite}`}>
+              <div className={`container ${styles.bgwhite} ${styles.formContainer}`}>
 
                 <div className="row mb-4">
                   <div className="col-12 text-center">

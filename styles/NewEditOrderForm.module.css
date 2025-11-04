@@ -12,22 +12,22 @@
   background-position: center;
 }
 
-:global(select[readonly]) {
+.formContainer :global(select[readonly]) {
   background: #eee;
   cursor: no-drop;
 }
 
-:global(select[readonly] option) {
+.formContainer :global(select[readonly] option) {
   display: none;
 }
 
-:global(input[type="checkbox"][readonly]) {
+.formContainer :global(input[type="checkbox"][readonly]) {
   pointer-events: none;
 }
-:global(input[type="textbox"][readonly]) {
+.formContainer :global(input[type="textbox"][readonly]) {
   pointer-events: none;
 }
-:global(input[type="number"][readonly]) {
+.formContainer :global(input[type="number"][readonly]) {
   pointer-events: none;
 }
 
@@ -48,7 +48,7 @@
   font-size: 13px;
 }
 
-:global(label) {
+.formContainer :global(label) {
   font-size: 13px;
 }
 
