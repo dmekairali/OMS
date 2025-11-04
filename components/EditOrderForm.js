@@ -71,6 +71,9 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
   const [orderInFull, setOrderInFull] = useState('');
   const [orderInFullReason, setOrderInFullReason] = useState('');
 
+  // Edit Order Status
+  const [editOrderStatus, setEditOrderStatus] = useState('');
+
   // API data and validation
   const [setupData, setSetupData] = useState(null);
   const [deliveryParties, setDeliveryParties] = useState([]);
@@ -82,6 +85,7 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
   // Load order data first
   useEffect(() => {
     if (order) {
+      setEditOrderStatus(order['Edit Order Status'] || order['editstatus'] || '');
       setClientName(order['Name of Client'] || '');
       setMobile(order['Mobile'] || '');
       setEmail(order['Email'] || '');
@@ -144,6 +148,7 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
         mrp: p['MRP'] || '0',
         packingSize: p['Packing Size'] || '',
         quantity: p['Quantity'] || p['QNT'] || '0',
+        orderQty: p['Order QTY'] || p['Quantity'] || p['QNT'] || '0',
         discountPer: p['Discount %'] || '0',
         discountAmt: p['Discount Amount'] || '0',
         beforeTax: p['Before Tax'] || '0',
@@ -329,6 +334,7 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
       mrp: '0',
       packingSize: '',
       quantity: '0',
+      orderQty: '0',
       discountPer: '0',
       discountAmt: '0',
       beforeTax: '0',
@@ -392,6 +398,7 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
     }
 
     const formData = {
+      editstatus: editOrderStatus,
       clientname: clientName,
       mobile: mobile,
       email: email,
@@ -425,6 +432,7 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
       MRP: productList.map(p => p.mrp),
       PACKINGSIZE: productList.map(p => p.packingSize),
       QNT: productList.map(p => p.quantity),
+      OrderQTY: productList.map(p => p.orderQty),
       DISPER: productList.map(p => p.discountPer),
       DISOUCNT: productList.map(p => ''),
       DISAMT: productList.map(p => p.discountAmt),
@@ -503,6 +511,21 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
           {errorMessage}
         </div>
       )}
+
+      {/* Edit Order Status */}
+      <div className={styles.section}>
+        <div className={styles.grid2}>
+          <div className={styles.field}>
+            <label>Edit Order Status</label>
+            <input 
+              type="text" 
+              value={editOrderStatus} 
+              readOnly 
+              className={styles.readonly}
+            />
+          </div>
+        </div>
+      </div>
 
       {/* Client Information */}
       <div className={styles.section}>
@@ -589,7 +612,11 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
         <div className={styles.grid2}>
           <div className={styles.field}>
             <label>Order Type</label>
-            <input type="text" value={orderType} onChange={(e) => setOrderType(e.target.value)} />
+            <select value={orderType} onChange={(e) => setOrderType(e.target.value)}>
+              <option value="">-- Select --</option>
+              <option value="New Order">New Order</option>
+              <option value="Sample Order">Sample Order</option>
+            </select>
           </div>
           <div className={styles.field}>
             <label>Party Name</label>
@@ -732,6 +759,7 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
                 <th>IGST %</th>
                 <th>IGST Amt</th>
                 <th>Total</th>
+                <th>Order QTY</th>
                 <th>Split Qty</th>
                 <th></th>
               </tr>
@@ -810,6 +838,7 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
                   </td>
                   <td><input type="text" value={product.igstAmt} readOnly /></td>
                   <td><input type="text" value={product.total} readOnly /></td>
+                  <td><input type="text" value={product.orderQty} readOnly /></td>
                   <td>
                     <input 
                       type="number" 
@@ -843,7 +872,7 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
           </div>
           <div className={styles.field}>
             <label>Shipping Tax Percent</label>
-            <input type="number" value={shippingTaxPercent} onChange={(e) => setShippingTaxPercent(e.target.value)} />
+            <input type="number" value={shippingTaxPercent} readOnly className={styles.readonly} />
           </div>
           <div className={styles.field}>
             <label>Shipping Tax Percent Remark</label>
@@ -851,7 +880,7 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
           </div>
           <div className={styles.field}>
             <label>Total Shipping Charge</label>
-            <input type="number" value={totalShippingCharge} onChange={(e) => setTotalShippingCharge(e.target.value)} />
+            <input type="number" value={totalShippingCharge} readOnly className={styles.readonly} />
           </div>
           <div className={styles.field}>
             <label>Total Shipping Charge Remark</label>
@@ -865,20 +894,33 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
         <h3>Repeat Order</h3>
         <div className={styles.grid2}>
           <div className={styles.field}>
-            <label>Reoccurance</label>
-            <input type="text" value={reoccurance} onChange={(e) => setReoccurance(e.target.value)} />
+            <label>Next Order Fixed Date</label>
+            <input type="date" value={nextOrderDate} onChange={(e) => setNextOrderDate(e.target.value)} />
           </div>
           <div className={styles.field}>
-            <label>Next Order Date</label>
-            <input type="date" value={nextOrderDate} onChange={(e) => setNextOrderDate(e.target.value)} />
+            <label>Reoccurrence Interval</label>
+            <select value={reoccurance} onChange={(e) => setReoccurance(e.target.value)}>
+              <option value="">-- Select --</option>
+              <option value="Weekly">Weekly</option>
+              <option value="Monthly">Monthly</option>
+              <option value="Yearly">Yearly</option>
+            </select>
           </div>
           <div className={styles.field}>
             <label>End Order Date</label>
             <input type="date" value={endOrderDate} onChange={(e) => setEndOrderDate(e.target.value)} />
           </div>
           <div className={styles.field}>
-            <label>Priority</label>
-            <input type="text" value={priority} onChange={(e) => setPriority(e.target.value)} />
+            <label>Rocket Client</label>
+            <div>
+              <input 
+                type="checkbox" 
+                id="priority" 
+                checked={priority === 'Yes'}
+                onChange={(e) => setPriority(e.target.checked ? 'Yes' : '')}
+              />
+              <label htmlFor="priority" style={{ marginLeft: '8px' }}>Yes</label>
+            </div>
           </div>
         </div>
       </div>
@@ -966,6 +1008,11 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
               <option value="Edited and Reorderd">Edited and Reorderd</option>
               <option value="Labelling issue">Labelling issue</option>
               <option value="Botteling issue">Botteling issue</option>
+              <option value="Packaging issue">Packaging issue</option>
+              <option value="Raw material supply issue">Raw material supply issue</option>
+              <option value="Production damage">Production damage</option>
+              <option value="Storage damage">Storage damage</option>
+              <option value="Others">Others</option>
             </select>
           </div>
         </div>
