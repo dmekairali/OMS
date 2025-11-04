@@ -3,9 +3,17 @@
    ============================================ */
 
 /* ============================================
-   Color Variables - World Class Palette
+   Form Container
    ============================================ */
-:root {
+.form {
+  max-width: 100%;
+  padding: 20px;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  
+  /* CSS Variables defined locally */
   --primary: #2563eb;
   --primary-dark: #1d4ed8;
   --primary-light: #3b82f6;
@@ -20,18 +28,6 @@
   --text-secondary: #64748b;
   --border: #e2e8f0;
   --border-light: #f1f5f9;
-}
-
-/* ============================================
-   Form Container
-   ============================================ */
-.form {
-  max-width: 100%;
-  padding: 20px;
-  background: var(--surface);
-  border-radius: 12px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 .editForm {
@@ -205,7 +201,6 @@
    Compact Input Variants
    ============================================ */
 .numberInput {
-  composes: input from global;
   padding: 6px 8px !important;
   min-height: 32px !important;
   text-align: center;
