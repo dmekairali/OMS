@@ -815,6 +815,7 @@ export default function EditOrderForm({ order, products, onSave, onCancel, selec
                   </div>
                 </div>
                 </div>
+              </div>
             </form>
           </div>
         </div>
