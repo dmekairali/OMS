@@ -1,5 +1,5 @@
 /* ============================================
-   EditOrderForm.module.css - Enhanced Styles
+   EditOrderForm.module.css - Compact Enhanced Styles
    ============================================ */
 
 /* ============================================
@@ -7,13 +7,13 @@
    ============================================ */
 .form {
   max-width: 100%;
-  padding: 20px;
+  padding: 16px;
   background: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   
-  /* CSS Variables defined locally */
+  /* CSS Variables */
   --primary: #2563eb;
   --primary-dark: #1d4ed8;
   --primary-light: #3b82f6;
@@ -35,7 +35,7 @@
 }
 
 /* ============================================
-   Loading Overlay - FIXED
+   Loading Overlay
    ============================================ */
 .loadingOverlay {
   position: absolute;
@@ -48,18 +48,18 @@
   align-items: center;
   justify-content: center;
   z-index: 100;
-  border-radius: 12px;
+  border-radius: 8px;
   backdrop-filter: blur(4px);
 }
 
 .loadingSpinner {
   background: var(--surface);
-  padding: 24px 40px;
-  border-radius: 12px;
-  font-size: 16px;
+  padding: 20px 32px;
+  border-radius: 8px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--primary);
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
   border: 1px solid var(--border);
 }
 
@@ -70,38 +70,38 @@
   background: #fef2f2;
   border: 1px solid var(--error);
   color: #991b1b;
-  padding: 12px 16px;
-  border-radius: 8px;
-  margin-bottom: 20px;
+  padding: 10px 14px;
+  border-radius: 6px;
+  margin-bottom: 16px;
   font-weight: 500;
-  font-size: 14px;
+  font-size: 13px;
   border-left: 4px solid var(--error);
 }
 
 /* ============================================
-   Section Styling - Compact
+   Section Styling - Ultra Compact
    ============================================ */
 .section {
-  margin-bottom: 24px;
-  padding: 16px;
+  margin-bottom: 16px;
+  padding: 12px;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 6px;
   background: var(--surface);
   transition: all 0.2s ease;
 }
 
 .section:hover {
   border-color: var(--primary-light);
-  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.1);
+  box-shadow: 0 1px 4px rgba(37, 99, 235, 0.1);
 }
 
 .sectionTitle {
-  margin: 0 0 16px 0;
+  margin: 0 0 12px 0;
   color: var(--primary);
-  font-size: 18px;
+  font-size: 15px;
   font-weight: 700;
-  padding-bottom: 8px;
-  border-bottom: 2px solid var(--border-light);
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border-light);
   letter-spacing: -0.025em;
 }
 
@@ -109,7 +109,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
 .sectionHeader h3 {
@@ -119,67 +119,92 @@
 }
 
 /* ============================================
-   Grid Layouts - Compact
+   Grid Layouts - Ultra Compact
    ============================================ */
 .grid2 {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 16px;
+  gap: 10px;
 }
 
 .grid3 {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
+  gap: 10px;
+}
+
+.grid4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.grid5 {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
 }
 
 @media (max-width: 1024px) {
   .grid3 {
     grid-template-columns: repeat(2, 1fr);
   }
+  
+  .grid4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .grid5 {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
 
 @media (max-width: 768px) {
   .grid2,
-  .grid3 {
+  .grid3,
+  .grid4,
+  .grid5 {
     grid-template-columns: 1fr;
-    gap: 12px;
+    gap: 8px;
   }
 }
 
 /* ============================================
-   Form Fields - Compact Height
+   Form Fields - Ultra Compact
    ============================================ */
 .field {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 3px;
 }
 
 .field label {
   font-weight: 600;
   color: var(--text-primary);
-  font-size: 13px;
-  margin-bottom: 2px;
+  font-size: 11px;
+  margin-bottom: 1px;
+  line-height: 1.2;
 }
 
 .mandatory {
   color: var(--error);
   font-weight: 700;
+  font-size: 10px;
 }
 
 .field input,
 .field select,
 .field textarea {
   width: 100%;
-  padding: 8px 12px;
-  border: 1.5px solid var(--border);
-  border-radius: 6px;
-  font-size: 14px;
-  transition: all 0.2s ease;
+  padding: 5px 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 12px;
+  transition: all 0.15s ease;
   font-family: inherit;
   background: var(--surface);
-  min-height: 36px;
+  min-height: 28px;
+  line-height: 1.2;
 }
 
 .field input:focus,
@@ -187,23 +212,25 @@
 .field textarea:focus {
   outline: none;
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
   background: var(--surface);
 }
 
 .field textarea {
   resize: vertical;
-  min-height: 60px;
-  line-height: 1.4;
+  min-height: 50px;
+  line-height: 1.3;
+  padding: 6px 8px;
 }
 
 /* ============================================
    Compact Input Variants
    ============================================ */
 .numberInput {
-  padding: 6px 8px !important;
-  min-height: 32px !important;
+  padding: 4px 6px !important;
+  min-height: 26px !important;
   text-align: center;
+  font-size: 11px !important;
 }
 
 /* ============================================
@@ -214,7 +241,8 @@
   color: var(--text-secondary) !important;
   cursor: not-allowed !important;
   border-color: var(--border) !important;
-  opacity: 0.8;
+  opacity: 0.7;
+  font-size: 11px !important;
 }
 
 .readonly:hover {
@@ -232,25 +260,25 @@
 .checkboxGroup {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
-  font-size: 13px;
+  gap: 6px;
+  margin-bottom: 6px;
+  font-size: 11px;
 }
 
 .checkboxGroup input[type="checkbox"] {
-  width: 16px;
-  height: 16px;
+  width: 14px;
+  height: 14px;
   margin: 0;
 }
 
 /* ============================================
-   Products Table - Fixed Sticky Columns & Custom Widths
+   Products Table - Compact
    ============================================ */
 .productsTable {
   overflow-x: auto;
-  margin-top: 12px;
+  margin-top: 10px;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 6px;
   background: var(--surface);
   max-width: 100%;
 }
@@ -258,8 +286,8 @@
 .productsTable table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 1200px;
-  font-size: 13px;
+  min-width: 1000px;
+  font-size: 11px;
 }
 
 .productsTable thead {
@@ -270,74 +298,74 @@
 }
 
 .productsTable thead th {
-  padding: 10px 6px;
+  padding: 8px 4px;
   text-align: center;
   font-weight: 600;
-  font-size: 12px;
+  font-size: 10px;
   border-right: 1px solid rgba(255, 255, 255, 0.1);
   white-space: nowrap;
   letter-spacing: 0.025em;
 }
 
-/* Custom Column Widths - Adjust these percentages as needed */
+/* Custom Column Widths */
 .productsTable thead th:nth-child(1) { /* Product Name */
-  width: 25%;
-  min-width: 250px;
+  width: 22%;
+  min-width: 200px;
 }
 
 .productsTable thead th:nth-child(2) { /* MRP */
   width: 6%;
-  min-width: 80px;
+  min-width: 60px;
 }
 
 .productsTable thead th:nth-child(3) { /* Packing Size */
   width: 8%;
-  min-width: 100px;
+  min-width: 80px;
 }
 
 .productsTable thead th:nth-child(4) { /* Qty */
   width: 5%;
-  min-width: 70px;
+  min-width: 50px;
 }
 
-.productsTable thead th:nth-child(5) { /* Discount % (colspan 2) */
-  width: 8%;
-  min-width: 100px;
+.productsTable thead th:nth-child(5) { /* Discount % */
+  width: 7%;
+  min-width: 70px;
 }
 
 .productsTable thead th:nth-child(6) { /* Dis. Amt */
   width: 7%;
-  min-width: 90px;
+  min-width: 70px;
 }
 
 .productsTable thead th:nth-child(7) { /* Taxable Before Dis. */
   width: 8%;
-  min-width: 100px;
+  min-width: 80px;
 }
 
 .productsTable thead th:nth-child(8) { /* Taxable After Dis. */
   width: 8%;
-  min-width: 100px;
-}
-
-.productsTable thead th:nth-child(9) { /* CGST (colspan 2) */
-  width: 6%;
   min-width: 80px;
 }
 
-.productsTable thead th:nth-child(10) { /* SGST (colspan 2) */
-  width: 6%;
-  min-width: 80px;
+.productsTable thead th:nth-child(9) { /* CGST */
+  width: 5%;
+  min-width: 60px;
 }
 
-.productsTable thead th:nth-child(11) { /* IGST (colspan 2) */
-  width: 6%;
-  min-width: 80px;
+.productsTable thead th:nth-child(10) { /* SGST */
+  width: 5%;
+  min-width: 60px;
+}
+
+.productsTable thead th:nth-child(11) { /* IGST */
+  width: 5%;
+  min-width: 60px;
 }
 
 .productsTable thead th:nth-child(12) { /* Total */
-  width: 7%;
-  min-width: 90px;
+  width: 6%;
+  min-width: 70px;
 }
 
 .productsTable thead th:last-child {
@@ -354,88 +382,86 @@
 }
 
 .productsTable tbody td {
-  padding: 6px;
+  padding: 4px;
   text-align: center;
-  font-size: 13px;
+  font-size: 11px;
   vertical-align: middle;
 }
 
 /* Apply custom widths to table body cells */
 .productsTable tbody td:nth-child(1) { /* Product Name */
-  width: 28%;
-  min-width: 250px;
+  width: 22%;
+  min-width: 200px;
   position: sticky;
-  left: 0; /* Starts from left edge since no index column */
+  left: 0;
   z-index: 2;
   background: var(--surface);
   text-align: left;
 }
 
-/* Remove sticky from other columns - THIS FIXES THE MRP FREEZING */
 .productsTable tbody td:nth-child(2) { /* MRP */
   width: 6%;
-  min-width: 80px;
-  position: static; /* Remove sticky positioning */
-  background: var(--surface);
+  min-width: 60px;
+  position: static;
 }
 
 .productsTable tbody td:nth-child(3) { /* Packing Size */
-  width: 5%;
-  min-width: 100px;
+  width: 8%;
+  min-width: 80px;
   position: static;
 }
 
 .productsTable tbody td:nth-child(4) { /* Qty */
   width: 5%;
-  min-width: 70px;
+  min-width: 50px;
   position: static;
 }
 
 .productsTable tbody td:nth-child(5) { /* Discount % */
-  width: 8%;
-  min-width: 100px;
+  width: 7%;
+  min-width: 70px;
   position: static;
 }
 
 .productsTable tbody td:nth-child(6) { /* Dis. Amt */
   width: 7%;
-  min-width: 90px;
+  min-width: 70px;
   position: static;
 }
 
 .productsTable tbody td:nth-child(7) { /* Taxable Before Dis. */
   width: 8%;
-  min-width: 100px;
+  min-width: 80px;
   position: static;
 }
 
 .productsTable tbody td:nth-child(8) { /* Taxable After Dis. */
   width: 8%;
-  min-width: 100px;
+  min-width: 80px;
   position: static;
 }
 
 .productsTable tbody td:nth-child(9) { /* CGST */
-  width: 6%;
-  min-width: 80px;
+  width: 5%;
+  min-width: 60px;
   position: static;
 }
 
 .productsTable tbody td:nth-child(10) { /* SGST */
-  width: 6%;
-  min-width: 80px;
+  width: 5%;
+  min-width: 60px;
   position: static;
 }
 
 .productsTable tbody td:nth-child(11) { /* IGST */
-  width: 6%;
-  min-width: 80px;
+  width: 5%;
+  min-width: 60px;
   position: static;
 }
 
 .productsTable tbody td:nth-child(12) { /* Total */
-  width: 7%;
-  min-width: 90px;
+  width: 6%;
+  min-width: 70px;
   position: static;
 }
 
@@ -446,20 +472,47 @@
 .productsTable tbody td:nth-child(1) select {
   text-align: left;
   width: 100%;
-  min-width: 200px;
+  min-width: 180px;
 }
 
 .productsTable tbody td input,
 .productsTable tbody td select {
-  min-width: 60px;
+  min-width: 50px;
   text-align: center;
-  padding: 4px 6px;
-  min-height: 28px;
-  font-size: 13px;
-  width: 90%; /* Make inputs fit within cells */
+  padding: 3px 4px;
+  min-height: 24px;
+  font-size: 11px;
+  width: 90%;
 }
 
-/* Total Row Styling */
+/* ============================================
+   Product Dropdown Styling
+   ============================================ */
+.productDropdown {
+  width: 100%;
+  padding: 4px 6px;
+  border: 1px solid var(--primary);
+  border-radius: 3px;
+  font-size: 11px;
+  background-color: var(--surface);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  min-height: 26px;
+}
+
+.productDropdown:hover {
+  border-color: var(--primary-dark);
+}
+
+.productDropdown:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
+}
+
+/* ============================================
+   Total Row Styling
+   ============================================ */
 .totalRow {
   background: linear-gradient(135deg, #f0f9ff, #e0f2fe) !important;
   font-weight: 600;
@@ -470,14 +523,15 @@
   text-align: right;
   color: var(--primary);
   font-weight: 700;
-  padding-right: 12px;
+  padding-right: 8px;
+  font-size: 11px;
 }
 
 .finalTotal {
   background: var(--primary) !important;
   color: white !important;
   font-weight: 700;
-  font-size: 14px;
+  font-size: 12px;
 }
 
 .finalTotal input {
@@ -486,64 +540,65 @@
   background: transparent !important;
   border: none !important;
   text-align: center;
+  font-size: 11px !important;
 }
 
 /* ============================================
    Total Amount Section
    ============================================ */
 .totalAmountSection {
-  margin-top: 16px;
-  padding: 12px 16px;
+  margin-top: 12px;
+  padding: 10px 12px;
   background: linear-gradient(135deg, #f0fdf4, #dcfce7);
   border: 1px solid #bbf7d0;
-  border-radius: 8px;
+  border-radius: 6px;
 }
 
 .totalAmountRow {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 4px 0;
+  padding: 2px 0;
 }
 
 .totalAmountRow span {
   font-weight: 600;
   color: var(--text-primary);
+  font-size: 12px;
 }
 
 .beforeAmount {
   color: var(--secondary);
-  font-size: 15px;
+  font-size: 13px;
 }
 
 .afterAmount {
   color: var(--success);
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 700;
 }
 
 /* ============================================
-   Button Styling - Modern
+   Button Styling - Compact
    ============================================ */
 .btnAdd {
   background: linear-gradient(135deg, var(--primary), var(--primary-dark));
   color: white;
   border: none;
-  border-radius: 6px;
-  padding: 8px 16px;
-  font-size: 13px;
+  border-radius: 4px;
+  padding: 6px 12px;
+  font-size: 11px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.15s ease;
   display: flex;
   align-items: center;
-  gap: 4px;
-  box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
+  gap: 3px;
 }
 
 .btnAdd:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(37, 99, 235, 0.3);
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.3);
 }
 
 .btnAdd:active {
@@ -553,13 +608,13 @@
 .toggleButton {
   background: transparent;
   color: var(--primary);
-  border: 1.5px solid var(--primary);
-  border-radius: 6px;
-  padding: 6px 12px;
-  font-size: 12px;
+  border: 1px solid var(--primary);
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 10px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.15s ease;
 }
 
 .toggleButton:hover {
@@ -571,13 +626,13 @@
   background-color: var(--error);
   color: white;
   border: none;
-  border-radius: 4px;
-  width: 28px;
-  height: 28px;
-  font-size: 16px;
+  border-radius: 3px;
+  width: 22px;
+  height: 22px;
+  font-size: 12px;
   line-height: 1;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.15s ease;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -594,28 +649,27 @@
 .formActions {
   display: flex;
   justify-content: flex-end;
-  gap: 12px;
-  padding-top: 20px;
-  border-top: 2px solid var(--border-light);
-  margin-top: 24px;
+  gap: 10px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-light);
+  margin-top: 20px;
 }
 
 .btnSubmit {
   background: linear-gradient(135deg, var(--success), #059669);
   color: white;
   border: none;
-  border-radius: 8px;
-  padding: 10px 24px;
-  font-size: 14px;
+  border-radius: 4px;
+  padding: 8px 20px;
+  font-size: 12px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);
+  transition: all 0.15s ease;
 }
 
 .btnSubmit:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4);
 }
 
 .btnSubmit:active:not(:disabled) {
@@ -633,13 +687,13 @@
 .btnCancel {
   background: white;
   color: var(--text-secondary);
-  border: 1.5px solid var(--border);
-  border-radius: 8px;
-  padding: 10px 24px;
-  font-size: 14px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 8px 20px;
+  font-size: 12px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.15s ease;
 }
 
 .btnCancel:hover {
@@ -654,18 +708,18 @@
 .discountTable {
   width: 100%;
   border-collapse: collapse;
-  margin-top: 12px;
+  margin-top: 10px;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 4px;
   overflow: hidden;
 }
 
 .discountTable th,
 .discountTable td {
-  padding: 10px 12px;
+  padding: 8px 10px;
   text-align: left;
   border: 1px solid var(--border-light);
-  font-size: 13px;
+  font-size: 11px;
 }
 
 .discountTable thead {
@@ -682,23 +736,23 @@
    ============================================ */
 @media (max-width: 768px) {
   .form {
-    padding: 16px;
+    padding: 12px;
   }
 
   .section {
-    padding: 12px;
-    margin-bottom: 20px;
+    padding: 10px;
+    margin-bottom: 14px;
   }
 
   .sectionTitle {
-    font-size: 16px;
-    margin-bottom: 12px;
+    font-size: 14px;
+    margin-bottom: 10px;
   }
 
   .sectionHeader {
     flex-direction: column;
     align-items: flex-start;
-    gap: 8px;
+    gap: 6px;
   }
   
   .btnAdd {
@@ -708,20 +762,20 @@
 
   .formActions {
     flex-direction: column-reverse;
-    gap: 8px;
+    gap: 6px;
   }
 
   .btnSubmit,
   .btnCancel {
     width: 100%;
-    padding: 12px;
+    padding: 10px;
   }
 
   .productsTable {
-    font-size: 12px;
+    font-size: 10px;
   }
   
-  .productsTable tbody td:nth-child(2) {
+  .productsTable tbody td:nth-child(1) {
     position: static;
     min-width: 150px;
   }
@@ -734,8 +788,8 @@
 .field input:focus-visible,
 .field select:focus-visible,
 .field textarea:focus-visible {
-  outline: 2px solid var(--primary);
-  outline-offset: 2px;
+  outline: 1px solid var(--primary);
+  outline-offset: 1px;
 }
 
 /* ============================================
@@ -744,7 +798,7 @@
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(8px);
+    transform: translateY(6px);
   }
   to {
     opacity: 1;
@@ -753,7 +807,7 @@
 }
 
 .section {
-  animation: fadeIn 0.3s ease-out;
+  animation: fadeIn 0.2s ease-out;
 }
 
 @keyframes pulse {
