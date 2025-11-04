@@ -38,6 +38,20 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
   // Products
   const [productList, setProductList] = useState([]);
   
+  // Totals
+  const [totals, setTotals] = useState({
+    mrpTotal: '0',
+    qtyTotal: '0',
+    discountTotal: '0',
+    taxBeforeTotal: '0',
+    taxAfterTotal: '0',
+    totalAmount: '0'
+  });
+
+  // Amounts
+  const [beforeAmount, setBeforeAmount] = useState('0');
+  const [afterAmount, setAfterAmount] = useState('0');
+
   // Repeat Order
   const [reoccurance, setReoccurance] = useState('');
   const [nextOrderDate, setNextOrderDate] = useState('');
@@ -84,6 +98,42 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
   const [clientNotFound, setClientNotFound] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+
+  // Calculate totals whenever productList changes
+  useEffect(() => {
+    calculateTotals();
+  }, [productList]);
+
+  const calculateTotals = () => {
+    let mrpSum = 0;
+    let qtySum = 0;
+    let discountSum = 0;
+    let taxBeforeSum = 0;
+    let taxAfterSum = 0;
+    let totalSum = 0;
+
+    productList.forEach(product => {
+      mrpSum += parseFloat(product.mrp || 0);
+      qtySum += parseFloat(product.quantity || 0);
+      discountSum += parseFloat(product.discountAmt || 0);
+      taxBeforeSum += parseFloat(product.beforeTax || 0);
+      taxAfterSum += parseFloat(product.afterDiscount || 0);
+      totalSum += parseFloat(product.total || 0);
+    });
+
+    setTotals({
+      mrpTotal: mrpSum.toFixed(2),
+      qtyTotal: qtySum.toFixed(2),
+      discountTotal: discountSum.toFixed(2),
+      taxBeforeTotal: taxBeforeSum.toFixed(2),
+      taxAfterTotal: taxAfterSum.toFixed(2),
+      totalAmount: totalSum.toFixed(2)
+    });
+
+    // Calculate Before and After amounts
+    setBeforeAmount(taxBeforeSum.toFixed(2));
+    setAfterAmount(totalSum.toFixed(2));
+  };
 
   // Load order data first
   useEffect(() => {
@@ -141,7 +191,7 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
     }
     
     if (products && products.length > 0) {
-      setProductList(products.map(p => ({
+      const initialProducts = products.map(p => ({
         productName: p['Product Name'] || '',
         sku: p['SKU Code'] || '',
         mrp: p['MRP'] || '0',
@@ -161,7 +211,8 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
         total: p['Total'] || '0',
         splitQty: '0',
         productCategory: ''
-      })));
+      }));
+      setProductList(initialProducts);
     }
   }, [order, products]);
 
@@ -569,10 +620,14 @@ const processProductList = (productList) => {
       otifyesno: orderInFull,
       otifreason: orderInFullReason,
       
-      taxbeforetotal: productList.reduce((sum, p) => sum + parseFloat(p.beforeTax || 0), 0).toFixed(2),
-      distotal: productList.reduce((sum, p) => sum + parseFloat(p.discountAmt || 0), 0).toFixed(2),
-      Beforeamt: productList.reduce((sum, p) => sum + parseFloat(p.beforeTax || 0), 0).toFixed(2),
-      Afteramt: productList.reduce((sum, p) => sum + parseFloat(p.total || 0), 0).toFixed(2)
+      mrptotal: totals.mrpTotal,
+      qnttotal: totals.qtyTotal,
+      distotal: totals.discountTotal,
+      taxbeforetotal: totals.taxBeforeTotal,
+      taxaftertotal: totals.taxAfterTotal,
+      totaltotal: totals.totalAmount,
+      Beforeamt: beforeAmount,
+      Afteramt: afterAmount
     };
     
     onSave(formData);
@@ -939,8 +994,76 @@ const processProductList = (productList) => {
                   </td>
                 </tr>
               ))}
+              {/* Total Row */}
+              <tr className={styles.totalRow}>
+                <td colSpan="2" className={styles.totalLabel}>Total</td>
+                <td></td>
+                <td>
+                  <input 
+                    type="text" 
+                    value={totals.mrpTotal} 
+                    readOnly 
+                    className={styles.readonly}
+                  />
+                </td>
+                <td></td>
+                <td>
+                  <input 
+                    type="text" 
+                    value={totals.qtyTotal} 
+                    readOnly 
+                    className={styles.readonly}
+                  />
+                </td>
+                <td colSpan="2">
+                  <input 
+                    type="text" 
+                    value={totals.discountTotal} 
+                    readOnly 
+                    className={styles.readonly}
+                  />
+                </td>
+                <td>
+                  <input 
+                    type="text" 
+                    value={totals.taxBeforeTotal} 
+                    readOnly 
+                    className={styles.readonly}
+                  />
+                </td>
+                <td>
+                  <input 
+                    type="text" 
+                    value={totals.taxAfterTotal} 
+                    readOnly 
+                    className={styles.readonly}
+                  />
+                </td>
+                <td colSpan="6"></td>
+                <td className={styles.finalTotal}>
+                  <input 
+                    type="text" 
+                    value={totals.totalAmount} 
+                    readOnly 
+                    className={styles.readonly}
+                  />
+                </td>
+                <td colSpan="3"></td>
+              </tr>
             </tbody>
           </table>
+        </div>
+
+        {/* Total Amount Display */}
+        <div className={styles.totalAmountSection}>
+          <div className={styles.totalAmountRow}>
+            <span>Total Amount Before Discount:</span>
+            <strong className={styles.beforeAmount}>Rs. {beforeAmount}/-</strong>
+          </div>
+          <div className={styles.totalAmountRow}>
+            <span>Total Amount After Discount:</span>
+            <strong className={styles.afterAmount}>Rs. {afterAmount}/-</strong>
+          </div>
         </div>
       </div>
 
