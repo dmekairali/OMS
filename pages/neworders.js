@@ -1276,6 +1276,8 @@ export default function NewOrders() {
       products={editProducts}
       onSave={handleSaveEditOrder}
       onCancel={handleCancelEdit}
+      editMode={editMode}
+
     />
   </div>
           ) : (
