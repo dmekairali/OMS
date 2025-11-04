@@ -30,7 +30,6 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
   // Delivery & Payment
   const [deliveryDate, setDeliveryDate] = useState('');
   const [deliveryTime, setDeliveryTime] = useState('');
-  const [deliveryParty, setDeliveryParty] = useState('');
   const [paymentTerms, setPaymentTerms] = useState('');
   const [paymentMode, setPaymentMode] = useState('');
   const [paymentDate, setPaymentDate] = useState('');
@@ -61,6 +60,7 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
   // Discounts
   const [discountTier, setDiscountTier] = useState('');
   const [discounts, setDiscounts] = useState([{ category: '', percentage: '' }]);
+  const [showDiscounts, setShowDiscounts] = useState(false);
 
   // Shipping Charges
   const [shippingCharges, setShippingCharges] = useState('');
@@ -113,7 +113,6 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
     let totalSum = 0;
 
     productList.forEach(product => {
-      // FIX: Calculate MRP total as (MRP * Quantity) for each product
       const productMrpTotal = (parseFloat(product.mrp) || 0) * (parseFloat(product.quantity) || 0);
       mrpSum += productMrpTotal;
       
@@ -133,7 +132,6 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
       totalAmount: totalSum.toFixed(2)
     });
 
-    // Calculate Before and After amounts
     setBeforeAmount(taxBeforeSum.toFixed(2));
     setAfterAmount(totalSum.toFixed(2));
   };
@@ -232,36 +230,26 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
       const data = await SetupDataService.loadAllData();
       setSetupData(data);
 
-      // Process Client List data - FILTER BY "Active/Non Active" = "Verified"
       const clientData = processClientList(data.clientList, mobile);
-
-      // Process Employee List
       const employees = processEmployeeList(data.employeeList);
       setEmployeeList(employees);
 
-      // Process Delivery Parties from Distributor List
       const parties = processDeliveryParties(data.distributorList);
       setDeliveryParties(parties);
 
-      // Process Product List
       const productOpts = processProductList(data.productList);
       setProductListOptions(productOpts);
 
-      // Process Discount Structure for caps
       const discountCaps = processDiscountCaps(data.discountList);
       setDiscountStructure(discountCaps);
 
       if (clientData.found) {
-        // Set discount tier
         setDiscountTier(clientData.discountTier);
-
-        // Set location data from Client List
         setTaluk(clientData.taluk);
         setDistrict(clientData.district);
         setState(clientData.state);
         setMrName(clientData.mrName);
 
-        // Fetch and set discounts from Discount Module
         const discountData = processDiscountModule(
           data.discountStructure,
           clientData.discountTier,
@@ -272,7 +260,6 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
           setDiscounts(discountData);
         }
       } else {
-        // Client not found or not verified
         setClientNotFound(true);
         setErrorMessage('Client mobile number not found or not verified in Client List. This order cannot be edited.');
       }
@@ -289,7 +276,6 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
       return { found: false };
     }
 
-    // Find client by Company Contact No AND filter by Active/Non Active = "Verified"
     const client = clientList.rows.find(row => {
       const contactNo = row['Company Contact No'];
       const activeStatus = row['Active/Non Active'];
@@ -317,7 +303,6 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
       return [];
     }
 
-    // Find ALL matching rows with same Client Type and Tier
     const matchingDiscounts = discountStructure.rows.filter(row => {
       const rowClientType = row['Client Type'] || '';
       const rowTier = row['Tier'] || '';
@@ -325,7 +310,6 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
       return rowClientType === type && rowTier === tier;
     });
 
-    // Map to discount format
     return matchingDiscounts.map(row => ({
       category: row['Category'] || '',
       percentage: row['TD'] || ''
@@ -337,12 +321,10 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
       return [];
     }
 
-    // Get all unique users from ALL USERS column
     const users = employeeList.rows
       .map(row => row['ALL USERS'])
       .filter(user => user && user.trim() !== '');
 
-    // Remove duplicates
     return [...new Set(users)];
   };
 
@@ -351,7 +333,6 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
       return [];
     }
 
-    // Get unique delivery party names with their states from DISTRIBUTOR LIST
     const partiesMap = new Map();
 
     distributorList.rows.forEach(row => {
@@ -365,14 +346,12 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
       }
     });
 
-    // Convert to array of objects
     return Array.from(partiesMap.entries()).map(([name, state]) => ({
       name,
       state
     }));
   };
 
-  // Process Product List from Product List table
   const processProductList = (productList) => {
     if (!productList || !productList.rows) {
       return [];
@@ -391,7 +370,6 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
       .filter(p => p.combinedName);
   };
 
-  // Process Discount Caps from Discount section
   const processDiscountCaps = (discountList) => {
     if (!discountList || !discountList.rows) {
       return [];
@@ -403,13 +381,11 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
     })).filter(d => d.category);
   };
 
-  // Get preset discount for product category
   const getPresetDiscount = (productCategory) => {
     const discount = discounts.find(d => d.category === productCategory);
     return discount ? discount.percentage : '0';
   };
 
-  // Get max discount allowed for product category
   const getMaxDiscount = (productCategory) => {
     const cap = discountStructure.find(d => d.category === productCategory);
     return cap ? cap.maxDiscount : 100;
@@ -417,8 +393,6 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
 
   const handlePartyNameChange = (selectedPartyName) => {
     setPartyName(selectedPartyName);
-
-    // Auto-fill party state from Distributor List
     const selectedParty = deliveryParties.find(p => p.name === selectedPartyName);
     if (selectedParty) {
       setPartyState(selectedParty.state);
@@ -446,14 +420,9 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
     }]);
   };
 
-  const removeProduct = (index) => {
-    setProductList(productList.filter((_, i) => i !== index));
-  };
-
   const updateProduct = (index, field, value) => {
     const updated = [...productList];
     
-    // Handle product selection from dropdown
     if (field === 'productName') {
       const selectedProduct = productListOptions.find(p => p.combinedName === value);
       
@@ -464,11 +433,9 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
         updated[index].packingSize = selectedProduct.pack;
         updated[index].productCategory = selectedProduct.productCategory;
         
-        // Preset discount based on category
         const presetDiscount = getPresetDiscount(selectedProduct.productCategory);
         updated[index].discountPer = presetDiscount;
         
-        // Set tax rate
         const taxRate = parseFloat(selectedProduct.taxRate || '0');
         if (state && partyState && state === partyState) {
           updated[index].cgst = (taxRate / 2).toString();
@@ -481,7 +448,6 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
         }
       }
     } else if (field === 'discountPer') {
-      // Apply discount cap
       const maxDiscount = getMaxDiscount(updated[index].productCategory);
       const enteredDiscount = parseFloat(value) || 0;
       
@@ -497,7 +463,6 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
       updated[index][field] = value;
     }
     
-    // Recalculate amounts (REMOVED CGST/SGST/IGST AMOUNT CALCULATIONS)
     if (field === 'quantity' || field === 'mrp' || field === 'discountPer' || field === 'productName') {
       const qty = parseFloat(updated[index].quantity) || 0;
       const mrp = parseFloat(updated[index].mrp) || 0;
@@ -511,7 +476,6 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
       updated[index].discountAmt = discAmt.toFixed(2);
       updated[index].afterDiscount = afterDisc.toFixed(2);
       
-      // Calculate total with tax (simplified)
       const cgstRate = parseFloat(updated[index].cgst) || 0;
       const sgstRate = parseFloat(updated[index].sgst) || 0;
       const igstRate = parseFloat(updated[index].igst) || 0;
@@ -528,7 +492,6 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
   const handleSubmit = (e) => {
     e.preventDefault();
     
-    // Validation
     if (clientNotFound) {
       alert('Cannot save order. Client mobile number not found or not verified in Client List.');
       return;
@@ -557,7 +520,6 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
       
       Deliverydate: deliveryDate,
       Deliverytime: deliveryTime,
-      deliverydatebyname: deliveryParty,
       paymentterm: paymentTerms,
       paymentmodename: paymentMode,
       paymentdate: [paymentDate, '', '', '', ''],
@@ -636,23 +598,16 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
 
   return (
     <form onSubmit={handleSubmit} className={styles.editForm}>
-      {/* Error Message */}
       {errorMessage && (
-        <div style={{ 
-          background: '#fee', 
-          border: '1px solid #fcc', 
-          padding: '15px', 
-          borderRadius: '8px',
-          marginBottom: '20px',
-          color: '#c00'
-        }}>
+        <div className={styles.errorMessage}>
           {errorMessage}
         </div>
       )}
 
       {/* Edit Order Status */}
       <div className={styles.section}>
-        <div className={styles.grid2}>
+        <h3 className={styles.sectionTitle}>Edit Order Status</h3>
+        <div className={styles.grid3}>
           <div className={styles.field}>
             <label>Edit Order Status</label>
             <input 
@@ -665,69 +620,25 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
         </div>
       </div>
 
-      {/* Client Information */}
+      {/* Buyer Details */}
       <div className={styles.section}>
-        <h3>Client Information</h3>
-        <div className={styles.grid2}>
+        <h3 className={styles.sectionTitle}>Buyer Details</h3>
+        <div className={styles.grid3}>
           <div className={styles.field}>
-            <label>Client Name *</label>
+            <label>Client Name <span className={styles.mandatory}>*</span></label>
             <input type="text" value={clientName} readOnly className={styles.readonly} />
           </div>
           <div className={styles.field}>
-            <label>Mobile *</label>
+            <label>Mobile <span className={styles.mandatory}>*</span></label>
             <input type="tel" value={mobile} readOnly className={styles.readonly} />
           </div>
           <div className={styles.field}>
-            <label>Email</label>
+            <label>Email <span className={styles.mandatory}>*</span></label>
             <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
           </div>
           <div className={styles.field}>
-            <label>Client Type *</label>
-            <input type="text" value={clientType} readOnly className={styles.readonly} />
-          </div>
-          <div className={styles.field}>
-            <label>Client Category</label>
-            <input type="text" value={clientCategory} readOnly className={styles.readonly} />
-          </div>
-          <div className={styles.field}>
-            <label>GST No</label>
-            <input type="text" value={gstNo} onChange={(e) => setGstNo(e.target.value)} />
-          </div>
-        </div>
-      </div>
-
-      {/* Addresses */}
-      <div className={styles.section}>
-        <h3>Address Details</h3>
-        <div className={styles.grid2}>
-          <div className={styles.field}>
-            <label>Billing Address *</label>
-            <textarea value={billingAddress} onChange={(e) => setBillingAddress(e.target.value)} required rows="2" />
-          </div>
-          <div className={styles.field}>
-            <label>Shipping Address *</label>
-            <div>
-              <input
-                type="checkbox"
-                checked={isShippingSameAsBilling}
-                onChange={() => {
-                  setIsShippingSameAsBilling(!isShippingSameAsBilling);
-                  if (!isShippingSameAsBilling) {
-                    setShippingAddress(billingAddress);
-                  }
-                }}
-              />
-              <label style={{ marginLeft: '8px' }}>Same as Billing Address</label>
-            </div>
-            <textarea value={shippingAddress} onChange={(e) => setShippingAddress(e.target.value)} required rows="2" />
-          </div>
-          <div className={styles.field}>
-            <label>Billing Pincode *</label>
+            <label>PIN CODE <span className={styles.mandatory}>*</span></label>
             <input type="text" value={billingPincode} onChange={(e) => setBillingPincode(e.target.value)} required />
-          </div>
-          <div className={styles.field}>
-            <label>Shipping Pincode</label>
-            <input type="text" value={shippingPincode} onChange={(e) => setShippingPincode(e.target.value)} />
           </div>
           <div className={styles.field}>
             <label>Taluk</label>
@@ -741,26 +652,59 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
             <label>State</label>
             <input type="text" value={state} readOnly className={styles.readonly} />
           </div>
-        </div>
-      </div>
-
-      {/* Order Details */}
-      <div className={styles.section}>
-        <h3>Order Details</h3>
-        <div className={styles.grid2}>
           <div className={styles.field}>
-            <label>Order Type</label>
-            <select value={orderType} onChange={(e) => setOrderType(e.target.value)}>
-              <option value="">-- Select --</option>
+            <label>GST No. <span className={styles.mandatory}>*</span></label>
+            <input type="text" value={gstNo} onChange={(e) => setGstNo(e.target.value)} />
+          </div>
+          <div className={styles.field}>
+            <label>Client Type <span className={styles.mandatory}>*</span></label>
+            <input type="text" value={clientType} readOnly className={styles.readonly} />
+          </div>
+          <div className={styles.field}>
+            <label>Client Category <span className={styles.mandatory}>*</span></label>
+            <input type="text" value={clientCategory} readOnly className={styles.readonly} />
+          </div>
+          <div className={styles.field}>
+            <label>Order Type <span className={styles.mandatory}>*</span></label>
+            <select value={orderType} onChange={(e) => setOrderType(e.target.value)} required>
+              <option value="">-- select --</option>
               <option value="New Order">New Order</option>
               <option value="Sample Order">Sample Order</option>
             </select>
           </div>
+        </div>
+
+        <div className={styles.grid2}>
           <div className={styles.field}>
-            <label>Party Name</label>
+            <label>Billing Address <span className={styles.mandatory}>*</span></label>
+            <textarea value={billingAddress} onChange={(e) => setBillingAddress(e.target.value)} required rows="3" />
+          </div>
+          <div className={styles.field}>
+            <label>Shipping Address <span className={styles.mandatory}>*</span></label>
+            <div className={styles.checkboxGroup}>
+              <input
+                type="checkbox"
+                checked={isShippingSameAsBilling}
+                onChange={() => {
+                  setIsShippingSameAsBilling(!isShippingSameAsBilling);
+                  if (!isShippingSameAsBilling) {
+                    setShippingAddress(billingAddress);
+                  }
+                }}
+              />
+              <label>Check if billing and shipping is same</label>
+            </div>
+            <textarea value={shippingAddress} onChange={(e) => setShippingAddress(e.target.value)} required rows="3" />
+          </div>
+        </div>
+
+        <div className={styles.grid2}>
+          <div className={styles.field}>
+            <label>Order Placed to Party <span className={styles.mandatory}>*</span></label>
             <select 
               value={partyName} 
               onChange={(e) => handlePartyNameChange(e.target.value)}
+              required
             >
               <option value="">-- Select Party --</option>
               {deliveryParties.map((party, idx) => (
@@ -771,86 +715,28 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
             </select>
           </div>
           <div className={styles.field}>
-            <label>Party State</label>
+            <label>State (Order Placed to Party) <span className={styles.mandatory}>*</span></label>
             <input type="text" value={partyState} readOnly className={styles.readonly} />
-          </div>
-          <div className={styles.field}>
-            <label>MR Name</label>
-            <input type="text" value={mrName} readOnly className={styles.readonly} />
-          </div>
-        </div>
-      </div>
-
-      {/* Delivery & Payment */}
-      <div className={styles.section}>
-        <h3>Delivery & Payment</h3>
-        <div className={styles.grid2}>
-          <div className={styles.field}>
-            <label>Delivery Date</label>
-            <input type="date" value={deliveryDate} onChange={(e) => setDeliveryDate(e.target.value)} />
-          </div>
-          <div className={styles.field}>
-            <label>Delivery Time</label>
-            <input type="time" value={deliveryTime} onChange={(e) => setDeliveryTime(e.target.value)} />
-          </div>
-          <div className={styles.field}>
-            <label>Payment Terms</label>
-            <select value={paymentTerms} onChange={(e) => setPaymentTerms(e.target.value)}>
-              <option value="">-- Select Payment Terms --</option>
-              <option value="Credit">Credit</option>
-              <option value="Post Dated Cheque - Credit">Post Dated Cheque - Credit</option>
-              <option value="Advance">Advance</option>
-              <option value="Fully Paid">Fully Paid</option>
-              <option value="Sample">Sample</option>
-              <option value="Barter">Barter</option>
-              <option value="Others">Others</option>
-            </select>
-          </div>
-          <div className={styles.field}>
-            <label>Payment Mode</label>
-            <select value={paymentMode} onChange={(e) => setPaymentMode(e.target.value)}>
-              <option value="">-- Select Payment Mode --</option>
-              <option value="Cash">Cash</option>
-              <option value="Cheque">Cheque</option>
-              <option value="COD">COD</option>
-              <option value="UPI">UPI</option>
-              <option value="Bank Transfer">Bank Transfer</option>
-              <option value="Wallet">Wallet</option>
-              <option value="Credit">Credit</option>
-              <option value="Paytm">Paytm</option>
-              <option value="Sample/Barter">Sample/Barter</option>
-              <option value="Credit Card">Credit Card</option>
-              <option value="Others">Others</option>
-            </select>
-          </div>
-          <div className={styles.field}>
-            <label>Payment Date</label>
-            <input type="date" value={paymentDate} onChange={(e) => setPaymentDate(e.target.value)} />
-          </div>
-          <div className={styles.field}>
-            <label>Order Place by</label>
-            <select 
-              value={orderBy} 
-              onChange={(e) => setOrderBy(e.target.value)}
-              required
-            >
-              <option value="">-- Select Employee --</option>
-              {employeeList.map((employee, idx) => (
-                <option key={idx} value={employee}>
-                  {employee}
-                </option>
-              ))}
-            </select>
           </div>
         </div>
       </div>
 
       {/* Discounts */}
       <div className={styles.section}>
-        <h3>Discounts</h3>
-        <div className={styles.grid2}>
+        <div className={styles.sectionHeader}>
+          <h3 className={styles.sectionTitle}>Discounts</h3>
+          <button 
+            type="button" 
+            className={styles.toggleButton}
+            onClick={() => setShowDiscounts(!showDiscounts)}
+          >
+            {showDiscounts ? '▲ Hide' : '▼ Show'} Discounts
+          </button>
+        </div>
+        
+        <div className={styles.grid3}>
           <div className={styles.field}>
-            <label>Discount Tier *</label>
+            <label>Discount Tier <span className={styles.mandatory}>*</span></label>
             <input 
               type="text" 
               value={discountTier} 
@@ -859,72 +745,71 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
             />
           </div>
         </div>
-        <table className={styles.table}>
-          <thead>
-            <tr>
-              <th>Discount Category</th>
-              <th>Discount %</th>
-            </tr>
-          </thead>
-          <tbody>
-            {discounts.map((d, i) => (
-              <tr key={i}>
-                <td>
-                  <input
-                    type="text"
-                    value={d.category}
-                    readOnly
-                    className={styles.readonly}
-                  />
-                </td>
-                <td>
-                  <input
-                    type="number"
-                    value={d.percentage}
-                    readOnly
-                    className={styles.readonly}
-                  />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+
+        {showDiscounts && (
+          <div className={styles.discountTable}>
+            <table className={styles.table}>
+              <thead>
+                <tr>
+                  <th>Discount Category</th>
+                  <th>Discount %</th>
+                </tr>
+              </thead>
+              <tbody>
+                {discounts.map((d, i) => (
+                  <tr key={i}>
+                    <td>
+                      <input
+                        type="text"
+                        value={d.category}
+                        readOnly
+                        className={styles.readonly}
+                      />
+                    </td>
+                    <td>
+                      <input
+                        type="number"
+                        value={d.percentage}
+                        readOnly
+                        className={styles.readonly}
+                      />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       {/* Products */}
       <div className={styles.section}>
         <div className={styles.sectionHeader}>
-          <h3>Products</h3>
-          <button type="button" onClick={addProduct} className={styles.btnAdd}>+ Add Product</button>
+          <h3 className={styles.sectionTitle}>Add Product Details</h3>
+          <button type="button" onClick={addProduct} className={styles.btnAdd}>+ Add More</button>
         </div>
         
         <div className={styles.productsTable}>
-          <table>
+          <table className={styles.productsTable}>
             <thead>
               <tr>
-                <th>#</th>
-                <th>Product</th>
-                <th>SKU</th>
+                <th>Select Products</th>
                 <th>MRP</th>
                 <th>Packing Size</th>
-                <th>Qty</th>
-                <th>Disc %</th>
-                <th>Disc Amt</th>
-                <th>Before Tax</th>
-                <th>After Disc</th>
-                <th>CGST %</th>
-                <th>SGST %</th>
-                <th>IGST %</th>
+                <th>Qty.</th>
+                <th colSpan="2">Discount %</th>
+                <th>Dis. Amt</th>
+                <th>Taxable Before Dis.</th>
+                <th>Taxable After Dis.</th>
+                <th colSpan="2">Tax(CGST)</th>
+                <th colSpan="2">Tax(SGST)</th>
+                <th colSpan="2">Tax(IGST)</th>
                 <th>Total</th>
-                <th>Order QTY</th>
-                <th>Split Qty</th>
-                <th></th>
               </tr>
             </thead>
             <tbody>
               {productList.map((product, index) => (
                 <tr key={index}>
-                  <td>{index + 1}</td>
                   <td>
                     <select 
                       value={product.productName}
@@ -939,7 +824,6 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
                       ))}
                     </select>
                   </td>
-                  <td><input type="text" value={product.sku} readOnly className={styles.readonly} /></td>
                   <td><input type="text" value={product.mrp} readOnly className={styles.readonly} /></td>
                   <td><input type="text" value={product.packingSize} readOnly className={styles.readonly} /></td>
                   <td>
@@ -947,93 +831,39 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
                       type="number" 
                       value={product.quantity}
                       onChange={(e) => updateProduct(index, 'quantity', e.target.value)}
+                      className={styles.numberInput}
                     />
                   </td>
-                  <td>
+                  <td colSpan="2">
                     <input 
                       type="number" 
                       value={product.discountPer}
                       onChange={(e) => updateProduct(index, 'discountPer', e.target.value)}
                       title={`Max: ${getMaxDiscount(product.productCategory)}%`}
+                      className={styles.numberInput}
                     />
                   </td>
                   <td><input type="text" value={product.discountAmt} readOnly className={styles.readonly} /></td>
                   <td><input type="text" value={product.beforeTax} readOnly className={styles.readonly} /></td>
                   <td><input type="text" value={product.afterDiscount} readOnly className={styles.readonly} /></td>
-                  <td><input type="text" value={product.cgst} readOnly className={styles.readonly} /></td>
-                  <td><input type="text" value={product.sgst} readOnly className={styles.readonly} /></td>
-                  <td><input type="text" value={product.igst} readOnly className={styles.readonly} /></td>
+                  <td colSpan="2"><input type="text" value={product.cgst} readOnly className={styles.readonly} /></td>
+                  <td colSpan="2"><input type="text" value={product.sgst} readOnly className={styles.readonly} /></td>
+                  <td colSpan="2"><input type="text" value={product.igst} readOnly className={styles.readonly} /></td>
                   <td><input type="text" value={product.total} readOnly className={styles.readonly} /></td>
-                  <td><input type="text" value={product.orderQty} readOnly className={styles.readonly} /></td>
-                  <td>
-                    <input 
-                      type="number" 
-                      value={product.splitQty}
-                      onChange={(e) => updateProduct(index, 'splitQty', e.target.value)}
-                    />
-                  </td>
-                  <td>
-                    <button type="button" onClick={() => removeProduct(index)} className={styles.btnRemove}>
-                      Remove
-                    </button>
-                  </td>
                 </tr>
               ))}
               {/* Total Row */}
               <tr className={styles.totalRow}>
-                <td colSpan="2" className={styles.totalLabel}>Total</td>
+                <td className={styles.totalLabel}>Total</td>
+                <td><input type="text" value={totals.mrpTotal} readOnly className={styles.readonly} /></td>
                 <td></td>
-                <td>
-                  <input 
-                    type="text" 
-                    value={totals.mrpTotal} 
-                    readOnly 
-                    className={styles.readonly}
-                  />
-                </td>
-                <td></td>
-                <td>
-                  <input 
-                    type="text" 
-                    value={totals.qtyTotal} 
-                    readOnly 
-                    className={styles.readonly}
-                  />
-                </td>
-                <td colSpan="2">
-                  <input 
-                    type="text" 
-                    value={totals.discountTotal} 
-                    readOnly 
-                    className={styles.readonly}
-                  />
-                </td>
-                <td>
-                  <input 
-                    type="text" 
-                    value={totals.taxBeforeTotal} 
-                    readOnly 
-                    className={styles.readonly}
-                  />
-                </td>
-                <td>
-                  <input 
-                    type="text" 
-                    value={totals.taxAfterTotal} 
-                    readOnly 
-                    className={styles.readonly}
-                  />
-                </td>
-                <td colSpan="3"></td>
-                <td className={styles.finalTotal}>
-                  <input 
-                    type="text" 
-                    value={totals.totalAmount} 
-                    readOnly 
-                    className={styles.readonly}
-                  />
-                </td>
-                <td colSpan="3"></td>
+                <td><input type="text" value={totals.qtyTotal} readOnly className={styles.readonly} /></td>
+                <td colSpan="2"></td>
+                <td><input type="text" value={totals.discountTotal} readOnly className={styles.readonly} /></td>
+                <td><input type="text" value={totals.taxBeforeTotal} readOnly className={styles.readonly} /></td>
+                <td><input type="text" value={totals.taxAfterTotal} readOnly className={styles.readonly} /></td>
+                <td colSpan="6"></td>
+                <td className={styles.finalTotal}><input type="text" value={totals.totalAmount} readOnly className={styles.readonly} /></td>
               </tr>
             </tbody>
           </table>
@@ -1052,77 +882,41 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
         </div>
       </div>
 
-      {/* Shipping Charges */}
+      {/* Additional Details */}
       <div className={styles.section}>
-        <h3>Shipping Charges</h3>
-        <div className={styles.grid2}>
+        <h3 className={styles.sectionTitle}>Additional Details</h3>
+        <div className={styles.grid3}>
           <div className={styles.field}>
-            <label>Shipping Charges</label>
+            <label>Shipping, Packing and Delivery Charges (Amount):</label>
             <input type="number" value={shippingCharges} onChange={(e) => setShippingCharges(e.target.value)} />
           </div>
           <div className={styles.field}>
-            <label>Shipping Charges Remark</label>
+            <label>Note (Remarks):</label>
             <input type="text" value={shippingChargesRemark} onChange={(e) => setShippingChargesRemark(e.target.value)} />
           </div>
           <div className={styles.field}>
-            <label>Shipping Tax Percent</label>
+            <label>Shipping Tax (%):</label>
             <input type="number" value={shippingTaxPercent} readOnly className={styles.readonly} />
           </div>
           <div className={styles.field}>
-            <label>Shipping Tax Percent Remark</label>
+            <label>Type of (Remarks):</label>
             <input type="text" value={shippingTaxPercentRemark} onChange={(e) => setShippingTaxPercentRemark(e.target.value)} />
           </div>
           <div className={styles.field}>
-            <label>Total Shipping Charge</label>
+            <label>Total Shipping Charge (Amount):</label>
             <input type="number" value={totalShippingCharge} readOnly className={styles.readonly} />
           </div>
           <div className={styles.field}>
-            <label>Total Shipping Charge Remark</label>
+            <label>Type of (Remarks):</label>
             <input type="text" value={totalShippingChargeRemark} onChange={(e) => setTotalShippingChargeRemark(e.target.value)} />
           </div>
         </div>
       </div>
 
-      {/* Repeat Order */}
+      {/* Payment and Delivery */}
       <div className={styles.section}>
-        <h3>Repeat Order</h3>
-        <div className={styles.grid2}>
-          <div className={styles.field}>
-            <label>Next Order Fixed Date</label>
-            <input type="date" value={nextOrderDate} onChange={(e) => setNextOrderDate(e.target.value)} />
-          </div>
-          <div className={styles.field}>
-            <label>Reoccurrence Interval</label>
-            <select value={reoccurance} onChange={(e) => setReoccurance(e.target.value)}>
-              <option value="">-- Select --</option>
-              <option value="Weekly">Weekly</option>
-              <option value="Monthly">Monthly</option>
-              <option value="Yearly">Yearly</option>
-            </select>
-          </div>
-          <div className={styles.field}>
-            <label>End Order Date</label>
-            <input type="date" value={endOrderDate} onChange={(e) => setEndOrderDate(e.target.value)} />
-          </div>
-          <div className={styles.field}>
-            <label>Rocket Client</label>
-            <div>
-              <input 
-                type="checkbox" 
-                id="priority" 
-                checked={priority === 'Yes'}
-                onChange={(e) => setPriority(e.target.checked ? 'Yes' : '')}
-              />
-              <label htmlFor="priority" style={{ marginLeft: '8px' }}>Yes</label>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Payment, Delivery, and Remarks */}
-      <div className={styles.section}>
-        <h3>Payment, Delivery, and Remarks</h3>
-        <div className={styles.grid2}>
+        <h3 className={styles.sectionTitle}>Payment and Delivery</h3>
+        <div className={styles.grid3}>
           <div className={styles.field}>
             <label>Preferred Call Time 1</label>
             <input type="time" value={preferredCallTime1} onChange={(e) => setPreferredCallTime1(e.target.value)} />
@@ -1132,6 +926,51 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
             <input type="time" value={preferredCallTime2} onChange={(e) => setPreferredCallTime2(e.target.value)} />
           </div>
           <div className={styles.field}>
+            <label>Delivery Required By - Date</label>
+            <input type="date" value={deliveryDate} onChange={(e) => setDeliveryDate(e.target.value)} />
+          </div>
+          <div className={styles.field}>
+            <label>Payment Terms <span className={styles.mandatory}>*</span></label>
+            <select value={paymentTerms} onChange={(e) => setPaymentTerms(e.target.value)} required>
+              <option value="">-- Select Payment Terms --</option>
+              <option value="Credit">Credit</option>
+              <option value="Post Dated Cheque - Credit">Post Dated Cheque - Credit</option>
+              <option value="Advance">Advance</option>
+              <option value="Fully Paid">Fully Paid</option>
+              <option value="Sample">Sample</option>
+              <option value="Barter">Barter</option>
+              <option value="Others">Others</option>
+            </select>
+          </div>
+          <div className={styles.field}>
+            <label>Payment Mode <span className={styles.mandatory}>*</span></label>
+            <select value={paymentMode} onChange={(e) => setPaymentMode(e.target.value)} required>
+              <option value="">-- Select Payment Mode --</option>
+              <option value="Cash">Cash</option>
+              <option value="Cheque">Cheque</option>
+              <option value="COD">COD</option>
+              <option value="UPI">UPI</option>
+              <option value="Bank Transfer">Bank Transfer</option>
+              <option value="Wallet">Wallet</option>
+              <option value="Credit">Credit</option>
+              <option value="Paytm">Paytm</option>
+              <option value="Sample/Barter">Sample/Barter</option>
+              <option value="Credit Card">Credit Card</option>
+              <option value="Others">Others</option>
+            </select>
+          </div>
+          <div className={styles.field}>
+            <label>Payment collection date 1</label>
+            <input type="date" value={paymentDate} onChange={(e) => setPaymentDate(e.target.value)} />
+          </div>
+        </div>
+      </div>
+
+      {/* Payment Terms and Others */}
+      <div className={styles.section}>
+        <h3 className={styles.sectionTitle}>Payment Terms and Others</h3>
+        <div className={styles.grid3}>
+          <div className={styles.field}>
             <label>Expected Date of Dispatch</label>
             <input type="date" value={dispatchDate} onChange={(e) => setDispatchDate(e.target.value)} />
           </div>
@@ -1139,13 +978,42 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
             <label>Expected Time of Dispatch</label>
             <input type="time" value={dispatchTime} onChange={(e) => setDispatchTime(e.target.value)} />
           </div>
+          <div className={styles.field}>
+            <label>Next Order Fixed Date</label>
+            <input type="date" value={nextOrderDate} onChange={(e) => setNextOrderDate(e.target.value)} />
+          </div>
+          <div className={styles.field}>
+            <label>Reoccurrence Interval</label>
+            <select value={reoccurance} onChange={(e) => setReoccurance(e.target.value)}>
+              <option value="">-- select --</option>
+              <option value="Weekly">Weekly</option>
+              <option value="Monthly">Monthly</option>
+              <option value="Yearly">Yearly</option>
+            </select>
+          </div>
+          <div className={styles.field}>
+            <label>End Date</label>
+            <input type="date" value={endOrderDate} onChange={(e) => setEndOrderDate(e.target.value)} />
+          </div>
+          <div className={styles.field}>
+            <label>Rocket Client</label>
+            <div className={styles.checkboxGroup}>
+              <input 
+                type="checkbox" 
+                id="priority" 
+                checked={priority === 'Yes'}
+                onChange={(e) => setPriority(e.target.checked ? 'Yes' : '')}
+              />
+              <label htmlFor="priority">Yes</label>
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Remarks */}
       <div className={styles.section}>
-        <h3>Remarks</h3>
-        <div className={styles.grid2}>
+        <h3 className={styles.sectionTitle}>Remarks</h3>
+        <div className={styles.grid3}>
           <div className={styles.field}>
             <label>Remarks - Show to Kairali Team</label>
             <input type="text" value={saleTermRemark} onChange={(e) => setSaleTermRemark(e.target.value)} />
@@ -1158,13 +1026,17 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
             <label>Remarks - Show to Dispatch Team</label>
             <input type="text" value={warehouseRemark} onChange={(e) => setWarehouseRemark(e.target.value)} />
           </div>
+          <div className={styles.field}>
+            <label>Available MR/ASM</label>
+            <input type="text" value={mrName} readOnly className={styles.readonly} />
+          </div>
         </div>
       </div>
 
       {/* File Upload and OTIF */}
       <div className={styles.section}>
-        <h3>File Upload and OTIF</h3>
-        <div className={styles.grid2}>
+        <h3 className={styles.sectionTitle}>Images/ Invoice Upload & Others</h3>
+        <div className={styles.grid3}>
           <div className={styles.field}>
             <label>Images/Invoice Upload</label>
             <input type="file" onChange={(e) => {
@@ -1180,9 +1052,24 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
             }} />
           </div>
           <div className={styles.field}>
-            <label>Is order in Full - Yes/No *</label>
+            <label>Order Place by</label>
+            <select 
+              value={orderBy} 
+              onChange={(e) => setOrderBy(e.target.value)}
+              required
+            >
+              <option value="">-- Select Employee --</option>
+              {employeeList.map((employee, idx) => (
+                <option key={idx} value={employee}>
+                  {employee}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className={styles.field}>
+            <label>Is order in Full - Yes/No <span className={styles.mandatory}>*</span></label>
             <select value={orderInFull} onChange={(e) => setOrderInFull(e.target.value)} required>
-              <option value="">-- Select --</option>
+              <option value="">--Select--</option>
               <option value="Yes">Yes</option>
               <option value="No">No</option>
             </select>
@@ -1190,7 +1077,7 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
           <div className={styles.field}>
             <label>Reason (If No)</label>
             <select value={orderInFullReason} onChange={(e) => setOrderInFullReason(e.target.value)}>
-              <option value="">-- Select --</option>
+              <option value="">--Select--</option>
               <option value="Shortage of Stock">Shortage of Stock</option>
               <option value="Incorrect Discount">Incorrect Discount</option>
               <option value="Payment issue">Payment issue</option>
@@ -1221,24 +1108,13 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
           type="submit" 
           className={styles.btnSubmit}
           disabled={clientNotFound}
-          style={clientNotFound ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
         >
           Save Changes
         </button>
       </div>
 
-      {/* Validation message at bottom */}
       {clientNotFound && (
-        <div style={{ 
-          background: '#fee', 
-          border: '1px solid #fcc', 
-          padding: '15px', 
-          borderRadius: '8px',
-          marginTop: '20px',
-          color: '#c00',
-          textAlign: 'center',
-          fontWeight: 'bold'
-        }}>
+        <div className={styles.errorMessage}>
           ⚠️ This order cannot be edited because the mobile number was not found or not verified in the Client List.
         </div>
       )}
