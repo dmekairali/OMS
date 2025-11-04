@@ -903,20 +903,35 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
             <tbody>
               {productList.map((product, index) => (
                 <tr key={index}>
-                  <td>
-                    <Select
-                      value={productOptions.find(opt => opt.value === product.productName) || null}
-                      onChange={(selectedOption) => {
-                        updateProduct(index, 'productName', selectedOption ? selectedOption.value : '');
-                      }}
-                      options={productOptions}
-                      placeholder="-- Search Product --"
-                      isClearable
-                      isSearchable
-                      styles={customSelectStyles}
-                      noOptionsMessage={() => "No products found"}
-                    />
-                  </td>
+                 <td style={{ minWidth: '250px', position: 'relative' }}>
+  <Select
+    value={
+      product.productName 
+        ? productOptions.find(opt => opt.value === product.productName) || null
+        : null
+    }
+    onChange={(selectedOption) => {
+      updateProduct(
+        index, 
+        'productName', 
+        selectedOption ? selectedOption.value : ''
+      );
+    }}
+    options={productOptions}
+    placeholder="Type to search..."
+    isClearable
+    isSearchable
+    styles={customSelectStyles}
+    filterOption={filterOption}
+    noOptionsMessage={({ inputValue }) => 
+      inputValue 
+        ? `No products found matching "${inputValue}"`
+        : "Start typing to search products"
+    }
+    menuPortalTarget={document.body}  // KEY FIX: Renders menu outside table
+    menuPosition="fixed"              // KEY FIX: Fixed positioning
+  />
+</td>
                   <td><input type="text" value={product.mrp} readOnly className={styles.readonly} /></td>
                   <td><input type="text" value={product.packingSize} readOnly className={styles.readonly} /></td>
                   <td>
