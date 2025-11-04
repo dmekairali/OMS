@@ -3,18 +3,29 @@
  * Loads order details and products from SKUWise-Orders sheet
  * Uses COLUMN INDEX mapping for accurate data extraction
  * 
- * VERIFIED COLUMN MAPPINGS (Reading from B2:BZ):
+ * FINAL VERIFIED COLUMN MAPPINGS (Reading from B2:BZ):
  * - Order ID (filter) = Column C = index 1
  * - Quantity = Column L = index 10
  * - MRP = Column M = index 11
- * - Discount Amount = Column N = index 12
- * - Total = Column P = index 14 (CORRECTED)
+ * - Discount Amount = Column O = index 13 (CORRECTED)
+ * - Total = Column P = index 14
  * - Product Name = Column Q = index 15
- * - Discount % = Column AB = index 26 (CORRECTED)
+ * - Discount % = Column AB = index 26
  * - Packing Size = Column AC = index 27
  * - Before Tax = Column AD = index 28
  * - After Discount = Column AE = index 29
- * - SKU Code = Column AJ = index 34 (CORRECTED)
+ * - SKU Code = Column AJ = index 34
+ * - CGST % = Column AF = index 30 (CORRECTED)
+ * - SGST % = Column AG = index 31 (CORRECTED)
+ * - IGST % = Column AH = index 32 (CORRECTED)
+ * 
+ * TAX CALCULATIONS:
+ * - CGST Amount = (After Discount * CGST%) / 100
+ * - SGST Amount = (After Discount * SGST%) / 100
+ * - IGST Amount = (After Discount * IGST%) / 100
+ * 
+ * EDITABLE FIELDS: Product Name (dropdown), Quantity, Discount %
+ * READONLY FIELDS: All others (auto-calculated)
  */
 
 export default async function handler(req, res) {
@@ -144,47 +155,79 @@ export default async function handler(req, res) {
           }
         }
 
+        // Parse tax percentages (full numbers like 2.5, not 0.025)
+        const cgstPercent = parseFloat(row[30]) || 0;  // Column AF (index 30)
+        const sgstPercent = parseFloat(row[31]) || 0;  // Column AG (index 31)
+        const igstPercent = parseFloat(row[32]) || 0;  // Column AH (index 32)
+
+        // Get After Discount amount for tax calculation
+        const afterDiscount = parseFloat(row[29]) || 0; // Column AE (index 29)
+
+        // Calculate tax amounts
+        // Formula: (After Discount * Tax%) / 100
+        const cgstAmount = (afterDiscount * cgstPercent) / 100;
+        const sgstAmount = (afterDiscount * sgstPercent) / 100;
+        const igstAmount = (afterDiscount * igstPercent) / 100;
+
         console.log(`Mapping product ${idx + 1}:`, {
           orderId: row[1],                // Column C
           productName: row[15],           // Column Q
           quantity: row[10],              // Column L
           mrp: row[11],                   // Column M
-          sku: row[34],                   // Column AJ (CORRECTED)
-          discountPer: discountPercent,   // Column AB (CORRECTED)
-          total: row[14]                  // Column P (CORRECTED)
+          sku: row[34],                   // Column AJ
+          discountPer: discountPercent,   // Column AB
+          discountAmt: row[13],           // Column O (CORRECTED)
+          afterDiscount: afterDiscount,   // Column AE
+          cgst: cgstPercent,              // Column AF
+          sgst: sgstPercent,              // Column AG
+          igst: igstPercent,              // Column AH
+          cgstAmt: cgstAmount.toFixed(2),
+          sgstAmt: sgstAmount.toFixed(2),
+          igstAmt: igstAmount.toFixed(2),
+          total: row[14]                  // Column P
         });
 
         return {
           // Core Product Info
-          'Product Name': row[15] || '',           // Column Q (index 15)
-          'SKU Code': row[34] || '',               // Column AJ (index 34) ← CORRECTED
-          'MRP': parseFloat(row[11]) || 0,         // Column M (index 11)
-          'Packing Size': row[27] || '',           // Column AC (index 27)
+          'Product Name': row[15] || '',           // Column Q (index 15) - EDITABLE (dropdown)
+          'SKU Code': row[34] || '',               // Column AJ (index 34) - READONLY
+          'MRP': parseFloat(row[11]) || 0,         // Column M (index 11) - READONLY
+          'Packing Size': row[27] || '',           // Column AC (index 27) - READONLY
           
-          // QUANTITY - Most Important Field
-          'Quantity': parseFloat(row[10]) || 0,    // Column L (index 10) ← KEY
+          // QUANTITY - EDITABLE
+          'Quantity': parseFloat(row[10]) || 0,    // Column L (index 10) - EDITABLE ⭐
           'QNT': parseFloat(row[10]) || 0,         // Also map as QNT for compatibility
-          'Order QTY': parseFloat(row[10]) || 0,   // Original quantity for reference
+          'Order QTY': parseFloat(row[10]) || 0,   // Original quantity for reference - READONLY
           
           // Pricing & Discounts
-          'Discount %': discountPercent,           // Column AB (index 26) ← CORRECTED + VALIDATED
-          'Discount Amount': parseFloat(row[12]) || 0,  // Column N (index 12)
+          'Discount %': discountPercent,           // Column AB (index 26) - EDITABLE ⭐
+          'Discount Amount': parseFloat(row[13]) || 0,  // Column O (index 13) - READONLY (CORRECTED)
           
-          // Tax Calculations
-          'Before Tax': parseFloat(row[28]) || 0,  // Column AD (index 28)
-          'After Discount': parseFloat(row[29]) || 0,  // Column AE (index 29)
+          // Tax Calculations - READONLY
+          'Before Tax': parseFloat(row[28]) || 0,  // Column AD (index 28) - READONLY
+          'After Discount': afterDiscount,         // Column AE (index 29) - READONLY
           
-          // Line Total
-          'Total': parseFloat(row[14]) || 0,       // Column P (index 14) ← CORRECTED
+          // Tax Percentages (from sheet) - READONLY
+          'CGST %': cgstPercent,                   // Column AF (index 30) - READONLY (CORRECTED)
+          'SGST %': sgstPercent,                   // Column AG (index 31) - READONLY (CORRECTED)
+          'IGST %': igstPercent,                   // Column AH (index 32) - READONLY (CORRECTED)
           
-          // Additional fields for edit/split
+          // Tax Amounts (calculated) - READONLY
+          'CGST Amount': parseFloat(cgstAmount.toFixed(2)),  // CALCULATED - READONLY
+          'SGST Amount': parseFloat(sgstAmount.toFixed(2)),  // CALCULATED - READONLY
+          'IGST Amount': parseFloat(igstAmount.toFixed(2)),  // CALCULATED - READONLY
+          
+          // Line Total - READONLY
+          'Total': parseFloat(row[14]) || 0,       // Column P (index 14) - READONLY
+          
+          // Additional fields for edit/split - READONLY
           'Split Quantity': 0  // Default to 0 for split orders
         };
       });
 
       console.log(`Successfully mapped ${products.length} products`);
       if (products.length > 0) {
-        console.log('Sample product:', products[0]);
+        console.log('Sample product with tax calculations:', products[0]);
       }
 
     } catch (error) {
