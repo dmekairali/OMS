@@ -870,3 +870,26 @@
 .noWrap {
   white-space: nowrap;
 }
+
+/* Allow dropdown to overflow table */
+.productsTable {
+  overflow: visible !important;
+}
+
+/* Ensure first column (product dropdown) isn't clipped */
+.productsTable tbody td:first-child {
+  position: relative;
+  overflow: visible !important;
+  min-width: 250px;
+  z-index: 1;
+}
+
+/* Increase z-index when row is active */
+.productsTable tbody tr:focus-within {
+  z-index: 100;
+}
+
+/* Global React-Select menu styling */
+:global(.select__menu) {
+  z-index: 9999 !important;
+}
