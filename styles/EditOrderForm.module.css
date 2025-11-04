@@ -16,7 +16,7 @@
 }
 
 .sectionTitle {
-  color: #1e658b;
+  color: #7a8450;
   border-bottom: 2px solid #8e9e34;
   padding-bottom: 12px;
   margin-bottom: 25px;
@@ -80,7 +80,7 @@
 }
 
 .mandatory {
-  color: #dc3545;
+  color: #f6b93b;
   font-weight: bold;
 }
 
@@ -100,7 +100,7 @@
 .field select:focus,
 .field textarea:focus {
   outline: none;
-  border-color: #1e658b;
+  border-color: #7a8450;
   box-shadow: 0 0 0 3px rgba(30, 101, 139, 0.1);
   background-color: #fff;
 }
@@ -231,7 +231,7 @@
 }
 
 .btnSubmit {
-  background: linear-gradient(135deg, #1e658b, #2c7da0);
+  background: linear-gradient(135deg, #7a8450, #2c7da0);
   color: white;
   border: none;
   padding: 14px 28px;
@@ -283,7 +283,7 @@
 }
 
 .table th {
-  background: linear-gradient(135deg, #1e658b, #2c7da0);
+  background: linear-gradient(135deg, #7a8450, #2c7da0);
   color: white;
   padding: 12px 8px;
   text-align: center;
@@ -333,7 +333,7 @@
 }
 
 .productsTable th {
-  background: linear-gradient(135deg, #1e658b, #2c7da0);
+  background: linear-gradient(135deg, #7a8450, #2c7da0);
   color: white;
   padding: 12px 6px;
   text-align: center;
@@ -414,18 +414,18 @@
   text-align: right;
   padding-right: 15px;
   font-weight: 700;
-  color: #1e658b;
+  color: #7a8450;
   font-size: 13px;
 }
 
 .finalTotal {
-  color: #dc3545;
+  color: #f6b93b;
   font-weight: 700;
   font-size: 13px;
 }
 
 .finalTotal input {
-  color: #dc3545;
+  color: #f6b93b;
   font-weight: 700;
 }
 
@@ -455,7 +455,7 @@
 }
 
 .beforeAmount {
-  color: #dc3545;
+  color: #f6b93b;
   font-weight: 700;
   font-size: 18px;
 }
@@ -518,8 +518,8 @@
 
 .fileUploadLabel:hover {
   background: #e9ecef;
-  border-color: #1e658b;
-  color: #1e658b;
+  border-color: #7a8450;
+  color: #7a8450;
 }
 
 /* Status Indicators */
@@ -561,7 +561,7 @@
   width: 20px;
   height: 20px;
   border: 2px solid #f3f3f3;
-  border-top: 2px solid #1e658b;
+  border-top: 2px solid #7a8450;
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -694,7 +694,7 @@
 .field input:focus-visible,
 .field select:focus-visible,
 .field textarea:focus-visible {
-  outline: 2px solid #1e658b;
+  outline: 2px solid #7a8450;
   outline-offset: 2px;
 }
 
@@ -702,7 +702,7 @@
 .toggleButton:focus-visible,
 .btnCancel:focus-visible,
 .btnSubmit:focus-visible {
-  outline: 2px solid #1e658b;
+  outline: 2px solid #7a8450;
   outline-offset: 2px;
 }
 
@@ -753,7 +753,7 @@
   .field input:focus,
   .field select:focus,
   .field textarea:focus {
-    border-color: #1e658b;
+    border-color: #7a8450;
     box-shadow: 0 0 0 3px rgba(30, 101, 139, 0.3);
   }
   
