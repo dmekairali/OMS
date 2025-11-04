@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import styles from '../styles/EditOrderForm.module.css';
 import SetupDataService from '../services/SetupDataService';
 
-export default function EditOrderForm({ order, products, onSave, onCancel }) {
+export default function EditOrderForm({ order, products, onSave, onCancel, editMode }) {
   // Client Information
   const [clientName, setClientName] = useState('');
   const [mobile, setMobile] = useState('');
@@ -136,10 +136,17 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
     setAfterAmount(totalSum.toFixed(2));
   };
 
+
+   // Set edit status when component mounts or editMode changes
+  useEffect(() => {
+    const status = editMode === 'split' ? 'Edit and Split' : 'Edit Order';
+    setEditOrderStatus(status);
+  }, [editMode]);
+
   // Load order data first
   useEffect(() => {
     if (order) {
-      setEditOrderStatus(order['Order Status'] || order['Status'] || '');
+      
       setClientName(order['Name of Client'] || '');
       setMobile(order['Mobile'] || '');
       setEmail(order['Email'] || '');
