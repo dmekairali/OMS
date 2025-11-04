@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import styles from '../styles/NewEditOrderForm.module.css';
+import tableStyles from '../styles/ProductTable.module.css';
 import SetupDataService from '../services/SetupDataService';
 
 export default function EditOrderForm({ order, products, onSave, onCancel, selectedStatus }) {
@@ -603,65 +604,78 @@ export default function EditOrderForm({ order, products, onSave, onCancel, selec
                 <br />
 
                 {/* Add Product Details */}
-                <div className={`row`}><div className="col-md-12"><h5>Add Product Details</h5></div></div>
                 <div className="row">
-                  <div className="col-md-12">
-                    <div className="table-responsive">
-                      <table className={styles.tblborderAddproduct}>
-                        <thead>
-                          <tr>
-                            <th>#</th>
-                            <th>Product</th>
-                            <th>SKU</th>
-                            <th>MRP</th>
-                            <th>Packing Size</th>
-                            <th>Qty</th>
-                            <th>Disc %</th>
-                            <th>Disc Amt</th>
-                            <th>Before Tax</th>
-                            <th>After Disc</th>
-                            <th>CGST %</th>
-                            <th>CGST Amt</th>
-                            <th>SGST %</th>
-                            <th>SGST Amt</th>
-                            <th>IGST %</th>
-                            <th>IGST Amt</th>
-                            <th>Total</th>
-                            <th>Order QTY</th>
-                            <th>Split Qty</th>
-                            <th></th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {productList.map((product, index) => (
-                            <tr key={index}>
-                              <td>{index + 1}</td>
-                              <td><input type="text" value={product.productName} onChange={(e) => updateProduct(index, 'productName', e.target.value)} /></td>
-                              <td><input type="text" value={product.sku} onChange={(e) => updateProduct(index, 'sku', e.target.value)} /></td>
-                              <td><input type="number" value={product.mrp} onChange={(e) => updateProduct(index, 'mrp', e.target.value)} /></td>
-                              <td><input type="text" value={product.packingSize} onChange={(e) => updateProduct(index, 'packingSize', e.target.value)} /></td>
-                              <td><input type="number" value={product.quantity} onChange={(e) => updateProduct(index, 'quantity', e.target.value)} /></td>
-                              <td><input type="number" value={product.discountPer} onChange={(e) => updateProduct(index, 'discountPer', e.target.value)} /></td>
-                              <td><input type="text" value={product.discountAmt} readOnly /></td>
-                              <td><input type="text" value={product.beforeTax} readOnly /></td>
-                              <td><input type="text" value={product.afterDiscount} readOnly /></td>
-                              <td><input type="number" value={product.cgst} onChange={(e) => updateProduct(index, 'cgst', e.target.value)} /></td>
-                              <td><input type="text" value={product.cgstAmt} readOnly /></td>
-                              <td><input type="number" value={product.sgst} onChange={(e) => updateProduct(index, 'sgst', e.target.value)} /></td>
-                              <td><input type="text" value={product.sgstAmt} readOnly /></td>
-                              <td><input type="number" value={product.igst} onChange={(e) => updateProduct(index, 'igst', e.target.value)} /></td>
-                              <td><input type="text" value={product.igstAmt} readOnly /></td>
-                              <td><input type="text" value={product.total} readOnly /></td>
-                              <td><input type="text" value={product.orderQty} readOnly /></td>
-                              <td><input type="number" value={product.splitQty} onChange={(e) => updateProduct(index, 'splitQty', e.target.value)} /></td>
-                              <td><button type="button" onClick={() => removeProduct(index)} className="btn btn-danger btn-sm">Remove</button></td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                    <div className="col-md-12">
+                        <h5>Add Product Details</h5>
+                        <hr />
                     </div>
-                  </div>
-                  <div className="col-md-12"><div className="text-right"><input type="button" value="+ Add More" className="btn btn-success btn-sm" onClick={addProduct} /></div></div>
+                    <div className="col-md-12">
+                        <div className="table-responsive">
+                            <table className={tableStyles.tblborderAddproduct}>
+                                <tbody>
+                                    <tr>
+                                        <th>Select Products</th>
+                                        <th>MRP</th>
+                                        <th className={tableStyles.hide}>Packing Size</th>
+                                        <th>Qty.</th>
+                                        <th colSpan="2">Discount %</th>
+                                        <th>Dis. Amt</th>
+                                        <th>Taxable Before Dis.</th>
+                                        <th>Taxable After Dis.</th>
+                                        <th colSpan="2">Tax(CGST)</th>
+                                        <th colSpan="2">Tax(SGST)</th>
+                                        <th colSpan="2">Tax(IGST)</th>
+                                        <th>Total</th>
+                                        <th>A</th>
+                                        <th>B</th>
+                                    </tr>
+                                    {productList.map((product, index) => (
+                                        <tr key={index}>
+                                            <td><input type="text" className="form-control" value={product.productName} onChange={(e) => updateProduct(index, 'productName', e.target.value)} /></td>
+                                            <td><input type="number" className="form-control" value={product.mrp} onChange={(e) => updateProduct(index, 'mrp', e.target.value)} /></td>
+                                            <td className={tableStyles.hide}><input type="text" className="form-control" value={product.packingSize} onChange={(e) => updateProduct(index, 'packingSize', e.target.value)} /></td>
+                                            <td><input type="number" className="form-control" value={product.quantity} onChange={(e) => updateProduct(index, 'quantity', e.target.value)} /></td>
+                                            <td colSpan="2"><input type="number" className="form-control" value={product.discountPer} onChange={(e) => updateProduct(index, 'discountPer', e.target.value)} /></td>
+                                            <td><input type="text" className="form-control" value={product.discountAmt} readOnly /></td>
+                                            <td><input type="text" className="form-control" value={product.beforeTax} readOnly /></td>
+                                            <td><input type="text" className="form-control" value={product.afterDiscount} readOnly /></td>
+                                            <td colSpan="2"><input type="number" className="form-control" value={product.cgst} onChange={(e) => updateProduct(index, 'cgst', e.target.value)} /></td>
+                                            <td colSpan="2"><input type="number" className="form-control" value={product.sgst} onChange={(e) => updateProduct(index, 'sgst', e.target.value)} /></td>
+                                            <td colSpan="2"><input type="number" className="form-control" value={product.igst} onChange={(e) => updateProduct(index, 'igst', e.target.value)} /></td>
+                                            <td><input type="text" className="form-control" value={product.total} readOnly /></td>
+                                            <td><button type="button" className="btn btn-danger btn-sm" onClick={() => removeProduct(index)}>X</button></td>
+                                            <td></td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                                <tbody>
+                                    <tr>
+                                        <td className={`${tableStyles.darkblk} ${tableStyles.totalPriceRight}`}>Total</td>
+                                        <td className={tableStyles.darkblk}><input placeholder="00.0" type="text" className="form-control" value={mrpTotal} readOnly /></td>
+                                        <td className={`${tableStyles.darkblk} ${tableStyles.hide}`}></td>
+                                        <td className={tableStyles.darkblk}><input placeholder="00.0" type="text" className="form-control" value={qntTotal} readOnly /></td>
+                                        <td className={tableStyles.darkblk}></td>
+                                        <td className={tableStyles.darkblk}></td>
+                                        <td className={tableStyles.darkblk}><input placeholder="00.0" type="text" className="form-control" value={disTotal} readOnly /></td>
+                                        <td className={tableStyles.darkblk}><input placeholder="00.0" type="text" className="form-control" value={taxBeforeTotal} readOnly /></td>
+                                        <td className={tableStyles.darkblk}><input placeholder="00.0" type="text" className="form-control" value={taxAfterTotal} readOnly /></td>
+                                        <td className={tableStyles.darkblk}></td>
+                                        <td className={tableStyles.darkblk}></td>
+                                        <td className={tableStyles.darkblk}></td>
+                                        <td className={tableStyles.darkblk}></td>
+                                        <td className={tableStyles.darkblk}></td>
+                                        <td className={tableStyles.darkblk}></td>
+                                        <td className={`${tableStyles.darkblk} ${tableStyles.priceFinal}`}><input placeholder="00.0" type="text" className="form-control" value={totalTotal} readOnly /></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div className="col-md-12">
+                        <div className="text-right">
+                            <input type="button" value="+ Add More" className="btn btn-success btn-sm" onClick={addProduct} />
+                        </div>
+                    </div>
                 </div>
 
                 {/* Additional Details */}

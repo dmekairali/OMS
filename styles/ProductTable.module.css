@@ -1,0 +1,251 @@
+.tblborderAddproductFix {
+    max-width: 100%;
+    table-layout: fixed;
+    margin: auto
+}
+
+.tblborderAddproductFix th, .tblborderAddproductFix td {
+}
+
+.tblborderAddproductFix thead, .tblborderAddproductFix tfoot {
+    background: #f9f9f9;
+    display: table;
+    width: 100%;
+    width: calc(100% - 18px)
+}
+
+.tblborderAddproductFix tbody {
+    height: 300px;
+    overflow: auto;
+    overflow-x: hidden;
+    display: block;
+    width: 100%
+}
+
+.tblborderAddproductFix tbody tr {
+    display: table;
+    width: 100%;
+    table-layout: fixed
+}
+
+.tblborderAddproduct {
+    border-width: 1px;
+    border-collapse: collapse;
+    padding: 0px;
+    margin: 0px;
+    border-style: solid solid solid solid;
+    border-color: #e0e0e0;
+    background-color: #fff;
+    width: 100%;
+    font-size: 13px;
+}
+
+.tblborderAddproduct.subtable {
+    border-width: 0px;
+    border-collapse: collapse;
+    padding: 0px;
+    margin: 0px;
+    border-style: solid solid solid solid;
+    border-color: #e0e0e0;
+    background-color: #fff;
+    width: 100%
+}
+
+.tblborderAddproduct td {
+    border-width: 1px 1px 1px 1px;
+    margin: 0px;
+    padding: 4px 6px;
+    vertical-align: middle;
+    text-align: center;
+    border-style: solid solid solid solid;
+    border-color: #ccc
+}
+
+.tblborderAddproduct th {
+    border-width: 1px 1px 1px 1px;
+    margin: 0px;
+    padding: 4px 6px;
+    vertical-align: middle;
+    text-align: center;
+    border-style: solid solid solid solid;
+    border-color: #ccc;
+    background-color: #f0f0f0;
+    color: #8e9e34
+}
+
+.tblborderAddproduct.subtable th {
+    border-width: 0px 1px 0px 0px;
+    margin: 0px;
+    padding: 4px 6px;
+    vertical-align: middle;
+    text-align: center;
+    border-style: solid solid solid solid;
+    border-color: #ccc;
+    background-color: #f0f0f0;
+    color: #8e9e34
+}
+
+.tblborderAddproduct.subtable th:last-child {
+    border-width: 0px 0px 0px 0px;
+    margin: 0px;
+    padding: 4px 6px;
+    vertical-align: middle;
+    text-align: center;
+    border-style: solid solid solid solid;
+    border-color: #ccc;
+    background-color: #f0f0f0;
+    color: #8e9e34
+}
+
+.tblborderAddproduct.subtable td {
+    border-width: 0px 1px 1px 0px;
+    margin: 0px;
+    padding: 4px 6px;
+    vertical-align: middle;
+    text-align: center;
+    border-style: solid solid solid solid
+}
+
+.tblborderAddproduct.subtable tr:last-child td {
+    border-width: 0px 1px 0px 0px;
+    margin: 0px;
+    padding: 2px 3px;
+    vertical-align: middle;
+    text-align: center;
+    border-style: solid solid solid solid
+}
+
+.tblborderAddproduct.subtable td:last-child {
+    border-width: 0px 0px 1px 0px;
+    margin: 0px;
+    padding: 2px 3px;
+    vertical-align: middle;
+    text-align: center;
+    border-style: solid solid solid solid
+}
+
+.tblborderAddproduct th.nopad table {
+    border: 0 !important
+}
+
+.tblborderAddproduct th.nopad {
+    padding: 0;
+    position: relative;
+    border: 0
+}
+
+.tblborderAddproduct td a {
+    cursor: pointer
+}
+
+.tblborderAddproduct td.darkblk {
+    color: #000;
+    font-weight: bold
+}
+
+.hide {
+    display: none;
+}
+
+.tblborderAddproduct td.nopad {
+    padding: 0;
+    position: relative;
+    border: 0
+}
+
+.tblborderAddproduct td.nopad table {
+    border: 0 !important
+}
+
+.tblborderAddproduct td.total-price-right {
+    text-align: right
+}
+
+.tblborderAddproduct.subtable td.total-price-right {
+    text-align: right !important
+}
+
+.tblborderAddproduct td.price-final {
+    color: #c00
+}
+
+.tblborderAddproduct tr.hover td {
+    background-color: #ffe9b2
+}
+
+.tblborderAddproduct td.actionbtns a {
+    text-decoration: none;
+    padding: 0px 2px;
+    margin: 2px 1px;
+    color: #fff;
+    border: solid 1px #8e9e34;
+    width: 100px;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    float: left;
+    background-color: #8e9e34;
+    text-align: center
+}
+
+.tblborderAddproduct td.actionbtns a.lockorder {
+    color: #d72424;
+    border: solid 1px #d72424;
+    background-color: #fff
+}
+
+.locked {
+    color: #d72424;
+    border: solid 1px #d72424;
+    background-color: #fff;
+    width: 70px;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    float: left
+}
+
+.tblborderAddproduct td.actionbtns i {
+    font-size: 10px;
+    margin-right: 2px
+}
+
+.tblborderAddproduct td.actionbtns a:hover {
+    text-decoration: none;
+    color: #000;
+    background-color: #ffe487;
+    border-radius: 2px;
+    border: solid 1px #000
+}
+
+.tblborderAddproduct td.actionbtns2 a {
+    text-decoration: none;
+    padding: 0px 2px;
+    margin: 2px 1px;
+    color: #000;
+    border: solid 1px #bcc681;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    background-color: #f2f6d9;
+    float: left;
+    width: 70px;
+    text-align: center
+}
+
+.tblborderAddproduct td.actionbtns2 i {
+    font-size: 10px;
+    margin-right: 2px
+}
+
+.tblborderAddproduct td.actionbtns2 a:hover {
+    text-decoration: none;
+    color: #000;
+    background-color: #ffe487;
+    border-radius: 2px;
+    border: solid 1px #000
+}
+
+.tblborderAddproduct td.righttext {
+    text-align: right
+}
