@@ -21,7 +21,7 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
   const [isShippingSameAsBilling, setIsShippingSameAsBilling] = useState(false);
   
   // Order Details
-  const [orderType, setOrderType] = useState('');
+  const [orderType, setOrderType] = useState('New Order');
   const [partyName, setPartyName] = useState('');
   const [partyState, setPartyState] = useState('');
   const [mrName, setMrName] = useState('');
@@ -85,7 +85,7 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
   // Load order data first
   useEffect(() => {
     if (order) {
-      setEditOrderStatus(order['Edit Order Status'] || order['editstatus'] || '');
+      setEditOrderStatus(order['Order Status'] || order['Status'] || '');
       setClientName(order['Name of Client'] || '');
       setMobile(order['Mobile'] || '');
       setEmail(order['Email'] || '');
@@ -96,7 +96,7 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
       setBillingAddress(order['Billing Address'] || '');
       setShippingAddress(order['Shipping Address'] || '');
       setBillingPincode(order['Pin code'] || '');
-      setShippingPincode(order['Shipping Pin code'] || '');
+      setShippingPincode(order['Pin code'] || '');
       setTaluk(order['Taluk'] || '');
       setDistrict(order['District'] || '');
       setState(order['State'] || '');
@@ -655,14 +655,39 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
             <label>Delivery Time</label>
             <input type="time" value={deliveryTime} onChange={(e) => setDeliveryTime(e.target.value)} />
           </div>
-          <div className={styles.field}>
-            <label>Payment Terms</label>
-            <input type="text" value={paymentTerms} onChange={(e) => setPaymentTerms(e.target.value)} />
-          </div>
-          <div className={styles.field}>
-            <label>Payment Mode</label>
-            <input type="text" value={paymentMode} onChange={(e) => setPaymentMode(e.target.value)} />
-          </div>
+
+        <div className={styles.field}>
+  <label>Payment Terms</label>
+  <select value={paymentTerms} onChange={(e) => setPaymentTerms(e.target.value)}>
+    <option value="">-- Select Payment Terms --</option>
+    <option value="Credit">Credit</option>
+    <option value="Post Dated Cheque - Credit">Post Dated Cheque - Credit</option>
+    <option value="Advance">Advance</option>
+    <option value="Fully Paid">Fully Paid</option>
+    <option value="Sample">Sample</option>
+    <option value="Barter">Barter</option>
+    <option value="Others">Others</option>
+  </select>
+</div>
+        
+         <div className={styles.field}>
+  <label>Payment Mode</label>
+  <select value={paymentMode} onChange={(e) => setPaymentMode(e.target.value)}>
+    <option value="">-- Select Payment Mode --</option>
+    <option value="Cash">Cash</option>
+    <option value="Cheque">Cheque</option>
+    <option value="COD">COD</option>
+    <option value="UPI">UPI</option>
+    <option value="Bank Transfer">Bank Transfer</option>
+    <option value="Wallet">Wallet</option>
+    <option value="Credit">Credit</option>
+    <option value="Paytm">Paytm</option>
+    <option value="Sample/Barter">Sample/Barter</option>
+    <option value="Credit Card">Credit Card</option>
+    <option value="Others">Others</option>
+  </select>
+</div>
+        
           <div className={styles.field}>
             <label>Payment Date</label>
             <input type="date" value={paymentDate} onChange={(e) => setPaymentDate(e.target.value)} />
