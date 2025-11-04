@@ -124,25 +124,25 @@
 .grid2 {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
+  gap: 16px 20px; /* row gap, column gap */
 }
 
 .grid3 {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
+  gap: 16px 18px; /* row gap, column gap */
 }
 
 .grid4 {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 10px;
+  gap: 14px 16px; /* row gap, column gap */
 }
 
 .grid5 {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  gap: 8px;
+  gap: 12px 14px; /* row gap, column gap */
 }
 
 @media (max-width: 1024px) {
@@ -175,7 +175,8 @@
 .field {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 6px;
+  margin-bottom: 4px; /* Added extra margin */
 }
 
 .field label {
@@ -185,6 +186,7 @@
   line-height: 1.3;
   text-align: left;
   display: block;
+  margin-bottom: 2px; /* Added margin */
 }
 
 .mandatory {
