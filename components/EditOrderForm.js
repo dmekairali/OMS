@@ -483,44 +483,6 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
       <div className={styles.editForm}>
         <div style={{ textAlign: 'center', padding: '40px' }}>
           <p>Loading order data...</p>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <form onSubmit={handleSubmit} className={styles.editForm}>
-      
-      setReoccurance(order['Reoccurance'] || '');
-      setNextOrderDate(order['Next Order Date'] || '');
-      setEndOrderDate(order['End Order Date'] || '');
-      setPriority(order['Priority'] || '');
-
-      // Parse products if available
-      if (products && Array.isArray(products)) {
-        const parsedProducts = products.map(p => ({
-          productName: p.productName || '',
-          sku: p.sku || '',
-          mrp: p.mrp || '0',
-          packingSize: p.packingSize || '',
-          quantity: p.quantity || '0',
-          discountPer: p.discountPer || '0',
-          discountAmt: p.discountAmt || '0',
-          beforeTax: p.beforeTax || '0',
-          afterDiscount: p.afterDiscount || '0',
-          cgst: p.cgst || '0',
-          cgstAmt: p.cgstAmt || '0',
-          sgst: p.sgst || '0',
-          sgstAmt: p.sgstAmt || '0',
-          igst: p.igst || '0',
-          igstAmt: p.igstAmt || '0',
-          total: p.total || '0',
-          splitQty: p.splitQty || '0'
-        }));
-        setProductList(parsedProducts);
-      }
-    }
-  }, [order, products]);
 
   // Fetch setup data after order is loaded
   useEffect(() => {
