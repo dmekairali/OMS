@@ -753,3 +753,88 @@
 .loadingSpinner {
   animation: pulse 1.5s ease-in-out infinite;
 }
+
+/* Add these styles to your existing CSS file */
+
+.totalRow {
+  background-color: #f8f9fa;
+  font-weight: bold;
+}
+
+.totalLabel {
+  text-align: right;
+  padding: 8px;
+  font-weight: bold;
+}
+
+.finalTotal {
+  color: #dc3545;
+  font-weight: bold;
+}
+
+.totalAmountSection {
+  margin-top: 20px;
+  padding: 15px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #dee2e6;
+}
+
+.totalAmountRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  font-size: 16px;
+}
+
+.totalAmountRow:last-child {
+  margin-bottom: 0;
+}
+
+.beforeAmount {
+  color: #dc3545;
+}
+
+.afterAmount {
+  color: #28a745;
+}
+
+/* Ensure readonly inputs have proper styling */
+.readonly {
+  background-color: #e9ecef;
+  cursor: not-allowed;
+  opacity: 0.8;
+}
+
+/* Table styling for better readability */
+.productsTable table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.productsTable th,
+.productsTable td {
+  padding: 8px;
+  border: 1px solid #dee2e6;
+  text-align: center;
+}
+
+.productsTable th {
+  background-color: #1e658b;
+  color: white;
+  font-weight: 500;
+}
+
+.productsTable input {
+  width: 100%;
+  border: none;
+  background: transparent;
+  text-align: center;
+}
+
+.productsTable input:not(.readonly):focus {
+  background-color: #fff;
+  border: 1px solid #1e658b;
+  outline: none;
+}
