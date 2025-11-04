@@ -549,6 +549,7 @@
 .loading {
   opacity: 0.6;
   pointer-events: none;
+  position: relative;
 }
 
 .loading::after {
@@ -689,19 +690,14 @@
   }
 }
 
-/* Accessibility Improvements */
-@media (prefers-reduced-motion: reduce) {
-  * {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
-}
-
 /* Focus visible for keyboard navigation */
 .field input:focus-visible,
 .field select:focus-visible,
-.field textarea:focus-visible,
+.field textarea:focus-visible {
+  outline: 2px solid #1e658b;
+  outline-offset: 2px;
+}
+
 .btnAdd:focus-visible,
 .toggleButton:focus-visible,
 .btnCancel:focus-visible,
@@ -776,5 +772,31 @@
   .totalAmountSection {
     background: #2d2d2d;
     border-color: #404040;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .field input,
+  .field select,
+  .field textarea,
+  .btnAdd,
+  .toggleButton,
+  .btnCancel,
+  .btnSubmit,
+  .productsTable tr,
+  .productsTable td {
+    transition: none;
+  }
+  
+  .btnAdd:hover,
+  .toggleButton:hover,
+  .btnCancel:hover,
+  .btnSubmit:hover:not(:disabled) {
+    transform: none;
+  }
+  
+  .loading::after {
+    animation: none;
   }
 }
