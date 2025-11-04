@@ -244,7 +244,7 @@
 }
 
 /* ============================================
-   Products Table - FIXED OVERFLOW
+   Products Table - Fixed Sticky Columns & Custom Widths
    ============================================ */
 .productsTable {
   overflow-x: auto;
@@ -279,6 +279,67 @@
   letter-spacing: 0.025em;
 }
 
+/* Custom Column Widths - Adjust these percentages as needed */
+.productsTable thead th:nth-child(1) { /* Product Name */
+  width: 25%;
+  min-width: 250px;
+}
+
+.productsTable thead th:nth-child(2) { /* MRP */
+  width: 6%;
+  min-width: 80px;
+}
+
+.productsTable thead th:nth-child(3) { /* Packing Size */
+  width: 8%;
+  min-width: 100px;
+}
+
+.productsTable thead th:nth-child(4) { /* Qty */
+  width: 5%;
+  min-width: 70px;
+}
+
+.productsTable thead th:nth-child(5) { /* Discount % (colspan 2) */
+  width: 8%;
+  min-width: 100px;
+}
+
+.productsTable thead th:nth-child(6) { /* Dis. Amt */
+  width: 7%;
+  min-width: 90px;
+}
+
+.productsTable thead th:nth-child(7) { /* Taxable Before Dis. */
+  width: 8%;
+  min-width: 100px;
+}
+
+.productsTable thead th:nth-child(8) { /* Taxable After Dis. */
+  width: 8%;
+  min-width: 100px;
+}
+
+.productsTable thead th:nth-child(9) { /* CGST (colspan 2) */
+  width: 6%;
+  min-width: 80px;
+}
+
+.productsTable thead th:nth-child(10) { /* SGST (colspan 2) */
+  width: 6%;
+  min-width: 80px;
+}
+
+.productsTable thead th:nth-child(11) { /* IGST (colspan 2) */
+  width: 6%;
+  min-width: 80px;
+}
+
+.productsTable thead th:nth-child(12) { /* Total */
+  width: 7%;
+  min-width: 90px;
+}
+
 .productsTable thead th:last-child {
   border-right: none;
 }
@@ -297,78 +358,108 @@
   text-align: center;
   font-size: 13px;
   vertical-align: middle;
-  min-width: 80px;
 }
 
-.productsTable tbody td input,
-.productsTable tbody td select {
-  min-width: 70px;
-  text-align: center;
-  padding: 4px 6px;
-  min-height: 28px;
-  font-size: 13px;
-}
-
-/* First column (index number) */
-.productsTable tbody td:first-child {
-  font-weight: 600;
-  color: var(--primary);
-  background-color: #f8fafc;
+/* Apply custom widths to table body cells */
+.productsTable tbody td:nth-child(1) { /* Product Name */
+  width: 28%;
+  min-width: 250px;
   position: sticky;
-  left: 0;
-  z-index: 2;
-  min-width: 40px;
-}
-
-/* Product dropdown column */
-.productsTable tbody td:nth-child(2) {
-  min-width: 200px;
-  position: sticky;
-  left: 40px;
+  left: 0; /* Starts from left edge since no index column */
   z-index: 2;
   background: var(--surface);
   text-align: left;
 }
 
-.productsTable tbody tr:hover td:nth-child(2) {
+/* Remove sticky from other columns - THIS FIXES THE MRP FREEZING */
+.productsTable tbody td:nth-child(2) { /* MRP */
+  width: 6%;
+  min-width: 80px;
+  position: static; /* Remove sticky positioning */
+  background: var(--surface);
+}
+
+.productsTable tbody td:nth-child(3) { /* Packing Size */
+  width: 5%;
+  min-width: 100px;
+  position: static;
+}
+
+.productsTable tbody td:nth-child(4) { /* Qty */
+  width: 5%;
+  min-width: 70px;
+  position: static;
+}
+
+.productsTable tbody td:nth-child(5) { /* Discount % */
+  width: 8%;
+  min-width: 100px;
+  position: static;
+}
+
+.productsTable tbody td:nth-child(6) { /* Dis. Amt */
+  width: 7%;
+  min-width: 90px;
+  position: static;
+}
+
+.productsTable tbody td:nth-child(7) { /* Taxable Before Dis. */
+  width: 8%;
+  min-width: 100px;
+  position: static;
+}
+
+.productsTable tbody td:nth-child(8) { /* Taxable After Dis. */
+  width: 8%;
+  min-width: 100px;
+  position: static;
+}
+
+.productsTable tbody td:nth-child(9) { /* CGST */
+  width: 6%;
+  min-width: 80px;
+  position: static;
+}
+
+.productsTable tbody td:nth-child(10) { /* SGST */
+  width: 6%;
+  min-width: 80px;
+  position: static;
+}
+
+.productsTable tbody td:nth-child(11) { /* IGST */
+  width: 6%;
+  min-width: 80px;
+  position: static;
+}
+
+.productsTable tbody td:nth-child(12) { /* Total */
+  width: 7%;
+  min-width: 90px;
+  position: static;
+}
+
+.productsTable tbody tr:hover td:nth-child(1) {
   background-color: #f8fafc;
 }
 
-.productsTable tbody td:nth-child(2) select {
+.productsTable tbody td:nth-child(1) select {
   text-align: left;
   width: 100%;
-  min-width: 180px;
+  min-width: 200px;
 }
 
-/* ============================================
-   Product Dropdown Styling
-   ============================================ */
-.productDropdown {
-  width: 100%;
-  padding: 6px 8px;
-  border: 1.5px solid var(--primary);
-  border-radius: 4px;
+.productsTable tbody td input,
+.productsTable tbody td select {
+  min-width: 60px;
+  text-align: center;
+  padding: 4px 6px;
+  min-height: 28px;
   font-size: 13px;
-  background-color: var(--surface);
-  cursor: pointer;
-  transition: all 0.2s ease;
-  min-height: 32px;
+  width: 90%; /* Make inputs fit within cells */
 }
 
-.productDropdown:hover {
-  border-color: var(--primary-dark);
-  box-shadow: 0 2px 4px rgba(37, 99, 235, 0.1);
-}
-
-.productDropdown:focus {
-  outline: none;
-  border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-}
-
-/* ============================================
-   Total Row Styling
-   ============================================ */
+/* Total Row Styling */
 .totalRow {
   background: linear-gradient(135deg, #f0f9ff, #e0f2fe) !important;
   font-weight: 600;
