@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import styles from '../styles/NewEditOrderForm.module.css';
-import proStyles from '../styles/ProfessionalForm.module.css';
 import SetupDataService from '../services/SetupDataService';
 
 export default function EditOrderForm({ order, products, onSave, onCancel, selectedStatus }) {
@@ -409,12 +408,12 @@ export default function EditOrderForm({ order, products, onSave, onCancel, selec
             <form name="aspnetForm" onSubmit={handleSubmit}>
               <div className={`container ${styles.bgwhite} ${styles.formContainer}`}>
 
-                <div className={proStyles.formBody}>
+                <div>
                   {errorMessage && (
                     <div className="alert alert-danger">{errorMessage}</div>
                   )}
 
-                  <div className={`row ${proStyles.section}`}>
+                  <div className={`row`}>
                     <div className="col-md-12"><h5>Buyer Details</h5></div>
                   </div>
 
@@ -556,11 +555,11 @@ export default function EditOrderForm({ order, products, onSave, onCancel, selec
                 </div>
 
                 {/* Discounts */}
-                <div className={`row ${proStyles.section}`}>
+                <div className={`row`}>
                   <div className="col-md-12">
                     <h5 className="d-flex justify-content-between align-items-center">
                       Discounts
-                      <button type="button" className={`btn ${proStyles.btnLink}`} onClick={() => setDiscountsOpen(!discountsOpen)}>
+                      <button type="button" className={`btn btn-link`} onClick={() => setDiscountsOpen(!discountsOpen)}>
                         {discountsOpen ? 'Collapse' : 'Expand'}
                       </button>
                     </h5>
@@ -604,7 +603,7 @@ export default function EditOrderForm({ order, products, onSave, onCancel, selec
                 <br />
 
                 {/* Add Product Details */}
-                <div className={`row ${proStyles.section}`}><div className="col-md-12"><h5>Add Product Details</h5></div></div>
+                <div className={`row`}><div className="col-md-12"><h5>Add Product Details</h5></div></div>
                 <div className="row">
                   <div className="col-md-12">
                     <div className="table-responsive">
@@ -666,7 +665,7 @@ export default function EditOrderForm({ order, products, onSave, onCancel, selec
                 </div>
 
                 {/* Additional Details */}
-                <div className={`row ${proStyles.section}`}><div className="col-md-12"><h5>Additional Details</h5></div></div>
+                <div className={`row`}><div className="col-md-12"><h5>Additional Details</h5></div></div>
                 <div className="form-group row">
                   <div className="col-sm-4"><label>Shipping, Packing and Delivery Charges (Amount):</label></div>
                   <div className="col-sm-2"><input type="text" className="form-control" value={shippingCharges} onChange={e => setShippingCharges(e.target.value)} /></div>
@@ -692,7 +691,7 @@ export default function EditOrderForm({ order, products, onSave, onCancel, selec
                 {/* Payment & Delivery */}
                 <div className="row">
                   <div className="col-md-6">
-                    <div className={proStyles.section}><h5>Payment and Delivery</h5></div>
+                    <div><h5>Payment and Delivery</h5></div>
                     <label>Prefered Call Time</label>
                     <div className="row">
                       <div className="col-md-6"><input type="time" className="form-control" value={preferredCallTime1} onChange={e => setPreferredCallTime1(e.target.value)} /></div>
@@ -813,7 +812,7 @@ export default function EditOrderForm({ order, products, onSave, onCancel, selec
                 <div className="row">
                   <div className="col-md-12 text-center">
                     <button type="button" onClick={onCancel} className="btn btn-secondary mr-2">Cancel</button>
-                    <button type="submit" className={`btn ${proStyles.btnPrimary}`} disabled={clientNotFound || loading}>Save</button><br /><br />
+                    <button type="submit" className={`btn btn-primary`} disabled={clientNotFound || loading}>Save</button><br /><br />
                   </div>
                 </div>
                 </div>
