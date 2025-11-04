@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
+import Select from 'react-select';
 import styles from '../styles/EditOrderForm.module.css';
 import SetupDataService from '../services/SetupDataService';
 
-export default function EditOrderForm({ order, products, onSave, onCancel, editMode }) {
+export default function EditOrderForm({ order, products, onSave, onCancel }) {
   // Client Information
   const [clientName, setClientName] = useState('');
   const [mobile, setMobile] = useState('');
@@ -99,6 +100,64 @@ export default function EditOrderForm({ order, products, onSave, onCancel, editM
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
+  // =====================================================
+  // UTILITY FUNCTION: Format product display name
+  // =====================================================
+  const formatProductDisplay = (combinedName) => {
+    if (!combinedName) return '';
+    const parts = combinedName.split(' - ');
+    if (parts.length >= 4) {
+      // parts[0] = Name, parts[2] = Size, parts[3] = Price
+      return `${parts[0]} - ${parts[2]} - ${parts[3]}`;
+    }
+    return combinedName;
+  };
+
+  // =====================================================
+  // REACT-SELECT CUSTOM STYLES
+  // =====================================================
+  const customSelectStyles = {
+    control: (provided, state) => ({
+      ...provided,
+      minHeight: '36px',
+      fontSize: '13px',
+      borderColor: state.isFocused ? '#2563eb' : '#e2e8f0',
+      boxShadow: state.isFocused ? '0 0 0 2px rgba(37, 99, 235, 0.1)' : 'none',
+      '&:hover': {
+        borderColor: '#2563eb'
+      }
+    }),
+    option: (provided, state) => ({
+      ...provided,
+      fontSize: '13px',
+      padding: '8px 12px',
+      backgroundColor: state.isSelected 
+        ? '#2563eb' 
+        : state.isFocused 
+          ? '#f1f5f9' 
+          : 'white',
+      color: state.isSelected ? 'white' : '#1e293b',
+      cursor: 'pointer'
+    }),
+    menu: (provided) => ({
+      ...provided,
+      zIndex: 1000
+    }),
+    singleValue: (provided) => ({
+      ...provided,
+      fontSize: '13px'
+    }),
+    placeholder: (provided) => ({
+      ...provided,
+      fontSize: '13px',
+      color: '#94a3b8'
+    }),
+    input: (provided) => ({
+      ...provided,
+      fontSize: '13px'
+    })
+  };
+
   // Calculate totals whenever productList changes
   useEffect(() => {
     calculateTotals();
@@ -136,17 +195,10 @@ export default function EditOrderForm({ order, products, onSave, onCancel, editM
     setAfterAmount(totalSum.toFixed(2));
   };
 
-
-   // Set edit status when component mounts or editMode changes
-  useEffect(() => {
-    const status = editMode === 'split' ? 'Edit and Split' : 'Edit Order';
-    setEditOrderStatus(status);
-  }, [editMode]);
-
   // Load order data first
   useEffect(() => {
     if (order) {
-      
+      setEditOrderStatus(order['Order Status'] || order['Status'] || '');
       setClientName(order['Name of Client'] || '');
       setMobile(order['Mobile'] || '');
       setEmail(order['Email'] || '');
@@ -215,7 +267,7 @@ export default function EditOrderForm({ order, products, onSave, onCancel, editM
         igst: p['IGST %'] || '0',
         total: p['Total'] || '0',
         splitQty: '0',
-        productCategory: ''
+        productCategory: p['Product Category'] || ''
       }));
       setProductList(initialProducts);
     }
@@ -406,14 +458,17 @@ export default function EditOrderForm({ order, products, onSave, onCancel, editM
     }
   };
 
+  // =====================================================
+  // ADD PRODUCT FUNCTION - Initial quantity = 1
+  // =====================================================
   const addProduct = () => {
     setProductList([...productList, {
       productName: '',
       sku: '',
       mrp: '0',
       packingSize: '',
-      quantity: '1',
-      orderQty: '1',
+      quantity: '1',       // Default quantity is 1
+      orderQty: '1',       // Default order quantity is 1
       discountPer: '0',
       discountAmt: '0',
       beforeTax: '0',
@@ -427,98 +482,92 @@ export default function EditOrderForm({ order, products, onSave, onCancel, editM
     }]);
   };
 
+  // =====================================================
+  // UPDATE PRODUCT FUNCTION - Complete calculation logic
+  // =====================================================
   const updateProduct = (index, field, value) => {
-  const updated = [...productList];
-  
-  // Handle product selection from dropdown
-  if (field === 'productName') {
-    const selectedProduct = productListOptions.find(p => p.combinedName === value);
+    const updated = [...productList];
     
-    if (selectedProduct) {
-      updated[index].productName = selectedProduct.combinedName;
-      updated[index].sku = selectedProduct.productSKU;
-      updated[index].mrp = selectedProduct.price;
-      updated[index].packingSize = selectedProduct.pack;
-      updated[index].productCategory = selectedProduct.productCategory;
+    if (field === 'productName') {
+      const selectedProduct = productListOptions.find(p => p.combinedName === value);
       
-      // Set preset discount from discount structure
-      const presetDiscount = getPresetDiscount(selectedProduct.productCategory);
-      updated[index].discountPer = presetDiscount;
-      
-      // Set tax rates based on state matching
-      const taxRate = parseFloat(selectedProduct.taxRate || '0');
-      if (state && partyState && state === partyState) {
-        // Same state: Split between CGST and SGST
-        updated[index].cgst = (taxRate / 2).toString();
-        updated[index].sgst = (taxRate / 2).toString();
-        updated[index].igst = '0';
-      } else {
-        // Different state: Use IGST only
-        updated[index].cgst = '0';
-        updated[index].sgst = '0';
-        updated[index].igst = taxRate.toString();
+      if (selectedProduct) {
+        updated[index].productName = selectedProduct.combinedName;
+        updated[index].sku = selectedProduct.productSKU;
+        updated[index].mrp = selectedProduct.price;
+        updated[index].packingSize = selectedProduct.pack;
+        updated[index].productCategory = selectedProduct.productCategory;
+        
+        const presetDiscount = getPresetDiscount(selectedProduct.productCategory);
+        updated[index].discountPer = presetDiscount;
+        
+        const taxRate = parseFloat(selectedProduct.taxRate || '0');
+        if (state && partyState && state === partyState) {
+          updated[index].cgst = (taxRate / 2).toString();
+          updated[index].sgst = (taxRate / 2).toString();
+          updated[index].igst = '0';
+        } else {
+          updated[index].cgst = '0';
+          updated[index].sgst = '0';
+          updated[index].igst = taxRate.toString();
+        }
       }
-    }
-  } 
-  // Handle discount percentage with validation
-  else if (field === 'discountPer') {
-    const maxDiscount = getMaxDiscount(updated[index].productCategory);
-    const enteredDiscount = parseFloat(value) || 0;
-    
-    if (enteredDiscount > maxDiscount) {
-      updated[index][field] = maxDiscount.toString();
-      alert(`Maximum discount allowed for ${updated[index].productCategory} is ${maxDiscount}%`);
-    } else if (enteredDiscount < 0) {
-      updated[index][field] = '0';
+    } else if (field === 'discountPer') {
+      const maxDiscount = getMaxDiscount(updated[index].productCategory);
+      const enteredDiscount = parseFloat(value) || 0;
+      
+      if (enteredDiscount > maxDiscount) {
+        updated[index][field] = maxDiscount.toString();
+        alert(`Maximum discount allowed for ${updated[index].productCategory} is ${maxDiscount}%`);
+      } else if (enteredDiscount < 0) {
+        updated[index][field] = '0';
+      } else {
+        updated[index][field] = value;
+      }
     } else {
       updated[index][field] = value;
     }
-  } 
-  // Handle all other field updates
-  else {
-    updated[index][field] = value;
-  }
-  
-  // =====================================================
-  // AUTOMATIC CALCULATIONS - Runs for every field change
-  // =====================================================
-  
-  // Parse current values (default to 0 if invalid)
-  const qty = parseFloat(updated[index].quantity) || 0;
-  const mrp = parseFloat(updated[index].mrp) || 0;
-  const discPer = parseFloat(updated[index].discountPer) || 0;
-  
-  // Step 1: Calculate Before Tax = MRP × Quantity
-  const beforeTax = qty * mrp;
-  updated[index].beforeTax = beforeTax.toFixed(2);
-  
-  // Step 2: Calculate Discount Amount = (Before Tax × Discount%) / 100
-  const discAmt = (beforeTax * discPer) / 100;
-  updated[index].discountAmt = discAmt.toFixed(2);
-  
-  // Step 3: Calculate After Discount = Before Tax - Discount Amount
-  const afterDisc = beforeTax - discAmt;
-  updated[index].afterDiscount = afterDisc.toFixed(2);
-  
-  // Step 4: Get tax percentages
-  const cgstRate = parseFloat(updated[index].cgst) || 0;
-  const sgstRate = parseFloat(updated[index].sgst) || 0;
-  const igstRate = parseFloat(updated[index].igst) || 0;
-  
-  // Step 5: Calculate tax amounts in BACKGROUND (not stored in state)
-  // Tax is calculated on After Discount amount
-  const cgstAmount = (afterDisc * cgstRate) / 100;
-  const sgstAmount = (afterDisc * sgstRate) / 100;
-  const igstAmount = (afterDisc * igstRate) / 100;
-  
-  // Step 6: Calculate Final Total = After Discount + All Taxes
-  const totalAmount = afterDisc + cgstAmount + sgstAmount + igstAmount;
-  updated[index].total = totalAmount.toFixed(2);
-  
-  // Update the product list state
-  setProductList(updated);
-};
+    
+    // CALCULATION LOGIC - Runs for every field change
+    const qty = parseFloat(updated[index].quantity) || 0;
+    const mrp = parseFloat(updated[index].mrp) || 0;
+    const discPer = parseFloat(updated[index].discountPer) || 0;
+    
+    // Step 1: Calculate Before Tax
+    const beforeTax = qty * mrp;
+    updated[index].beforeTax = beforeTax.toFixed(2);
+    
+    // Step 2: Calculate Discount Amount
+    const discAmt = (beforeTax * discPer) / 100;
+    updated[index].discountAmt = discAmt.toFixed(2);
+    
+    // Step 3: Calculate After Discount
+    const afterDisc = beforeTax - discAmt;
+    updated[index].afterDiscount = afterDisc.toFixed(2);
+    
+    // Step 4: Get tax rates
+    const cgstRate = parseFloat(updated[index].cgst) || 0;
+    const sgstRate = parseFloat(updated[index].sgst) || 0;
+    const igstRate = parseFloat(updated[index].igst) || 0;
+    
+    // Step 5: Calculate tax amounts (in background)
+    const cgstAmount = (afterDisc * cgstRate) / 100;
+    const sgstAmount = (afterDisc * sgstRate) / 100;
+    const igstAmount = (afterDisc * igstRate) / 100;
+    
+    // Step 6: Calculate Total
+    const totalAmount = afterDisc + cgstAmount + sgstAmount + igstAmount;
+    updated[index].total = totalAmount.toFixed(2);
+    
+    setProductList(updated);
+  };
 
+  // Transform product options for react-select
+  const productOptions = productListOptions.map(product => ({
+    value: product.combinedName,
+    label: formatProductDisplay(product.combinedName),
+    product: product
+  }));
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -705,7 +754,6 @@ export default function EditOrderForm({ order, products, onSave, onCancel, editM
           </div>
         </div>
 
-        {/* Billing and Shipping Address - UPDATED */}
         <div className={styles.grid2}>
           <div className={styles.field}>
             <label>Billing Address <span className={styles.mandatory}>*</span></label>
@@ -716,7 +764,6 @@ export default function EditOrderForm({ order, products, onSave, onCancel, editM
               rows="3" 
             />
           </div>
-          
           <div className={styles.field}>
             <label>Shipping Address <span className={styles.mandatory}>*</span></label>
             <div>
@@ -794,7 +841,7 @@ export default function EditOrderForm({ order, products, onSave, onCancel, editM
 
         {showDiscounts && (
           <div className={styles.discountTable}>
-            <table className={styles.table}>
+            <table>
               <thead>
                 <tr>
                   <th>Discount Category</th>
@@ -828,7 +875,7 @@ export default function EditOrderForm({ order, products, onSave, onCancel, editM
         )}
       </div>
 
-      {/* Products */}
+      {/* Products - WITH SEARCHABLE DROPDOWN */}
       <div className={styles.section}>
         <div className={styles.sectionHeader}>
           <h3 className={styles.sectionTitle}>Add Product Details</h3>
@@ -836,20 +883,20 @@ export default function EditOrderForm({ order, products, onSave, onCancel, editM
         </div>
         
         <div className={styles.productsTable}>
-          <table className={styles.productsTable}>
+          <table>
             <thead>
               <tr>
                 <th>Select Products</th>
                 <th>MRP</th>
                 <th>Packing Size</th>
                 <th>Qty.</th>
-                <th colSpan="2">Discount %</th>
+                <th>Discount %</th>
                 <th>Dis. Amt</th>
                 <th>Taxable Before Dis.</th>
                 <th>Taxable After Dis.</th>
-                <th colSpan="2">Tax(CGST)</th>
-                <th colSpan="2">Tax(SGST)</th>
-                <th colSpan="2">Tax(IGST)</th>
+                <th>CGST %</th>
+                <th>SGST %</th>
+                <th>IGST %</th>
                 <th>Total</th>
               </tr>
             </thead>
@@ -857,18 +904,18 @@ export default function EditOrderForm({ order, products, onSave, onCancel, editM
               {productList.map((product, index) => (
                 <tr key={index}>
                   <td>
-                    <select 
-                      value={product.productName}
-                      onChange={(e) => updateProduct(index, 'productName', e.target.value)}
-                      className={styles.productDropdown}
-                    >
-                      <option value="">-- Select Product --</option>
-                      {productListOptions.map((p, i) => (
-                        <option key={i} value={p.combinedName}>
-                          {p.combinedName}
-                        </option>
-                      ))}
-                    </select>
+                    <Select
+                      value={productOptions.find(opt => opt.value === product.productName) || null}
+                      onChange={(selectedOption) => {
+                        updateProduct(index, 'productName', selectedOption ? selectedOption.value : '');
+                      }}
+                      options={productOptions}
+                      placeholder="-- Search Product --"
+                      isClearable
+                      isSearchable
+                      styles={customSelectStyles}
+                      noOptionsMessage={() => "No products found"}
+                    />
                   </td>
                   <td><input type="text" value={product.mrp} readOnly className={styles.readonly} /></td>
                   <td><input type="text" value={product.packingSize} readOnly className={styles.readonly} /></td>
@@ -880,7 +927,7 @@ export default function EditOrderForm({ order, products, onSave, onCancel, editM
                       className={styles.numberInput}
                     />
                   </td>
-                  <td colSpan="2">
+                  <td>
                     <input 
                       type="number" 
                       value={product.discountPer}
@@ -892,9 +939,9 @@ export default function EditOrderForm({ order, products, onSave, onCancel, editM
                   <td><input type="text" value={product.discountAmt} readOnly className={styles.readonly} /></td>
                   <td><input type="text" value={product.beforeTax} readOnly className={styles.readonly} /></td>
                   <td><input type="text" value={product.afterDiscount} readOnly className={styles.readonly} /></td>
-                  <td colSpan="2"><input type="text" value={product.cgst} readOnly className={styles.readonly} /></td>
-                  <td colSpan="2"><input type="text" value={product.sgst} readOnly className={styles.readonly} /></td>
-                  <td colSpan="2"><input type="text" value={product.igst} readOnly className={styles.readonly} /></td>
+                  <td><input type="text" value={product.cgst} readOnly className={styles.readonly} /></td>
+                  <td><input type="text" value={product.sgst} readOnly className={styles.readonly} /></td>
+                  <td><input type="text" value={product.igst} readOnly className={styles.readonly} /></td>
                   <td><input type="text" value={product.total} readOnly className={styles.readonly} /></td>
                 </tr>
               ))}
@@ -904,11 +951,11 @@ export default function EditOrderForm({ order, products, onSave, onCancel, editM
                 <td><input type="text" value={totals.mrpTotal} readOnly className={styles.readonly} /></td>
                 <td></td>
                 <td><input type="text" value={totals.qtyTotal} readOnly className={styles.readonly} /></td>
-                <td colSpan="2"></td>
+                <td></td>
                 <td><input type="text" value={totals.discountTotal} readOnly className={styles.readonly} /></td>
                 <td><input type="text" value={totals.taxBeforeTotal} readOnly className={styles.readonly} /></td>
                 <td><input type="text" value={totals.taxAfterTotal} readOnly className={styles.readonly} /></td>
-                <td colSpan="6"></td>
+                <td colSpan="3"></td>
                 <td className={styles.finalTotal}><input type="text" value={totals.totalAmount} readOnly className={styles.readonly} /></td>
               </tr>
             </tbody>
