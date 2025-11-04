@@ -321,21 +321,24 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
     }));
   };
 
-  // Process Product List from Product List table
-  const processProductList = (productList) => {
-    if (!productList || !productList.rows) {
-      return [];
-    }
+ // Process Product List from Product List table
+const processProductList = (productList) => {
+  if (!productList || !productList.rows) {
+    return [];
+  }
 
-    return productList.rows.map(row => ({
+  return productList.rows
+    .filter(row => row['As Per Factory- Status'] !== 'Discontinue')
+    .map(row => ({
       combinedName: row['Combined Name'] || '',
-      productSKU: row['ProductSKU'] || '',
+      productSKU: row['SKU'] || '',
       pack: row['Pack'] || '',
-      price: row['Price As Per Factory'] || '0',
+      price: row['Price'] || '0',
       productCategory: row['Products Category'] || '',
       taxRate: row['TAX RATE'] || '0'
-    })).filter(p => p.combinedName);
-  };
+    }))
+    .filter(p => p.combinedName);
+};
 
   // Process Discount Caps from Discount section
   const processDiscountCaps = (discountList) => {
