@@ -421,73 +421,97 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
   };
 
   const updateProduct = (index, field, value) => {
-    const updated = [...productList];
+  const updated = [...productList];
+  
+  // Handle product selection from dropdown
+  if (field === 'productName') {
+    const selectedProduct = productListOptions.find(p => p.combinedName === value);
     
-    if (field === 'productName') {
-      const selectedProduct = productListOptions.find(p => p.combinedName === value);
+    if (selectedProduct) {
+      updated[index].productName = selectedProduct.combinedName;
+      updated[index].sku = selectedProduct.productSKU;
+      updated[index].mrp = selectedProduct.price;
+      updated[index].packingSize = selectedProduct.pack;
+      updated[index].productCategory = selectedProduct.productCategory;
       
-      if (selectedProduct) {
-        updated[index].productName = selectedProduct.combinedName;
-        updated[index].sku = selectedProduct.productSKU;
-        updated[index].mrp = selectedProduct.price;
-        updated[index].packingSize = selectedProduct.pack;
-        updated[index].productCategory = selectedProduct.productCategory;
-        
-        const presetDiscount = getPresetDiscount(selectedProduct.productCategory);
-        updated[index].discountPer = presetDiscount;
-        
-        const taxRate = parseFloat(selectedProduct.taxRate || '0');
-        if (state && partyState && state === partyState) {
-          updated[index].cgst = (taxRate / 2).toString();
-          updated[index].sgst = (taxRate / 2).toString();
-          updated[index].igst = '0';
-        } else {
-          updated[index].cgst = '0';
-          updated[index].sgst = '0';
-          updated[index].igst = taxRate.toString();
-        }
-      }
-    } else if (field === 'discountPer') {
-      const maxDiscount = getMaxDiscount(updated[index].productCategory);
-      const enteredDiscount = parseFloat(value) || 0;
+      // Set preset discount from discount structure
+      const presetDiscount = getPresetDiscount(selectedProduct.productCategory);
+      updated[index].discountPer = presetDiscount;
       
-      if (enteredDiscount > maxDiscount) {
-        updated[index][field] = maxDiscount.toString();
-        alert(`Maximum discount allowed for ${updated[index].productCategory} is ${maxDiscount}%`);
-      } else if (enteredDiscount < 0) {
-        updated[index][field] = '0';
+      // Set tax rates based on state matching
+      const taxRate = parseFloat(selectedProduct.taxRate || '0');
+      if (state && partyState && state === partyState) {
+        // Same state: Split between CGST and SGST
+        updated[index].cgst = (taxRate / 2).toString();
+        updated[index].sgst = (taxRate / 2).toString();
+        updated[index].igst = '0';
       } else {
-        updated[index][field] = value;
+        // Different state: Use IGST only
+        updated[index].cgst = '0';
+        updated[index].sgst = '0';
+        updated[index].igst = taxRate.toString();
       }
+    }
+  } 
+  // Handle discount percentage with validation
+  else if (field === 'discountPer') {
+    const maxDiscount = getMaxDiscount(updated[index].productCategory);
+    const enteredDiscount = parseFloat(value) || 0;
+    
+    if (enteredDiscount > maxDiscount) {
+      updated[index][field] = maxDiscount.toString();
+      alert(`Maximum discount allowed for ${updated[index].productCategory} is ${maxDiscount}%`);
+    } else if (enteredDiscount < 0) {
+      updated[index][field] = '0';
     } else {
       updated[index][field] = value;
     }
-    
-    if (field === 'quantity' || field === 'mrp' || field === 'discountPer' || field === 'productName') {
-      const qty = parseFloat(updated[index].quantity) || 0;
-      const mrp = parseFloat(updated[index].mrp) || 0;
-      const discPer = parseFloat(updated[index].discountPer) || 0;
-      
-      const beforeTax = qty * mrp;
-      const discAmt = (beforeTax * discPer) / 100;
-      const afterDisc = beforeTax - discAmt;
-      
-      updated[index].beforeTax = beforeTax.toFixed(2);
-      updated[index].discountAmt = discAmt.toFixed(2);
-      updated[index].afterDiscount = afterDisc.toFixed(2);
-      
-      const cgstRate = parseFloat(updated[index].cgst) || 0;
-      const sgstRate = parseFloat(updated[index].sgst) || 0;
-      const igstRate = parseFloat(updated[index].igst) || 0;
-      
-      const totalTaxPercent = cgstRate + sgstRate + igstRate;
-      const taxAmount = (afterDisc * totalTaxPercent) / 100;
-      
-      updated[index].total = (afterDisc + taxAmount).toFixed(2);
-    }
-    
-    setProductList(updated);
-  };
+  } 
+  // Handle all other field updates
+  else {
+    updated[index][field] = value;
+  }
+  
+  // =====================================================
+  // AUTOMATIC CALCULATIONS - Runs for every field change
+  // =====================================================
+  
+  // Parse current values (default to 0 if invalid)
+  const qty = parseFloat(updated[index].quantity) || 0;
+  const mrp = parseFloat(updated[index].mrp) || 0;
+  const discPer = parseFloat(updated[index].discountPer) || 0;
+  
+  // Step 1: Calculate Before Tax = MRP × Quantity
+  const beforeTax = qty * mrp;
+  updated[index].beforeTax = beforeTax.toFixed(2);
+  
+  // Step 2: Calculate Discount Amount = (Before Tax × Discount%) / 100
+  const discAmt = (beforeTax * discPer) / 100;
+  updated[index].discountAmt = discAmt.toFixed(2);
+  
+  // Step 3: Calculate After Discount = Before Tax - Discount Amount
+  const afterDisc = beforeTax - discAmt;
+  updated[index].afterDiscount = afterDisc.toFixed(2);
+  
+  // Step 4: Get tax percentages
+  const cgstRate = parseFloat(updated[index].cgst) || 0;
+  const sgstRate = parseFloat(updated[index].sgst) || 0;
+  const igstRate = parseFloat(updated[index].igst) || 0;
+  
+  // Step 5: Calculate tax amounts in BACKGROUND (not stored in state)
+  // Tax is calculated on After Discount amount
+  const cgstAmount = (afterDisc * cgstRate) / 100;
+  const sgstAmount = (afterDisc * sgstRate) / 100;
+  const igstAmount = (afterDisc * igstRate) / 100;
+  
+  // Step 6: Calculate Final Total = After Discount + All Taxes
+  const totalAmount = afterDisc + cgstAmount + sgstAmount + igstAmount;
+  updated[index].total = totalAmount.toFixed(2);
+  
+  // Update the product list state
+  setProductList(updated);
+};
+
 
   const handleSubmit = (e) => {
     e.preventDefault();
