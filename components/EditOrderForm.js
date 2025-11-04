@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import styles from '../styles/EditOrderForm.module.css';
+import SetupDataService from '../services/SetupDataService';
 
 export default function EditOrderForm({ order, products, onSave, onCancel }) {
   // Client Information
@@ -176,48 +177,44 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
     setErrorMessage('');
 
     try {
-      const response = await fetch('/api/setup-data');
-      const data = await response.json();
+      const data = await SetupDataService.loadAllData();
+      setSetupData(data);
 
-      if (data.success) {
-        setSetupData(data.data);
+      // Process Client List data - FILTER BY "Active/Non Active" = "Verified"
+      const clientData = processClientList(data.clientList, mobile);
 
-        // Process Client List data - FILTER BY "Active/Non Active" = "Verified"
-        const clientData = processClientList(data.data.clientList, mobile);
-        
-        // Process Employee List
-        const employees = processEmployeeList(data.data.employeeList);
-        setEmployeeList(employees);
+      // Process Employee List
+      const employees = processEmployeeList(data.employeeList);
+      setEmployeeList(employees);
 
-        // Process Delivery Parties from Distributor List
-        const parties = processDeliveryParties(data.data.distributorList);
-        setDeliveryParties(parties);
+      // Process Delivery Parties from Distributor List
+      const parties = processDeliveryParties(data.distributorList);
+      setDeliveryParties(parties);
 
-        if (clientData.found) {
-          // Set discount tier
-          setDiscountTier(clientData.discountTier);
-          
-          // Set location data from Client List
-          setTaluk(clientData.taluk);
-          setDistrict(clientData.district);
-          setState(clientData.state);
-          setMrName(clientData.mrName);
+      if (clientData.found) {
+        // Set discount tier
+        setDiscountTier(clientData.discountTier);
 
-          // Fetch and set discounts from Discount Module
-          const discountData = processDiscountModule(
-            data.data.discountStructure,
-            clientData.discountTier,
-            clientType
-          );
-          
-          if (discountData.length > 0) {
-            setDiscounts(discountData);
-          }
-        } else {
-          // Client not found or not verified
-          setClientNotFound(true);
-          setErrorMessage('Client mobile number not found or not verified in Client List. This order cannot be edited.');
+        // Set location data from Client List
+        setTaluk(clientData.taluk);
+        setDistrict(clientData.district);
+        setState(clientData.state);
+        setMrName(clientData.mrName);
+
+        // Fetch and set discounts from Discount Module
+        const discountData = processDiscountModule(
+          data.discountStructure,
+          clientData.discountTier,
+          clientType
+        );
+
+        if (discountData.length > 0) {
+          setDiscounts(discountData);
         }
+      } else {
+        // Client not found or not verified
+        setClientNotFound(true);
+        setErrorMessage('Client mobile number not found or not verified in Client List. This order cannot be edited.');
       }
     } catch (error) {
       console.error('Error fetching setup data:', error);
