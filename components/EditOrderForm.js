@@ -140,9 +140,21 @@ export default function EditOrderForm({ order, products, onSave, onCancel }) {
       cursor: 'pointer'
     }),
     menu: (provided) => ({
-      ...provided,
-      zIndex: 1000
-    }),
+    ...provided,
+    zIndex: 9999,                    // High z-index
+    marginTop: '2px',
+    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+    border: '1px solid #e2e8f0',
+    borderRadius: '6px',
+    overflow: 'hidden'
+  }),
+  
+  menuList: (provided) => ({
+    ...provided,
+    padding: 0,
+    maxHeight: '300px',              // Scrollable if many options
+    overflowY: 'auto'
+  }),
     singleValue: (provided) => ({
       ...provided,
       fontSize: '13px'
