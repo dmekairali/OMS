@@ -563,27 +563,28 @@ const [deliveryDateBy, setDeliveryDateBy] = useState('');
       
       // Delivery party
       deliveryParty: deliveryParty,
+      partyName: partyName,  // 🔥 ADDED THIS LINE
       partyState: partyState,
       
-      // Products
+      // Products - FIXED FIELD MAPPINGS
       products: productList.map(product => ({
-        name: product.name,
+        name: product.productName,  // FIXED: productName instead of name
         mrp: product.mrp,
         packingSize: product.packingSize,
         quantity: product.quantity,
-        discountPercent: product.discountPercent || '0',
-        discountType: product.discountType || '%',
+        discountPercent: product.discountPer,  // FIXED: discountPer instead of discountPercent
+        discountType: '%',
         discountAmount: product.discountAmt,
         beforeTax: product.beforeTax,
         afterDiscount: product.afterDiscount,
-        cgstAmount: product.cgstAmount || '0',
-        cgstPercent: product.cgstPercent || '0',
-        sgstAmount: product.sgstAmount || '0',
-        sgstPercent: product.sgstPercent || '0',
-        igstAmount: product.igstAmount || '0',
-        igstPercent: product.igstPercent || '0',
+        cgstAmount: '0',
+        cgstPercent: product.cgst,
+        sgstAmount: '0', 
+        sgstPercent: product.sgst,
+        igstAmount: '0',
+        igstPercent: product.igst,
         total: product.total,
-        splitQuantity: product.splitQuantity || '0'
+        splitQuantity: product.splitQty || '0'  // FIXED: splitQty instead of splitQuantity
       })),
       
       // Totals
@@ -651,6 +652,14 @@ const [deliveryDateBy, setDeliveryDateBy] = useState('');
       file: file || null
     };
     
+    // Debug: Check product data before sending
+    console.log('🔍 Product data being sent:', apiData.products);
+    console.log('🔍 First product details:', {
+      productName: productList[0]?.productName,
+      discountPer: productList[0]?.discountPer,
+      splitQty: productList[0]?.splitQty
+    });
+    
     // Submit via API
     const result = await EditOrderAPI.submitEditOrder(apiData);
     
@@ -668,6 +677,7 @@ const [deliveryDateBy, setDeliveryDateBy] = useState('');
     
   } catch (error) {
     console.error('❌ Error saving order:', error);
+    console.error('❌ Error details:', error.response?.data || error.message);
     setErrorMessage(error.message || 'Failed to save order. Please try again.');
   } finally {
     setLoading(false);
