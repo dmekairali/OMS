@@ -561,9 +561,11 @@ const [deliveryDateBy, setDeliveryDateBy] = useState('');
       district: district,
       state: state,
       
-      // Delivery party
-      deliveryParty: deliveryParty,
-      partyName: partyName,  // 🔥 ADDED THIS LINE
+     
+       // Delivery party - FIXED: Use exact field names
+      deliveryParty: partyName,  // Use partyName here since deliveryParty is empty
+      partyName: partyName,
+      partyname: partyName,  // Make sure this is exactly 'partyname'
       partyState: partyState,
       
       // Products - FIXED FIELD MAPPINGS
