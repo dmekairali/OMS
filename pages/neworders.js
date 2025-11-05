@@ -357,6 +357,7 @@ export default function NewOrders() {
   setSelectedStatus('');
 };
 
+  //edit orders
 const handleSaveEditOrder = async (result) => {
   console.log('✅ Edit form saved successfully:', result);
   
@@ -464,6 +465,117 @@ const handleSaveEditOrder = async (result) => {
     alert('Edit form saved but failed to update order status. Please try again.');
   }
 };
+
+//other orders
+  const handleFormSubmit = async (e) => {
+    e.preventDefault();
+    
+    const formData = new FormData(e.target);
+    const updates = {};
+    const columnUpdates = {};
+    
+    const fieldConfigs = ACTION_FIELDS[selectedStatus] || [];
+    
+    for (let [key, value] of formData.entries()) {
+      const fieldConfig = fieldConfigs.find(f => f.name === key);
+      
+      if (e.target.elements[key].type === 'checkbox') {
+        updates[key] = e.target.elements[key].checked ? 'TRUE' : 'FALSE';
+      } else {
+        updates[key] = value;
+      }
+      
+      if (fieldConfig && fieldConfig.columnNumber) {
+        columnUpdates[fieldConfig.columnNumber] = updates[key];
+      }
+    }
+    
+    const orderStatusField = fieldConfigs.find(f => f.name === 'Order Status');
+    if (orderStatusField) {
+      const orderStatusValue = orderStatusField.defaultValue || selectedStatus;
+      updates['Order Status'] = orderStatusValue;
+      if (orderStatusField.columnNumber) {
+        columnUpdates[orderStatusField.columnNumber] = orderStatusValue;
+      }
+    }
+
+    updates['Last Edited By'] = user.username;
+    updates['Last Edited At'] = new Date().toISOString();
+    columnUpdates[78] = user.username;
+    columnUpdates[79] = new Date().toISOString();
+
+    try {
+      const response = await fetch('/api/orders', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          orderId: selectedOrder['Oder ID'],
+          rowIndex: selectedOrder._rowIndex,
+          updates: updates,
+          columnUpdates: columnUpdates
+        }),
+      });
+
+      if (response.ok) {
+        const updatedOrders = orders.map(order => {
+          if (order['Oder ID'] === selectedOrder['Oder ID']) {
+            return { ...order, ...updates };
+          }
+          return order;
+        });
+        
+        setOrders(updatedOrders);
+        
+        const newStatus = updates['Order Status'];
+        let targetFilter = 'All';
+        
+        if (newStatus && newStatus.trim() !== '') {
+          targetFilter = newStatus;
+        } else {
+          targetFilter = 'Pending';
+        }
+        
+        setActiveFilter(targetFilter);
+        filterOrders(updatedOrders, targetFilter, searchTerm);
+        
+        const summary = {
+          orderId: selectedOrder['Oder ID'],
+          status: selectedStatus,
+          newFilter: targetFilter,
+          fields: Object.keys(updates).filter(key => key !== 'Last Edited By' && key !== 'Last Edited At'),
+          updates: updates,
+          timestamp: new Date().toLocaleString('en-IN', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true
+          })
+        };
+        
+        setUpdateSummaryData(summary);
+        setShowUpdateSummary(true);
+        
+        setTimeout(() => {
+          setShowUpdateSummary(false);
+          handleBackToDashboard();
+        }, 5000);
+        
+        setTimeout(() => {
+          loadOrders(false);
+        }, 1000);
+      } else {
+        const errorData = await response.json();
+        alert('Failed to update order: ' + (errorData.error || 'Unknown error'));
+      }
+    } catch (error) {
+      console.error('Error updating order:', error);
+      alert('Failed to update order. Please try again.');
+    }
+  };
 
   const handleLogout = () => {
     localStorage.removeItem('userSession');
