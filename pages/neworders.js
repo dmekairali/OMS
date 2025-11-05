@@ -251,30 +251,33 @@ export default function NewOrders() {
   };
 
   const filterOrders = (ordersList, statusFilter, search) => {
-    let filtered = [...ordersList];
+  // SAFETY: Filter out null/undefined orders first
+  let filtered = ordersList.filter(order => 
+    order != null && order['Oder ID'] != null
+  );
 
-    if (statusFilter !== 'All') {
-      if (statusFilter === 'Pending') {
-        filtered = filtered.filter(order => 
-          !order['Order Status'] || order['Order Status'].trim() === ''
-        );
-      } else {
-        filtered = filtered.filter(order => order['Order Status'] === statusFilter);
-      }
+  if (statusFilter !== 'All') {
+    if (statusFilter === 'Pending') {
+      filtered = filtered.filter(order => 
+        !order['Order Status'] || order['Order Status'].trim() === ''
+      );
+    } else {
+      filtered = filtered.filter(order => order['Order Status'] === statusFilter);
     }
+  }
 
-    if (search) {
-      const term = search.toLowerCase();
-      filtered = filtered.filter(order => {
-        return DISPLAY_FIELDS.some(field => {
-          const value = order[field.name];
-          return value && value.toString().toLowerCase().includes(term);
-        });
+  if (search) {
+    const term = search.toLowerCase();
+    filtered = filtered.filter(order => {
+      return DISPLAY_FIELDS.some(field => {
+        const value = order[field.name];
+        return value && value.toString().toLowerCase().includes(term);
       });
-    }
+    });
+  }
 
-    setFilteredOrders(filtered);
-  };
+  setFilteredOrders(filtered);
+};
 
   useEffect(() => {
     filterOrders(orders, activeFilter, searchTerm);
@@ -355,6 +358,7 @@ export default function NewOrders() {
 };
 
  // FIXED: Save Edit Order with API call for NewOrders sheet update
+// FIXED: Save Edit Order with API call for NewOrders sheet update (SAFE VERSION)
 const handleSaveEditOrder = async (result) => {
   console.log('✅ Edit form saved successfully:', result);
   
@@ -362,7 +366,7 @@ const handleSaveEditOrder = async (result) => {
     // Determine the correct status for NewOrders sheet
     const newOrderStatus = editMode === 'split' ? 'Edit and Split' : 'Edit Order';
     
-    // Prepare updates for NewOrders Google Sheet (EXACTLY like Order Confirmation)
+    // Prepare updates for NewOrders Google Sheet
     const updates = {
       'Order Status': newOrderStatus,
       'Remarks*': editRemark,
@@ -379,7 +383,7 @@ const handleSaveEditOrder = async (result) => {
 
     console.log('🔄 Updating NewOrders sheet with:', { updates, columnUpdates });
 
-    // CRITICAL: Call the SAME API as Order Confirmation to update NewOrders sheet
+    // Call API to update NewOrders sheet
     const response = await fetch('/api/orders', {
       method: 'PUT',
       headers: {
@@ -396,24 +400,30 @@ const handleSaveEditOrder = async (result) => {
     if (response.ok) {
       console.log('✅ NewOrders sheet updated successfully');
       
-      // Update local state
-      const updatedOrders = orders.map(order => {
-        if (order['Oder ID'] === selectedOrder['Oder ID']) {
-          return {
-            ...order,
-            ...updates
-          };
-        }
-        return order;
-      });
+      // SAFE: Update local state - filter out null values first
+      const updatedOrders = orders
+        .filter(order => order != null && order['Oder ID'])  // Remove nulls and invalid orders
+        .map(order => {
+          if (order['Oder ID'] === selectedOrder['Oder ID']) {
+            return {
+              ...order,
+              ...updates
+            };
+          }
+          return order;
+        })
+        .filter(order => order != null); // Final safety check
 
       setOrders(updatedOrders);
       
-      // Show success summary (like Order Confirmation)
+      // Show success summary
       const targetFilter = newOrderStatus;
       
       setActiveFilter(targetFilter);
-      filterOrders(updatedOrders, targetFilter, searchTerm);
+      
+      // SAFE: Filter orders before passing to filterOrders
+      const safeOrders = updatedOrders.filter(order => order != null && order['Oder ID']);
+      filterOrders(safeOrders, targetFilter, searchTerm);
 
       const summary = {
         orderId: selectedOrder['Oder ID'],
@@ -631,42 +641,42 @@ const handleSaveEditOrder = async (result) => {
   };
 
   const getTimeAgo = (timestamp) => {
-    if (!timestamp || timestamp === '' || timestamp === 'undefined' || timestamp === ' ') {
-      return '';
-    }
-    
-    const orderTime = parseSheetDate(timestamp);
-    if (!orderTime || isNaN(orderTime.getTime())) {
-      return '';
-    }
-    
-    const now = new Date();
-    const diffMs = now - orderTime;
-    
-    if (diffMs < 0) {
-      const futureDiffMs = Math.abs(diffMs);
-      const futureDays = Math.floor(futureDiffMs / (1000 * 60 * 60 * 24));
-      if (futureDays > 0) return `in ${futureDays} day${futureDays > 1 ? 's' : ''}`;
-      return 'soon';
-    }
-    
-    const diffMins = Math.floor(diffMs / 60000);
-    
-    if (diffMins < 1) return 'just now';
-    if (diffMins < 60) return `${diffMins} min${diffMins > 1 ? 's' : ''} ago`;
-    
-    const diffHours = Math.floor(diffMins / 60);
-    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
-    
-    const diffDays = Math.floor(diffHours / 24);
-    if (diffDays < 30) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
-    
-    const diffMonths = Math.floor(diffDays / 30);
-    if (diffMonths < 12) return `${diffMonths} month${diffMonths > 1 ? 's' : ''} ago`;
-    
-    const diffYears = Math.floor(diffDays / 365);
-    return `${diffYears} year${diffYears > 1 ? 's' : ''} ago`;
-  };
+  if (!timestamp || timestamp === '' || timestamp === 'undefined' || timestamp === ' ' || timestamp === null) {
+    return '';
+  }
+  
+  const orderTime = parseSheetDate(timestamp);
+  if (!orderTime || isNaN(orderTime.getTime())) {
+    return '';
+  }
+  
+  const now = new Date();
+  const diffMs = now - orderTime;
+  
+  if (diffMs < 0) {
+    const futureDiffMs = Math.abs(diffMs);
+    const futureDays = Math.floor(futureDiffMs / (1000 * 60 * 60 * 24));
+    if (futureDays > 0) return `in ${futureDays} day${futureDays > 1 ? 's' : ''}`;
+    return 'soon';
+  }
+  
+  const diffMins = Math.floor(diffMs / 60000);
+  
+  if (diffMins < 1) return 'just now';
+  if (diffMins < 60) return `${diffMins} min${diffMins > 1 ? 's' : ''} ago`;
+  
+  const diffHours = Math.floor(diffMins / 60);
+  if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+  
+  const diffDays = Math.floor(diffHours / 24);
+  if (diffDays < 30) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+  
+  const diffMonths = Math.floor(diffDays / 30);
+  if (diffMonths < 12) return `${diffMonths} month${diffMonths > 1 ? 's' : ''} ago`;
+  
+  const diffYears = Math.floor(diffDays / 365);
+  return `${diffYears} year${diffYears > 1 ? 's' : ''} ago`;
+};
 
   const getLastUpdatedText = () => {
     if (!lastUpdated) return '';
