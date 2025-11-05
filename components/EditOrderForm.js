@@ -652,13 +652,17 @@ const [deliveryDateBy, setDeliveryDateBy] = useState('');
       file: file || null
     };
     
-    // Debug: Check product data before sending
-    console.log('🔍 Product data being sent:', apiData.products);
-    console.log('🔍 First product details:', {
-      productName: productList[0]?.productName,
-      discountPer: productList[0]?.discountPer,
-      splitQty: productList[0]?.splitQty
+     // Debug: Check what's actually in apiData
+    console.log('🔍 DEBUG - API data delivery party fields:', {
+      deliveryParty: apiData.deliveryParty,
+      partyName: apiData.partyName,
+      partyname: apiData.partyname,
+      'partyname[0]': apiData['partyname[0]'],
+      partyState: apiData.partyState
     });
+    
+   setLoading(false);
+return; // This stops the function completely
     
     // Submit via API
     const result = await EditOrderAPI.submitEditOrder(apiData);
