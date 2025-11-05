@@ -468,11 +468,7 @@ const updateTaxRatesBasedOnState = (products) => {
     return cap ? cap.maxDiscount : 100;
   };
 
-  const handlePartyNameChange = (selectedPartyName) => {
-  setPartyName(selectedPartyName);
-  const selectedParty = deliveryParties.find(p => p.name === selectedPartyName);
-  if (selectedParty) {
-    setPartyState(selectedParty.state);
+  
     
     // SIMPLE FIX: Recalculate tax for ALL products when party changes
    const handlePartyNameChange = (selectedPartyName) => {
