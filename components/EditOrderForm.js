@@ -172,26 +172,35 @@ const [deliveryDateBy, setDeliveryDateBy] = useState('');
   // NEW: Function to update tax rates based on state matching
 const updateTaxRatesBasedOnState = (products) => {
   return products.map(product => {
-    // Only update tax rates if product has a tax rate and product category
-    if (product.productCategory && product.mrp && product.mrp !== '0') {
-      const taxRate = parseFloat(product.cgst || 0) + parseFloat(product.sgst || 0) + parseFloat(product.igst || 0);
+    if (product.productName && product.mrp && product.mrp !== '0') {
+      const fullTaxRate = parseFloat(product.cgst || 0) + 
+                         parseFloat(product.sgst || 0) + 
+                         parseFloat(product.igst || 0);
       
-      if (state && partyState && state === partyState) {
-        // Same state: Split tax between CGST and SGST, set IGST to 0
-        return {
-          ...product,
-          cgst: (taxRate / 2).toFixed(2),
-          sgst: (taxRate / 2).toFixed(2),
-          igst: '0'
-        };
-      } else if (state && partyState && state !== partyState) {
-        // Different state: Use IGST only, set CGST and SGST to 0
-        return {
-          ...product,
-          cgst: '0',
-          sgst: '0',
-          igst: taxRate.toFixed(2)
-        };
+      let taxRate = fullTaxRate;
+      if (taxRate === 0 && product.productName) {
+        const foundProduct = productListOptions.find(p => p.combinedName === product.productName);
+        if (foundProduct && foundProduct.taxRate) {
+          taxRate = parseFloat(foundProduct.taxRate); // FULL GST rate
+        }
+      }
+      
+      if (state && partyState) {
+        if (state === partyState) {
+          return {
+            ...product,
+            cgst: (taxRate / 2).toFixed(2), // Half for CGST
+            sgst: (taxRate / 2).toFixed(2), // Half for SGST
+            igst: '0'
+          };
+        } else {
+          return {
+            ...product,
+            cgst: '0',
+            sgst: '0',
+            igst: taxRate.toFixed(2) // Full rate for IGST
+          };
+        }
       }
     }
     return product;
@@ -466,39 +475,46 @@ const updateTaxRatesBasedOnState = (products) => {
     setPartyState(selectedParty.state);
     
     // SIMPLE FIX: Recalculate tax for ALL products when party changes
+   const handlePartyNameChange = (selectedPartyName) => {
+  setPartyName(selectedPartyName);
+  const selectedParty = deliveryParties.find(p => p.name === selectedPartyName);
+  if (selectedParty) {
+    setPartyState(selectedParty.state);
+    
+    // Recalculate tax for ALL products when party changes
     const updatedProducts = productList.map(product => {
       if (product.productName && product.mrp && product.mrp !== '0') {
-        // Get the total tax rate from existing product
-        const totalTaxRate = parseFloat(product.cgst || 0) + 
-                            parseFloat(product.sgst || 0) + 
-                            parseFloat(product.igst || 0);
+        // Get the FULL tax rate from existing product (this is the total GST rate)
+        const fullTaxRate = parseFloat(product.cgst || 0) + 
+                           parseFloat(product.sgst || 0) + 
+                           parseFloat(product.igst || 0);
         
         // If we can't determine tax from existing values, try to find from product list
-        let taxRate = totalTaxRate;
+        let taxRate = fullTaxRate;
         if (taxRate === 0 && product.productName) {
           const foundProduct = productListOptions.find(p => p.combinedName === product.productName);
           if (foundProduct && foundProduct.taxRate) {
-            taxRate = parseFloat(foundProduct.taxRate);
+            taxRate = parseFloat(foundProduct.taxRate); // This is the FULL GST rate
           }
         }
         
         // Apply tax logic based on state matching
         if (state && selectedParty.state) {
           if (state === selectedParty.state) {
-            // Same state: CGST + SGST
+            // Same state: Split FULL GST rate between CGST and SGST (divide by 2)
             return {
               ...product,
-              cgst: (taxRate / 2).toFixed(2),
-              sgst: (taxRate / 2).toFixed(2),
+              cgst: (taxRate / 2).toFixed(2), // Half of full rate for CGST
+              sgst: (taxRate / 2).toFixed(2), // Half of full rate for SGST
               igst: '0'
             };
           } else {
-            // Different state: IGST only
+            // Different state: Use FULL GST rate for IGST
             return {
               ...product,
               cgst: '0',
               sgst: '0',
-              igst: taxRate.toFixed(2)
+              igst: taxRate.toFixed(2) // Full rate for IGST
             };
           }
         }
@@ -535,35 +551,37 @@ const updateTaxRatesBasedOnState = (products) => {
   const updated = [...productList];
   
   // Handle product selection from dropdown
-  if (field === 'productName') {
-    const selectedProduct = productListOptions.find(p => p.combinedName === value);
+  // In the updateProduct function, inside the 'productName' case:
+if (field === 'productName') {
+  const selectedProduct = productListOptions.find(p => p.combinedName === value);
+  
+  if (selectedProduct) {
+    updated[index].productName = selectedProduct.combinedName;
+    updated[index].sku = selectedProduct.productSKU;
+    updated[index].mrp = selectedProduct.price;
+    updated[index].packingSize = selectedProduct.pack;
+    updated[index].productCategory = selectedProduct.productCategory;
     
-    if (selectedProduct) {
-      updated[index].productName = selectedProduct.combinedName;
-      updated[index].sku = selectedProduct.productSKU;
-      updated[index].mrp = selectedProduct.price;
-      updated[index].packingSize = selectedProduct.pack;
-      updated[index].productCategory = selectedProduct.productCategory;
-      
-      // Set preset discount from discount structure
-      const presetDiscount = getPresetDiscount(selectedProduct.productCategory);
-      updated[index].discountPer = presetDiscount;
-      
-      // Set initial tax rates based on state matching
-      const taxRate = parseFloat(selectedProduct.taxRate || '0');
-      if (state && partyState && state === partyState) {
-        // Same state: Split between CGST and SGST
-        updated[index].cgst = (taxRate / 2).toFixed(2);
-        updated[index].sgst = (taxRate / 2).toFixed(2);
-        updated[index].igst = '0';
-      } else {
-        // Different state: Use IGST only
-        updated[index].cgst = '0';
-        updated[index].sgst = '0';
-        updated[index].igst = taxRate.toFixed(2);
-      }
+    // Set preset discount from discount structure
+    const presetDiscount = getPresetDiscount(selectedProduct.productCategory);
+    updated[index].discountPer = presetDiscount;
+    
+    // Set tax rates based on CURRENT state matching
+    const fullTaxRate = parseFloat(selectedProduct.taxRate || '0'); // This is the FULL GST rate
+    
+    if (state && partyState && state === partyState) {
+      // Same state: Split FULL GST rate between CGST and SGST
+      updated[index].cgst = (fullTaxRate / 2).toFixed(2); // Half for CGST
+      updated[index].sgst = (fullTaxRate / 2).toFixed(2); // Half for SGST
+      updated[index].igst = '0';
+    } else {
+      // Different state: Use FULL GST rate for IGST
+      updated[index].cgst = '0';
+      updated[index].sgst = '0';
+      updated[index].igst = fullTaxRate.toFixed(2); // Full rate for IGST
     }
-  } 
+  }
+}
   // Handle discount percentage with validation
   else if (field === 'discountPer') {
     const maxDiscount = getMaxDiscount(updated[index].productCategory);
