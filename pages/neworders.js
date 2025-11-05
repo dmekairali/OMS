@@ -334,7 +334,7 @@ export default function NewOrders() {
 
   try {
     // ✅ OPTIMIZED: Only fetch products, use existing order data
-    const response = await fetch(`/api/orders/products?orderId=${selectedOrder['Oder ID']}`);
+    const response = await fetch(`/api/orders/purchase-order?orderId=${selectedOrder['Oder ID']}`);
     
     if (response.ok) {
       const data = await response.json();
