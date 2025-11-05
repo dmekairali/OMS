@@ -540,78 +540,78 @@ const [deliveryDateBy, setDeliveryDateBy] = useState('');
     // Prepare data for API
     const apiData = {
       // Order identification
-      BuyId: order['Buyer ID'],
-      OrderNumber: order['Oder ID'],
-      editstatus: editOrderStatus,
+      buyerId: order['Buyer ID'],
+      orderNumber: order['Oder ID'],
+      editStatus: editOrderStatus,
       
       // Client details
-      clientname: [clientName],
-      mobile: [mobile],
-      email: [email],
-      clienttypename: [clientType],
-      clientcategory1: [clientCategory],
-      BPINCODE: [billingPincode],
-      GSTNO: [gstNo],
-      Baddress: [billingAddress],
-      saddress: [shippingAddress],
-      ordertype: [orderType],
+      clientName: clientName,
+      mobile: mobile,
+      email: email,
+      clientType: clientType,
+      clientCategory: clientCategory,
+      billingPincode: billingPincode,
+      gstNumber: gstNo,
+      billingAddress: billingAddress,
+      shippingAddress: shippingAddress,
+      orderType: orderType,
       
       // Location
-      talukname: [taluk],
-      districtname: [district],
-      state: [state],
+      taluk: taluk,
+      district: district,
+      state: state,
       
       // Delivery party
-      partyname: [partyName],
-      partystatename: [partyState],
+      deliveryParty: deliveryParty,
+      partyState: partyState,
       
-      // Products - FIXED FIELD NAMES TO MATCH API
-      products: productList.map((product, index) => ({
-        // Basic product info - EXACT FIELD NAMES FROM API
-        [`productname[${index}]`]: product.productName || '',
-        [`MRP[${index}]`]: product.mrp || '0',
-        [`PACKINGSIZE[${index}]`]: product.packingSize || '',
-        [`QNT[${index}]`]: product.quantity || '0',
-        
-        // Discount - EXACT FIELD NAMES FROM API
-        [`DISPER[${index}]`]: product.discountPer || '0',
-        [`DISAMT[${index}]`]: product.discountAmt || '0',
-        
-        // Taxable amounts - EXACT FIELD NAMES FROM API
-        [`BEFORE[${index}]`]: product.beforeTax || '0',
-        [`AFTER[${index}]`]: product.afterDiscount || '0',
-        
-        // Tax percentages - EXACT FIELD NAMES FROM API
-        [`CGST[${index}]`]: product.cgst || '0',
-        [`CGSTAMT[${index}]`]: product.cgst || '0',  // Same value as CGST
-        [`SGST[${index}]`]: product.sgst || '0',
-        [`SGSTAMT[${index}]`]: product.sgst || '0',  // Same value as SGST
-        [`IGST[${index}]`]: product.igst || '0',
-        [`IGSTAMT[${index}]`]: product.igst || '0',  // Same value as IGST
-        
-        // Totals - EXACT FIELD NAMES FROM API
-        [`TOTAL[${index}]`]: product.total || '0',
-        
-        // Split order
-        [`SplitQTY[${index}]`]: editMode === 'split' ? product.splitQty || '0' : '0'
+      // Products - FIXED FIELD MAPPINGS
+      products: productList.map(product => ({
+        name: product.productName,  // FIXED: productName instead of name
+        mrp: product.mrp,
+        packingSize: product.packingSize,
+        quantity: product.quantity,
+        discountPercent: product.discountPer,  // FIXED: discountPer instead of discountPercent
+        discountType: '%',
+        discountAmount: product.discountAmt,
+        beforeTax: product.beforeTax,
+        afterDiscount: product.afterDiscount,
+        cgstAmount: '0',
+        cgstPercent: product.cgst,
+        sgstAmount: '0', 
+        sgstPercent: product.sgst,
+        igstAmount: '0',
+        igstPercent: product.igst,
+        total: product.total,
+        splitQuantity: product.splitQty || '0'  // FIXED: splitQty instead of splitQuantity
       })),
       
-      // Shipping - EXACT FIELD NAMES FROM API
-      scharge: [shippingCharges || '0'],
-      sremark: [shippingChargesRemark || ''],
-      Stax: [totalShippingCharge || '0'],
-      Staxremark: [totalShippingChargeRemark || ''],
-      staxper: [shippingTaxPercent || '0'],
-      staxperrem: [shippingTaxPercentRemark || ''],
+      // Totals
+      totals: {
+        mrpTotal: totals.mrpTotal,
+        quantityTotal: totals.qtyTotal,
+        discountTotal: totals.discountTotal,
+        taxBeforeTotal: totals.taxBeforeTotal,
+        taxAfterTotal: totals.taxAfterTotal,
+        totalAmount: totals.totalAmount
+      },
       
-      // Final amounts - EXACT FIELD NAMES FROM API
-      Beforeamt: [beforeAmount],
-      Afteramt: [afterAmount],
+      // Shipping
+      shippingCharge: shippingCharges || '0',
+      shippingRemark: shippingChargesRemark || '',
+      shippingTax: totalShippingCharge || '0',
+      shippingTaxRemark: totalShippingChargeRemark || '',
+      shippingTaxPercent: shippingTaxPercent || '0',
+      shippingTaxPercentRemark: shippingTaxPercentRemark || '',
       
-      // Payment - EXACT FIELD NAMES FROM API
-      paymentterm: [paymentTerms],
-      paymentmode: [paymentMode],
-      paymentdate: [
+      // Final amounts
+      beforeAmount: beforeAmount,
+      afterAmount: afterAmount,
+      
+      // Payment
+      paymentTerm: paymentTerms,
+      paymentMode: paymentMode,
+      paymentDates: [
         paymentDate,
         paymentDate2 || '',
         paymentDate3 || '',
@@ -619,41 +619,45 @@ const [deliveryDateBy, setDeliveryDateBy] = useState('');
         paymentDate5 || ''
       ],
       
-      // Delivery - EXACT FIELD NAMES FROM API
-      Deliverydate: [deliveryDate],
-      Deliverytime: [deliveryTime],
-      deliverydatebyname: [deliveryDateBy || ''],
+      // Delivery
+      deliveryDate: deliveryDate,
+      deliveryTime: deliveryTime,
+      deliveryDateBy: deliveryDateBy || '',
       
-      // Remarks - EXACT FIELD NAMES FROM API
-      saletermremark: [saleTermRemark || ''],
-      invoiceremark: [invoiceRemark || ''],
-      warehouseremark: [warehouseRemark || ''],
+      // Remarks
+      saleTermRemark: saleTermRemark || '',
+      invoiceRemark: invoiceRemark || '',
+      warehouseRemark: warehouseRemark || '',
       
-      // Metadata - EXACT FIELD NAMES FROM API
-      orderby: [orderBy],
-      mrname_name: [mrName || 'NO MR'],
+      // Metadata
+      orderBy: orderBy,
+      mrName: mrName || 'NO MR',
       
-      // Call time - EXACT FIELD NAMES FROM API
-      calltime1: [preferredCallTime1 || ''],
-      calltime2: [preferredCallTime2 || ''],
+      // Call time
+      callTime1: preferredCallTime1 || '',
+      callTime2: preferredCallTime2 || '',
       
-      // OTIF - EXACT FIELD NAMES FROM API
-      otifyesno: [orderInFull || ''],
-      otifreason: [orderInFullReason || ''],
+      // OTIF
+      orderInFull: orderInFull || '',
+      orderInFullReason: orderInFullReason || '',
       
-      // Recurring - EXACT FIELD NAMES FROM API
-      NextOrderDate: [nextOrderDate || ''],
-      reoccurance: [reoccurance || ''],
-      EndOrderDate: [endOrderDate || ''],
-      Priority: [priority || ''],
+      // Recurring
+      nextOrderDate: nextOrderDate || '',
+      recurrence: reoccurance || '',
+      endOrderDate: endOrderDate || '',
+      priority: priority || '',
       
       // File
       file: file || null
     };
     
-    // Debug: Check what's being sent
-    console.log('🔍 Sending API data:', apiData);
-    console.log('🔍 Products data:', apiData.products);
+    // Debug: Check product data before sending
+    console.log('🔍 Product data being sent:', apiData.products);
+    console.log('🔍 First product details:', {
+      productName: productList[0]?.productName,
+      discountPer: productList[0]?.discountPer,
+      splitQty: productList[0]?.splitQty
+    });
     
     // Submit via API
     const result = await EditOrderAPI.submitEditOrder(apiData);
@@ -672,6 +676,7 @@ const [deliveryDateBy, setDeliveryDateBy] = useState('');
     
   } catch (error) {
     console.error('❌ Error saving order:', error);
+    console.error('❌ Error details:', error.response?.data || error.message);
     setErrorMessage(error.message || 'Failed to save order. Please try again.');
   } finally {
     setLoading(false);
