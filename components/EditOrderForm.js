@@ -681,13 +681,7 @@ const [deliveryDateBy, setDeliveryDateBy] = useState('');
     
     // Submit via API
     const result = await EditOrderAPI.submitEditOrder(apiData);
-    
-    // Show success message
-    alert(
-      `✅ Order ${result.editStatus} successfully!\n\n` +
-      `📋 Order ID: ${result.orderId}\n` +
-      `${result.splitOrderId ? '✂️ Split Order ID: ' + result.splitOrderId : ''}`
-    );
+  
     
     // Call parent callback
     if (onSave) {
