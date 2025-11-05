@@ -356,7 +356,14 @@ export default function NewOrders() {
 
  const handleSaveEditOrder = (result) => {
   console.log('✅ Order saved successfully:', result);
-  
+   console.log('=== DEBUG ===');
+  console.log('result:', result);
+  console.log('orders:', orders);
+  console.log('orders type:', typeof orders);
+  console.log('orders is array?', Array.isArray(orders));
+  console.log('selectedOrder:', selectedOrder);
+  console.log('=============');
+   
   // Update local state (NO RELOAD - like Order Confirmation)
   const updatedOrders = orders
     .filter(order => order != null && order['Oder ID'])  // Safety: remove nulls
