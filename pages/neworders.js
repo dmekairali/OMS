@@ -354,9 +354,33 @@ export default function NewOrders() {
   setSelectedStatus('');
 };
 
-  const handleSaveEditOrder = async (formData) => {
-  // Send to /api/orders/save-edit with doPost format
-}
+ const handleSaveEditOrder = (result) => {
+  console.log('✅ Order saved successfully:', result);
+  
+  // Update local state
+  setOrders(prevOrders => 
+    prevOrders.map(order => 
+      order['Oder ID'] === result.orderId 
+        ? { 
+            ...order, 
+            'Order Status': result.editStatus,
+            'Remarks*': editRemark,
+            'Last Edited At': new Date().toISOString()
+          }
+        : order
+    )
+  );
+  
+  // Close edit view
+  setShowEditView(false);
+  setSelectedOrder(null);
+  setEditRemark('');
+  
+  // Refresh orders list
+  setTimeout(() => {
+    loadOrders(false);
+  }, 500);
+};
 
   // NEW: Handle product quantity change
   const handleProductQtyChange = (productIndex, newQty) => {
