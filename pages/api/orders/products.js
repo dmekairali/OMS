@@ -77,7 +77,7 @@ export default async function handler(req, res) {
     // Load entire data range starting from B2
     const productResponse = await sheets.spreadsheets.values.get({
       spreadsheetId: productSheetId,
-      range: 'SKUWise-Orders!B2:BZ', // Start from B2 (skip row 1 header)
+      range: 'SKUWise-Orders!B2:AJ', // Reduced range - only up to column AJ (SKU Code)
     });
 
     const productData = productResponse.data.values;
@@ -151,24 +151,6 @@ export default async function handler(req, res) {
       const sgstAmount = (afterDiscount * sgstPercent) / 100;
       const igstAmount = (afterDiscount * igstPercent) / 100;
 
-      console.log(`📦 Mapping product ${idx + 1}:`, {
-        orderId: row[1],                // Column C
-        productName: row[15],           // Column Q
-        quantity: row[10],              // Column L
-        mrp: row[11],                   // Column M
-        sku: row[34],                   // Column AJ
-        discountPer: discountPercent,   // Column AB
-        discountAmt: row[13],           // Column O (CORRECTED)
-        afterDiscount: afterDiscount,   // Column AE
-        cgst: cgstPercent,              // Column AF
-        sgst: sgstPercent,              // Column AG
-        igst: igstPercent,              // Column AH
-        cgstAmt: cgstAmount.toFixed(2),
-        sgstAmt: sgstAmount.toFixed(2),
-        igstAmt: igstAmount.toFixed(2),
-        total: row[14]                  // Column P
-      });
-
       return {
         // Core Product Info
         'Product Name': row[15] || '',           // Column Q (index 15) - EDITABLE (dropdown)
@@ -208,14 +190,6 @@ export default async function handler(req, res) {
     });
 
     console.log(`✅ Successfully mapped ${products.length} products`);
-    if (products.length > 0) {
-      console.log('📦 Sample product:', {
-        name: products[0]['Product Name'],
-        sku: products[0]['SKU Code'],
-        qty: products[0]['Quantity'],
-        total: products[0]['Total']
-      });
-    }
 
     // Return ONLY products (order data is already available in frontend)
     return res.status(200).json({
