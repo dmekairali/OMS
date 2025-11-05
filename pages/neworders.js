@@ -354,135 +354,111 @@ export default function NewOrders() {
   setSelectedStatus('');
 };
 
- const handleSaveEditOrder = (result) => {
+ const handleSaveEditOrder = async (result) => {
   console.log('✅ Order saved successfully:', result);
-   console.log('=== DEBUG ===');
-  console.log('result:', result);
-  console.log('orders:', orders);
-  console.log('orders type:', typeof orders);
-  console.log('orders is array?', Array.isArray(orders));
-  console.log('selectedOrder:', selectedOrder);
-  console.log('=============');
-   
-  // Update local state (NO RELOAD - like Order Confirmation)
-  const updatedOrders = orders
-    .filter(order => order != null && order['Oder ID'])  // Safety: remove nulls
-    .map(order => {
-      if (order['Oder ID'] === selectedOrder['Oder ID']) {
-        return {
-          ...order,                                    // Keep all data
-          'Order Status': result.editStatus,           // Update status
-          'Remarks*': editRemark,                      // Update remarks
-          'Last Edited By': user.username,             // Update user
-          'Last Edited At': new Date().toISOString()   // Update time
-        };
-      }
-      return order;
-    });
   
-  setOrders(updatedOrders);
-  
-  // Close edit view
-  setShowEditView(false);
-  setSelectedOrder(null);
-  setEditRemark('');
-  setEditMode(null);
-  
-  // Show success (like Order Confirmation does)
-  setShowUpdateSummary(true);
-  setUpdateSummaryData({
-    orderId: result.orderId,
-    status: result.editStatus,
-    message: result.splitOrderId 
-      ? `Split created: ${result.splitOrderId}`
-      : 'Order updated!',
-    timestamp: new Date().toISOString()
-  });
-  
-  // Auto-close after 3 seconds
-  setTimeout(() => {
-    setShowUpdateSummary(false);
-  }, 3000);
-  
-  // Return to dashboard
-  handleBackToDashboard();
-};
-
-  // NEW: Handle product quantity change
-  const handleProductQtyChange = (productIndex, newQty) => {
-    const updatedProducts = [...editProducts];
-    const product = updatedProducts[productIndex];
-    const originalQty = parseFloat(product['Quantity'] || product['QNT'] || 0);
-    
-    updatedProducts[productIndex] = {
-      ...product,
-      'New Quantity': newQty,
-      'Split Quantity': editMode === 'split' ? originalQty - newQty : 0
+  try {
+    // Prepare updates for Google Sheet (like Order Confirmation does)
+    const updates = {
+      'Order Status': result.editStatus,
+      'Remarks*': editRemark,
+      'Last Edited By': user.username,
+      'Last Edited At': new Date().toISOString()
     };
-    
-    setEditProducts(updatedProducts);
-  };
 
-  // NEW: Save edited order
-  const handleSaveEditedOrder = async () => {
-    try {
-      setLoadingEdit(true);
+    const columnUpdates = {
+      45: result.editStatus,  // Order Status column
+      47: editRemark,         // Remarks column
+      78: user.username,      // Last Edited By column
+      79: new Date().toISOString() // Last Edited At column
+    };
 
-      const saveData = {
+    // Call API to update Google Sheet (CRITICAL - this was missing)
+    const response = await fetch('/api/orders', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
         orderId: selectedOrder['Oder ID'],
         rowIndex: selectedOrder._rowIndex,
-        editStatus: editMode === 'split' ? 'Edit and Split' : 'Edit Order',
-        remarks: editRemark,
-        username: user.username,
-        products: editProducts,
-        editMode: editMode
-      };
+        updates: updates,
+        columnUpdates: columnUpdates
+      }),
+    });
 
-      const response = await fetch('/api/orders/edit', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(saveData),
+    if (response.ok) {
+      // Update local state (like Order Confirmation does)
+      const updatedOrders = orders.map(order => {
+        if (order['Oder ID'] === selectedOrder['Oder ID']) {
+          return {
+            ...order,
+            ...updates
+          };
+        }
+        return order;
       });
 
-      if (response.ok) {
-        const result = await response.json();
-        
-        alert(`Order ${editMode === 'split' ? 'split' : 'edited'} successfully!\n\nNote: Status and remarks updated in NewOrders sheet. Product changes saved for processing.`);
-        
-        const updatedOrders = orders.map(order => {
-          if (order['Oder ID'] === selectedOrder['Oder ID']) {
-            return {
-              ...order,
-              'Order Status': result.updatedFields['Order Status'],
-              'Remarks*': result.updatedFields['Remarks*'],
-              'Last Edited By': result.updatedFields['Last Edited By'],
-              'Last Edited At': result.updatedFields['Last Edited At']
-            };
-          }
-          return order;
-        });
-        
-        setOrders(updatedOrders);
-        setShowEditView(false);
-        setEditRemark('');
-        handleBackToDashboard();
-        
-        setTimeout(() => {
-          loadOrders(false);
-        }, 500);
+      setOrders(updatedOrders);
+      
+      // Show success summary (like Order Confirmation does)
+      const newStatus = result.editStatus;
+      let targetFilter = 'All';
+      
+      if (newStatus && newStatus.trim() !== '') {
+        targetFilter = newStatus;
       } else {
-        const error = await response.json();
-        alert('Failed to update order: ' + (error.error || 'Unknown error'));
+        targetFilter = 'Pending';
       }
-    } catch (error) {
-      console.error('Error saving edited order:', error);
-      alert('Error saving changes');
-    } finally {
-      setLoadingEdit(false);
+      
+      setActiveFilter(targetFilter);
+      filterOrders(updatedOrders, targetFilter, searchTerm);
+
+      const summary = {
+        orderId: selectedOrder['Oder ID'],
+        status: newStatus,
+        newFilter: targetFilter,
+        fields: Object.keys(updates),
+        updates: updates,
+        timestamp: new Date().toLocaleString('en-IN', {
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: true
+        })
+      };
+
+      setUpdateSummaryData(summary);
+      setShowUpdateSummary(true);
+
+      // Close edit view
+      setShowEditView(false);
+      setSelectedOrder(null);
+      setEditRemark('');
+      setEditMode(null);
+
+      // Auto-close after 5 seconds (like Order Confirmation)
+      setTimeout(() => {
+        setShowUpdateSummary(false);
+        handleBackToDashboard();
+      }, 5000);
+
+      // Refresh data after delay
+      setTimeout(() => {
+        loadOrders(false);
+      }, 1000);
+
+    } else {
+      const errorData = await response.json();
+      alert('Failed to update order: ' + (errorData.error || 'Unknown error'));
     }
-  };
+  } catch (error) {
+    console.error('Error updating order:', error);
+    alert('Failed to update order. Please try again.');
+  }
+};
 
   const handleFormSubmit = async (e) => {
     e.preventDefault();
