@@ -26,6 +26,7 @@ export default function EditOrderForm({ order, products, onSave, onCancel, editM
   const [orderType, setOrderType] = useState('New Order');
   const [partyName, setPartyName] = useState('');
   const [partyState, setPartyState] = useState('');
+  const [deliveryParty, setDeliveryParty] = useState('');
   const [mrName, setMrName] = useState('');
   
   // Delivery & Payment
