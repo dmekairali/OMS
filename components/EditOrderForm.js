@@ -111,80 +111,59 @@ const [deliveryDateBy, setDeliveryDateBy] = useState('');
 
 
   // Calculate totals whenever productList changes
-useEffect(() => {
-  calculateTotals();
-}, [productList]);
+  useEffect(() => {
+    calculateTotals();
+  }, [productList]);
 
-// Calculate totals whenever productList changes
-useEffect(() => {
-  calculateTotals();
-}, [productList]);
+  const calculateTotals = () => {
+    let mrpSum = 0;
+    let qtySum = 0;
+    let discountSum = 0;
+    let taxBeforeSum = 0;
+    let taxAfterSum = 0;
+    let totalSum = 0;
+     // NEW: Track highest tax rate
+    let highestTaxRate = 0;
 
-const calculateTotals = () => {
-  console.log('🧮 Calculating totals only');
-  
-  let mrpSum = 0;
-  let qtySum = 0;
-  let discountSum = 0;
-  let taxBeforeSum = 0;
-  let taxAfterSum = 0;
-  let totalSum = 0;
-  let highestTaxRate = 0;
+    productList.forEach(product => {
+      const productMrpTotal = (parseFloat(product.mrp) || 0) * (parseFloat(product.quantity) || 0);
+      mrpSum += productMrpTotal;
+      
+      qtySum += parseFloat(product.quantity || 0);
+      discountSum += parseFloat(product.discountAmt || 0);
+      taxBeforeSum += parseFloat(product.beforeTax || 0);
+      taxAfterSum += parseFloat(product.afterDiscount || 0);
+      totalSum += parseFloat(product.total || 0);
 
-  // Just calculate totals from current productList
-  productList.forEach(product => {
-    const qty = parseFloat(product.quantity) || 0;
-    const mrp = parseFloat(product.mrp) || 0;
-    const discPer = parseFloat(product.discountPer) || 0;
-    
-    // Calculate values using current product data (which already has correct tax rates)
-    const beforeTax = qty * mrp;
-    const discAmt = (beforeTax * discPer) / 100;
-    const afterDisc = beforeTax - discAmt;
-    
-    // Get current tax rates (already set by updateProductTaxRates)
-    const cgstRate = parseFloat(product.cgst) || 0;
-    const sgstRate = parseFloat(product.sgst) || 0;
-    const igstRate = parseFloat(product.igst) || 0;
-    
-    const cgstAmount = (afterDisc * cgstRate) / 100;
-    const sgstAmount = (afterDisc * sgstRate) / 100;
-    const igstAmount = (afterDisc * igstRate) / 100;
-    
-    const totalAmount = afterDisc + cgstAmount + sgstAmount + igstAmount;
-    
-    // Accumulate totals
-    mrpSum += beforeTax;
-    qtySum += qty;
-    discountSum += discAmt;
-    taxBeforeSum += beforeTax;
-    taxAfterSum += afterDisc;
-    totalSum += totalAmount;
-    
-    // Update highest tax rate for shipping
-    const cgstSgstSum = cgstRate + sgstRate;
-    const productHighestTax = Math.max(igstRate, cgstSgstSum);
-    if (productHighestTax > highestTaxRate) {
-      highestTaxRate = productHighestTax;
-    }
-  });
+      // NEW: Calculate highest tax rate for this product
+      const cgstRate = parseFloat(product.cgst) || 0;
+      const sgstRate = parseFloat(product.sgst) || 0;
+      const igstRate = parseFloat(product.igst) || 0;
+      
+      const cgstSgstSum = cgstRate + sgstRate;
+      const productHighestTax = Math.max(igstRate, cgstSgstSum);
+      
+      // Update overall highest tax rate
+      if (productHighestTax > highestTaxRate) {
+        highestTaxRate = productHighestTax;
+      }
+    });
 
-  // Set totals only
-  setTotals({
-    mrpTotal: mrpSum.toFixed(2),
-    qtyTotal: qtySum.toFixed(2),
-    discountTotal: discountSum.toFixed(2),
-    taxBeforeTotal: taxBeforeSum.toFixed(2),
-    taxAfterTotal: taxAfterSum.toFixed(2),
-    totalAmount: totalSum.toFixed(2)
-  });
+    setTotals({
+      mrpTotal: mrpSum.toFixed(2),
+      qtyTotal: qtySum.toFixed(2),
+      discountTotal: discountSum.toFixed(2),
+      taxBeforeTotal: taxBeforeSum.toFixed(2),
+      taxAfterTotal: taxAfterSum.toFixed(2),
+      totalAmount: totalSum.toFixed(2)
+    });
 
-  setBeforeAmount(taxBeforeSum.toFixed(2));
-  setAfterAmount(totalSum.toFixed(2));
+    setBeforeAmount(taxBeforeSum.toFixed(2));
+    setAfterAmount(totalSum.toFixed(2));
 
-  const finalShippingTax = highestTaxRate > 0 ? highestTaxRate : 5;
-  setShippingTaxPercent(finalShippingTax.toFixed(2));
-};
+    // NEW: Set shipping tax percent to the highest tax rate found
+    setShippingTaxPercent(highestTaxRate.toFixed(2));
+  };
 
 
    // Set edit status when component mounts or editMode changes
@@ -194,136 +173,82 @@ const calculateTotals = () => {
   }, [editMode]);
 
   // Load order data first
-  // In your EditOrderForm component - around line 250-350 range
-useEffect(() => {
-  if (order) {
-    
-    setClientName(order['Name of Client'] || '');
-    setMobile(order['Mobile'] || '');
-    setEmail(order['Email'] || '');
-    setClientType(order['Client Type'] || '');
-    setClientCategory(order['Client Category'] || '');
-    setGstNo(order['GST No'] || '');
-    
-    setBillingAddress(order['Billing Address'] || '');
-    setShippingAddress(order['Shipping Address'] || '');
-    setBillingPincode(order['Pin code'] || '');
-    setShippingPincode(order['Pin code'] || '');
-    setTaluk(order['Taluk'] || '');
-    setDistrict(order['District'] || '');
-    setState(order['State'] || '');
-    
-    setMrName(order['MR Name'] || '');
-    
-    // FIX DATE FORMAT HERE - Delivery Date
-    const deliveryDateValue = order['Delivery Required Date']?.split(' ')[0] || '';
-    if (deliveryDateValue) {
-      // Convert DD/MM/YYYY to YYYY-MM-DD
-      const [day, month, year] = deliveryDateValue.split('/');
-      if (day && month && year) {
-        setDeliveryDate(`${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`);
-      } else {
-        setDeliveryDate(deliveryDateValue); // fallback
-      }
-    } else {
-      setDeliveryDate('');
+  useEffect(() => {
+    if (order) {
+      
+      setClientName(order['Name of Client'] || '');
+      setMobile(order['Mobile'] || '');
+      setEmail(order['Email'] || '');
+      setClientType(order['Client Type'] || '');
+      setClientCategory(order['Client Category'] || '');
+      setGstNo(order['GST No'] || '');
+      
+      setBillingAddress(order['Billing Address'] || '');
+      setShippingAddress(order['Shipping Address'] || '');
+      setBillingPincode(order['Pin code'] || '');
+      setShippingPincode(order['Pin code'] || '');
+      setTaluk(order['Taluk'] || '');
+      setDistrict(order['District'] || '');
+      setState(order['State'] || '');
+      
+      setMrName(order['MR Name'] || '');
+      
+      setDeliveryDate(order['Delivery Required Date']?.split(' ')[0] || '');
+      setDeliveryTime(order['Delivery Required Date']?.split(' ')[1] || '');
+      
+      setPaymentTerms(order['Payment Terms'] || '');
+      setPaymentMode(order['Payment Mode'] || '');
+      setOrderBy(order['Order Taken By'] || '');
+      
+      const payDates = (order['Payment Date (to be paid)'] || '').split(',').map(d => d.trim());
+      setPaymentDate(payDates[0] || '');
+      
+      setReoccurance(order['Reoccurance'] || '');
+      setNextOrderDate(order['Next Order Date'] || '');
+      setEndOrderDate(order['End Order Date'] || '');
+      setPriority(order['Priority'] || '');
+      
+      setDiscountTier(order['Discount Tier'] || '');
+      setShippingCharges(order['Shipping Charges'] || '');
+      setShippingChargesRemark(order['Shipping Charges Remark'] || '');
+      setShippingTaxPercent(order['Shipping Tax Percent'] || '');
+      setShippingTaxPercentRemark(order['Shipping Tax Percent Remark'] || '');
+      setTotalShippingCharge(order['Total Shipping Charge'] || '');
+      setTotalShippingChargeRemark(order['Total Shipping Charge Remark'] || '');
+      
+      setPreferredCallTime1(order['Preferred Call Time 1'] || '');
+      setPreferredCallTime2(order['Preferred Call Time 2'] || '');
+      setDispatchDate(order['Dispatch Date'] || '');
+      setDispatchTime(order['Dispatch Time'] || '');
+      setSaleTermRemark(order['Sale Term Remark'] || '');
+      setInvoiceRemark(order['Invoice Remark'] || '');
+      setWarehouseRemark(order['Warehouse Remark'] || '');
+      setOrderInFull(order['Order In Full'] || '');
+      setOrderInFullReason(order['Order In Full Reason'] || '');
     }
     
-    setDeliveryTime(order['Delivery Required Date']?.split(' ')[1] || '');
-    
-    setPaymentTerms(order['Payment Terms'] || '');
-    setPaymentMode(order['Payment Mode'] || '');
-    setOrderBy(order['Order Taken By'] || '');
-    
-    // FIX DATE FORMAT HERE - Payment Dates
-    const payDates = (order['Payment Date (to be paid)'] || '').split(',').map(d => d.trim());
-    if (payDates[0]) {
-      const [day, month, year] = payDates[0].split('/');
-      if (day && month && year) {
-        setPaymentDate(`${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`);
-      } else {
-        setPaymentDate(payDates[0]);
-      }
+    if (products && products.length > 0) {
+      const initialProducts = products.map(p => ({
+        productName: p['Product Name'] || '',
+        sku: p['SKU Code'] || '',
+        mrp: p['MRP'] || '0',
+        packingSize: p['Packing Size'] || '',
+        quantity: p['Quantity'] || p['QNT'] || '0',
+        orderQty: p['Order QTY'] || p['Quantity'] || p['QNT'] || '0',
+        discountPer: p['Discount %'] || '0',
+        discountAmt: p['Discount Amount'] || '0',
+        beforeTax: p['Before Tax'] || '0',
+        afterDiscount: p['After Discount'] || '0',
+        cgst: p['CGST %'] || '0',
+        sgst: p['SGST %'] || '0',
+        igst: p['IGST %'] || '0',
+        total: p['Total'] || '0',
+        splitQty: '0',
+        productCategory: ''
+      }));
+      setProductList(initialProducts);
     }
-    
-    setReoccurance(order['Reoccurance'] || '');
-    
-    // FIX DATE FORMAT HERE - Next Order Date
-    const nextOrderDateValue = order['Next Order Date'] || '';
-    if (nextOrderDateValue) {
-      const [day, month, year] = nextOrderDateValue.split('/');
-      if (day && month && year) {
-        setNextOrderDate(`${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`);
-      } else {
-        setNextOrderDate(nextOrderDateValue);
-      }
-    }
-    
-    // FIX DATE FORMAT HERE - End Order Date
-    const endOrderDateValue = order['End Order Date'] || '';
-    if (endOrderDateValue) {
-      const [day, month, year] = endOrderDateValue.split('/');
-      if (day && month && year) {
-        setEndOrderDate(`${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`);
-      } else {
-        setEndOrderDate(endOrderDateValue);
-      }
-    }
-    
-    setPriority(order['Priority'] || '');
-    
-    setDiscountTier(order['Discount Tier'] || '');
-    setShippingCharges(order['Shipping Charges'] || '');
-    setShippingChargesRemark(order['Shipping Charges Remark'] || '');
-    setShippingTaxPercent(order['Shipping Tax Percent'] || '');
-    setShippingTaxPercentRemark(order['Shipping Tax Percent Remark'] || '');
-    setTotalShippingCharge(order['Total Shipping Charge'] || '');
-    setTotalShippingChargeRemark(order['Total Shipping Charge Remark'] || '');
-    
-    setPreferredCallTime1(order['Preferred Call Time 1'] || '');
-    setPreferredCallTime2(order['Preferred Call Time 2'] || '');
-    
-    // FIX DATE FORMAT HERE - Dispatch Date
-    const dispatchDateValue = order['Dispatch Date'] || '';
-    if (dispatchDateValue) {
-      const [day, month, year] = dispatchDateValue.split('/');
-      if (day && month && year) {
-        setDispatchDate(`${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`);
-      } else {
-        setDispatchDate(dispatchDateValue);
-      }
-    }
-    
-    setDispatchTime(order['Dispatch Time'] || '');
-    setSaleTermRemark(order['Sale Term Remark'] || '');
-    setInvoiceRemark(order['Invoice Remark'] || '');
-    setWarehouseRemark(order['Warehouse Remark'] || '');
-    setOrderInFull(order['Order In Full'] || '');
-    setOrderInFullReason(order['Order In Full Reason'] || '');
-  }
-  
-  if (products && products.length > 0) {
-    const initialProducts = products.map(p => ({
-      productName: p['Product Name'] || '',
-      sku: p['SKU Code'] || '',
-      mrp: p['MRP'] || '0',
-      packingSize: p['Packing Size'] || '',
-      quantity: p['Quantity'] || p['QNT'] || '0',
-      orderQty: p['Order QTY'] || p['Quantity'] || p['QNT'] || '0',
-      discountPer: p['Discount %'] || '0',
-      discountAmt: p['Discount Amount'] || '0',
-      beforeTax: p['Before Tax'] || '0',
-      afterDiscount: p['After Discount'] || '0',
-      cgst: p['CGST %'] || '0',
-      sgst: p['SGST %'] || '0',
-      igst: p['IGST %'] || '0',
-      total: p['Total'] || '0',
-      splitQty: '0',
-      productCategory: ''
-    }));
-    setProductList(initialProducts);
-  }
-}, [order, products]);
+  }, [order, products]);
 
   // Fetch setup data after order is loaded
   useEffect(() => {
@@ -531,7 +456,7 @@ useEffect(() => {
     }]);
   };
 
- const updateProduct = (index, field, value) => {
+  const updateProduct = (index, field, value) => {
   const updated = [...productList];
   
   // Handle product selection from dropdown
@@ -549,7 +474,19 @@ useEffect(() => {
       const presetDiscount = getPresetDiscount(selectedProduct.productCategory);
       updated[index].discountPer = presetDiscount;
       
-      // Tax rates will be set automatically in calculateTotals
+      // Set tax rates based on state matching
+      const taxRate = parseFloat(selectedProduct.taxRate || '0');
+      if (state && partyState && state === partyState) {
+        // Same state: Split between CGST and SGST
+        updated[index].cgst = (taxRate / 2).toString();
+        updated[index].sgst = (taxRate / 2).toString();
+        updated[index].igst = '0';
+      } else {
+        // Different state: Use IGST only
+        updated[index].cgst = '0';
+        updated[index].sgst = '0';
+        updated[index].igst = taxRate.toString();
+      }
     }
   } 
   // Handle discount percentage with validation
@@ -571,7 +508,43 @@ useEffect(() => {
     updated[index][field] = value;
   }
   
-  // Update the product list - calculateTotals will handle the calculations
+  // =====================================================
+  // AUTOMATIC CALCULATIONS - Runs for every field change
+  // =====================================================
+  
+  // Parse current values (default to 0 if invalid)
+  const qty = parseFloat(updated[index].quantity) || 0;
+  const mrp = parseFloat(updated[index].mrp) || 0;
+  const discPer = parseFloat(updated[index].discountPer) || 0;
+  
+  // Step 1: Calculate Before Tax = MRP × Quantity
+  const beforeTax = qty * mrp;
+  updated[index].beforeTax = beforeTax.toFixed(2);
+  
+  // Step 2: Calculate Discount Amount = (Before Tax × Discount%) / 100
+  const discAmt = (beforeTax * discPer) / 100;
+  updated[index].discountAmt = discAmt.toFixed(2);
+  
+  // Step 3: Calculate After Discount = Before Tax - Discount Amount
+  const afterDisc = beforeTax - discAmt;
+  updated[index].afterDiscount = afterDisc.toFixed(2);
+  
+  // Step 4: Get tax percentages
+  const cgstRate = parseFloat(updated[index].cgst) || 0;
+  const sgstRate = parseFloat(updated[index].sgst) || 0;
+  const igstRate = parseFloat(updated[index].igst) || 0;
+  
+  // Step 5: Calculate tax amounts in BACKGROUND (not stored in state)
+  // Tax is calculated on After Discount amount
+  const cgstAmount = (afterDisc * cgstRate) / 100;
+  const sgstAmount = (afterDisc * sgstRate) / 100;
+  const igstAmount = (afterDisc * igstRate) / 100;
+  
+  // Step 6: Calculate Final Total = After Discount + All Taxes
+  const totalAmount = afterDisc + cgstAmount + sgstAmount + igstAmount;
+  updated[index].total = totalAmount.toFixed(2);
+  
+  // Update the product list state
   setProductList(updated);
 };
 
