@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import styles from '../styles/EditOrderForm.module.css';
 import SetupDataService from '../services/SetupDataService';
+import EditOrderAPI from '../services/editOrderAPI';
 
 export default function EditOrderForm({ order, products, onSave, onCancel, editMode }) {
   // Client Information
@@ -98,6 +99,15 @@ export default function EditOrderForm({ order, products, onSave, onCancel, editM
   const [clientNotFound, setClientNotFound] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+
+  // Add these to your existing state declarations
+const [paymentDate2, setPaymentDate2] = useState('');
+const [paymentDate3, setPaymentDate3] = useState('');
+const [paymentDate4, setPaymentDate4] = useState('');
+const [paymentDate5, setPaymentDate5] = useState('');
+const [deliveryDateBy, setDeliveryDateBy] = useState('');
+const [orderType, setOrderType] = useState('');
+const [partyState, setPartyState] = useState('');
 
   // Calculate totals whenever productList changes
   useEffect(() => {
@@ -520,102 +530,148 @@ export default function EditOrderForm({ order, products, onSave, onCancel, editM
 };
 
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    
-    if (clientNotFound) {
-      alert('Cannot save order. Client mobile number not found or not verified in Client List.');
-      return;
-    }
-
-    const formData = {
-      editstatus: editOrderStatus,
-      clientname: clientName,
+ const handleSubmit = async (e) => {
+  e.preventDefault();
+  setLoading(true);
+  setErrorMessage('');
+  
+  try {
+    // Prepare data for API
+    const apiData = {
+      // Order identification
+      buyerId: order['Buyer ID'],
+      orderNumber: order['Oder ID'],
+      editStatus: editOrderStatus,
+      
+      // Client details
+      clientName: clientName,
       mobile: mobile,
       email: email,
-      clienttypename: clientType,
-      clientcategory1: clientCategory,
-      GSTNO: gstNo,
+      clientType: clientType,
+      clientCategory: clientCategory,
+      billingPincode: billingPincode,
+      gstNumber: gstNo,
+      billingAddress: billingAddress,
+      shippingAddress: shippingAddress,
+      orderType: orderType,
       
-      Baddress: billingAddress,
-      saddress: shippingAddress,
-      BPINCODE: billingPincode,
-      talukname: taluk,
-      districtname: district,
+      // Location
+      taluk: taluk,
+      district: district,
       state: state,
       
-      ordertype: orderType,
-      partyname: partyName,
-      partystatename: partyState,
-      mrname_name: mrName,
+      // Delivery party
+      deliveryParty: deliveryParty,
+      partyState: partyState,
       
-      Deliverydate: deliveryDate,
-      Deliverytime: deliveryTime,
-      paymentterm: paymentTerms,
-      paymentmodename: paymentMode,
-      paymentdate: [paymentDate, '', '', '', ''],
+      // Products
+      products: productList.map(product => ({
+        name: product.name,
+        mrp: product.mrp,
+        packingSize: product.packingSize,
+        quantity: product.quantity,
+        discountPercent: product.discountPercent || '0',
+        discountType: product.discountType || '%',
+        discountAmount: product.discountAmt,
+        beforeTax: product.beforeTax,
+        afterDiscount: product.afterDiscount,
+        cgstAmount: product.cgstAmount || '0',
+        cgstPercent: product.cgstPercent || '0',
+        sgstAmount: product.sgstAmount || '0',
+        sgstPercent: product.sgstPercent || '0',
+        igstAmount: product.igstAmount || '0',
+        igstPercent: product.igstPercent || '0',
+        total: product.total,
+        splitQuantity: product.splitQuantity || '0'
+      })),
       
-      calltime1: preferredCallTime1,
-      calltime2: preferredCallTime2,
+      // Totals
+      totals: {
+        mrpTotal: totals.mrpTotal,
+        quantityTotal: totals.qtyTotal,
+        discountTotal: totals.discountTotal,
+        taxBeforeTotal: totals.taxBeforeTotal,
+        taxAfterTotal: totals.taxAfterTotal,
+        totalAmount: totals.totalAmount
+      },
       
-      productname: productList.map(p => p.productName),
-      MRP: productList.map(p => p.mrp),
-      PACKINGSIZE: productList.map(p => p.packingSize),
-      QNT: productList.map(p => p.quantity),
-      OrderQTY: productList.map(p => p.orderQty),
-      DISPER: productList.map(p => p.discountPer),
-      DISOUCNT: productList.map(p => ''),
-      DISAMT: productList.map(p => p.discountAmt),
-      BEFORE: productList.map(p => p.beforeTax),
-      AFTER: productList.map(p => p.afterDiscount),
-      CGST: productList.map(p => p.cgst),
-      SGST: productList.map(p => p.sgst),
-      IGST: productList.map(p => p.igst),
-      TOTAL: productList.map(p => p.total),
-      SplitQTY: productList.map(p => p.splitQty),
+      // Shipping
+      shippingCharge: shippingCharges || '0',
+      shippingRemark: shippingChargesRemark || '',
+      shippingTax: totalShippingCharge || '0',
+      shippingTaxRemark: totalShippingChargeRemark || '',
+      shippingTaxPercent: shippingTaxPercent || '0',
+      shippingTaxPercentRemark: shippingTaxPercentRemark || '',
       
-      discounttiername: discountTier,
-      discountcategory: discounts.map(d => d.category),
-      discount: discounts.map(d => d.percentage),
-
-      scharge: shippingCharges,
-      sremark: shippingChargesRemark,
-      Stax: totalShippingCharge,
-      Staxremark: totalShippingChargeRemark,
-      staxper: shippingTaxPercent,
-      staxperrem: shippingTaxPercentRemark,
+      // Final amounts
+      beforeAmount: beforeAmount,
+      afterAmount: afterAmount,
       
-      saletermremark: saleTermRemark,
-      invoiceremark: invoiceRemark,
-      warehouseremark: warehouseRemark,
+      // Payment
+      paymentTerm: paymentTerms,
+      paymentMode: paymentMode,
+      paymentDates: [
+        paymentDate,
+        paymentDate2 || '',
+        paymentDate3 || '',
+        paymentDate4 || '',
+        paymentDate5 || ''
+      ],
       
-      reoccurance: reoccurance,
-      NextOrderDate: nextOrderDate,
-      EndOrderDate: endOrderDate,
-      Priority: priority,
+      // Delivery
+      deliveryDate: deliveryDate,
+      deliveryTime: deliveryTime,
+      deliveryDateBy: deliveryDateBy || '',
       
-      dispatchdate: dispatchDate,
-      dispatchtime: dispatchTime,
+      // Remarks
+      saleTermRemark: saleTermRemark || '',
+      invoiceRemark: invoiceRemark || '',
+      warehouseRemark: warehouseRemark || '',
       
-      data: fileData,
-      filename: file ? file.name : null,
-      mimetype: file ? file.type : null,
-      orderby: orderBy,
-      otifyesno: orderInFull,
-      otifreason: orderInFullReason,
+      // Metadata
+      orderBy: orderBy,
+      mrName: mrName || 'NO MR',
       
-      mrptotal: totals.mrpTotal,
-      qnttotal: totals.qtyTotal,
-      distotal: totals.discountTotal,
-      taxbeforetotal: totals.taxBeforeTotal,
-      taxaftertotal: totals.taxAfterTotal,
-      totaltotal: totals.totalAmount,
-      Beforeamt: beforeAmount,
-      Afteramt: afterAmount
+      // Call time
+      callTime1: preferredCallTime1 || '',
+      callTime2: preferredCallTime2 || '',
+      
+      // OTIF
+      orderInFull: orderInFull || '',
+      orderInFullReason: orderInFullReason || '',
+      
+      // Recurring
+      nextOrderDate: nextOrderDate || '',
+      recurrence: reoccurance || '',
+      endOrderDate: endOrderDate || '',
+      priority: priority || '',
+      
+      // File
+      file: file || null
     };
     
-    onSave(formData);
-  };
+    // Submit via API
+    const result = await EditOrderAPI.submitEditOrder(apiData);
+    
+    // Show success message
+    alert(
+      `✅ Order ${result.editStatus} successfully!\n\n` +
+      `📋 Order ID: ${result.orderId}\n` +
+      `${result.splitOrderId ? '✂️ Split Order ID: ' + result.splitOrderId : ''}`
+    );
+    
+    // Call parent callback
+    if (onSave) {
+      onSave(result);
+    }
+    
+  } catch (error) {
+    console.error('❌ Error saving order:', error);
+    setErrorMessage(error.message || 'Failed to save order. Please try again.');
+  } finally {
+    setLoading(false);
+  }
+};
 
   if (loading) {
     return (
