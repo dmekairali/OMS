@@ -115,13 +115,7 @@ const [deliveryDateBy, setDeliveryDateBy] = useState('');
     calculateTotals();
   }, [productList, state, partyState]); // Added state and partyState as dependencies
 
-  // NEW: Effect to update tax rates when state or partyState changes
-useEffect(() => {
-  if (productList.length > 0 && state && partyState) {
-    const updatedProducts = updateTaxRatesBasedOnState(productList);
-    setProductList(updatedProducts);
-  }
-}, [state, partyState]); // Run when state or partyState changes
+  
 
   const calculateTotals = () => {
   let mrpSum = 0;
@@ -470,7 +464,49 @@ const updateTaxRatesBasedOnState = (products) => {
   const selectedParty = deliveryParties.find(p => p.name === selectedPartyName);
   if (selectedParty) {
     setPartyState(selectedParty.state);
-    // Tax rates will be automatically updated via the useEffect above
+    
+    // SIMPLE FIX: Recalculate tax for ALL products when party changes
+    const updatedProducts = productList.map(product => {
+      if (product.productName && product.mrp && product.mrp !== '0') {
+        // Get the total tax rate from existing product
+        const totalTaxRate = parseFloat(product.cgst || 0) + 
+                            parseFloat(product.sgst || 0) + 
+                            parseFloat(product.igst || 0);
+        
+        // If we can't determine tax from existing values, try to find from product list
+        let taxRate = totalTaxRate;
+        if (taxRate === 0 && product.productName) {
+          const foundProduct = productListOptions.find(p => p.combinedName === product.productName);
+          if (foundProduct && foundProduct.taxRate) {
+            taxRate = parseFloat(foundProduct.taxRate);
+          }
+        }
+        
+        // Apply tax logic based on state matching
+        if (state && selectedParty.state) {
+          if (state === selectedParty.state) {
+            // Same state: CGST + SGST
+            return {
+              ...product,
+              cgst: (taxRate / 2).toFixed(2),
+              sgst: (taxRate / 2).toFixed(2),
+              igst: '0'
+            };
+          } else {
+            // Different state: IGST only
+            return {
+              ...product,
+              cgst: '0',
+              sgst: '0',
+              igst: taxRate.toFixed(2)
+            };
+          }
+        }
+      }
+      return product;
+    });
+    
+    setProductList(updatedProducts);
   }
 };
 
