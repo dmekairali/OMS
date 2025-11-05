@@ -4,9 +4,9 @@ import SetupDataService from '../services/SetupDataService';
 import EditOrderAPI from '../services/editOrderAPI';
 
 export default function EditOrderForm({ order, products, onSave, onCancel, editMode }) {
-  // State for showing/hiding advanced fields
-  const [showAdvancedFields, setShowAdvancedFields] = useState(false);
-  
+  // Toggle state for showing additional fields
+  const [showAdditionalFields, setShowAdditionalFields] = useState(false);
+
   // Client Information
   const [clientName, setClientName] = useState('');
   const [mobile, setMobile] = useState('');
@@ -40,60 +40,65 @@ export default function EditOrderForm({ order, products, onSave, onCancel, editM
   const [paymentDate, setPaymentDate] = useState('');
   const [orderBy, setOrderBy] = useState('');
   
-  // Recurring Orders
+  // Additional fields that will be hidden by default
+  const [shippingPackingCharges, setShippingPackingCharges] = useState('');
+  const [noteRemarks, setNoteRemarks] = useState('');
+  const [typeOfRemarks1, setTypeOfRemarks1] = useState('');
+  const [totalShippingCharge, setTotalShippingCharge] = useState('');
+  const [typeOfRemarks2, setTypeOfRemarks2] = useState('');
+  const [preferredCallTime2, setPreferredCallTime2] = useState('');
+  const [expectedDispatchTime, setExpectedDispatchTime] = useState('');
+  const [nextOrderFixedDate, setNextOrderFixedDate] = useState('');
+  const [reoccurrenceInterval, setReoccurrenceInterval] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [rocketClient, setRocketClient] = useState('');
+  const [remarks, setRemarks] = useState('');
+  const [remarksKairaliTeam, setRemarksKairaliTeam] = useState('');
+  const [remarksInvoice, setRemarksInvoice] = useState('');
+  const [remarksDispatchTeam, setRemarksDispatchTeam] = useState('');
+  const [availableMRASM, setAvailableMRASM] = useState('');
+  const [imagesInvoiceUpload, setImagesInvoiceUpload] = useState('');
+  
+  // Recurring fields
   const [reoccurance, setReoccurance] = useState('');
   const [nextOrderDate, setNextOrderDate] = useState('');
   const [endOrderDate, setEndOrderDate] = useState('');
   const [priority, setPriority] = useState('');
   
-  // Pricing
+  // Discount & Charges
   const [discountTier, setDiscountTier] = useState('');
   const [shippingCharges, setShippingCharges] = useState('');
-  const [packingDeliveryCharges, setPackingDeliveryCharges] = useState('');
-  const [totalShippingCharge, setTotalShippingCharge] = useState('');
+  const [packingCharges, setPackingCharges] = useState('');
+  const [deliveryCharges, setDeliveryCharges] = useState('');
   
-  // Remarks fields
-  const [remarks, setRemarks] = useState('');
-  const [remarksType, setRemarksType] = useState('');
-  const [shippingRemarksType, setShippingRemarksType] = useState('');
-  const [preferredCallTime2, setPreferredCallTime2] = useState('');
-  const [expectedDispatchTime, setExpectedDispatchTime] = useState('');
-  const [rocketClient, setRocketClient] = useState('');
-  const [remarksKairali, setRemarksKairali] = useState('');
-  const [remarksInvoice, setRemarksInvoice] = useState('');
-  const [remarksDispatch, setRemarksDispatch] = useState('');
-  const [availableMRASM, setAvailableMRASM] = useState('');
-  const [imagesInvoice, setImagesInvoice] = useState('');
+  // Product Items
+  const [orderItems, setOrderItems] = useState([]);
   
-  // Edit order status
-  const [editOrderStatus, setEditOrderStatus] = useState('');
+  // Setup data from SetupDataService
+  const [clientTypes, setClientTypes] = useState([]);
+  const [clientCategories, setClientCategories] = useState([]);
+  const [orderTypes, setOrderTypes] = useState([]);
+  const [partyNames, setPartyNames] = useState([]);
+  const [states, setStates] = useState([]);
+  const [mrNames, setMrNames] = useState([]);
+  const [paymentTermsList, setPaymentTermsList] = useState([]);
+  const [paymentModes, setPaymentModes] = useState([]);
+  const [discountTiers, setDiscountTiers] = useState([]);
+  const [priorities, setPriorities] = useState([]);
   
-  // Product list
-  const [productList, setProductList] = useState([]);
+  // Edit Order Status
+  const [editOrderStatus, setEditOrderStatus] = useState('Edit Order');
   
-  // Totals
-  const [totals, setTotals] = useState({
-    mrpTotal: 0,
-    qtyTotal: 0,
-    discountTotal: 0,
-    taxBeforeTotal: 0,
-    taxAfterTotal: 0,
-    totalAmount: 0
-  });
-  
-  // Loading and error states
-  const [loading, setLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
-  
-  // Set edit order status based on edit mode
+  // Set Edit Order Status based on editMode
   useEffect(() => {
     const status = editMode === 'split' ? 'Edit and Split' : 'Edit Order';
     setEditOrderStatus(status);
   }, [editMode]);
 
-  // Load order data
+  // Load order data first
   useEffect(() => {
     if (order) {
+      
       setClientName(order['Name of Client'] || '');
       setMobile(order['Mobile'] || '');
       setEmail(order['Email'] || '');
@@ -128,596 +133,930 @@ export default function EditOrderForm({ order, products, onSave, onCancel, editM
       
       setDiscountTier(order['Discount Tier'] || '');
       setShippingCharges(order['Shipping Charges'] || '');
-      setPackingDeliveryCharges(order['Packing Delivery Charges'] || '');
-      setTotalShippingCharge(order['Total Shipping Charge'] || '');
+      setPackingCharges(order['Packing Charges'] || '');
+      setDeliveryCharges(order['Delivery Charges'] || '');
       
-      setRemarks(order['Remarks'] || '');
-      setRemarksType(order['Remarks Type'] || '');
-      setShippingRemarksType(order['Shipping Remarks Type'] || '');
+      // Load additional hidden fields
+      setShippingPackingCharges(order['Shipping, Packing and Delivery Charges'] || '');
+      setNoteRemarks(order['Note (Remarks)'] || '');
+      setTypeOfRemarks1(order['Type of (Remarks)'] || '');
+      setTotalShippingCharge(order['Total Shipping Charge'] || '');
+      setTypeOfRemarks2(order['Type of (Remarks) 2'] || '');
       setPreferredCallTime2(order['Preferred Call Time 2'] || '');
       setExpectedDispatchTime(order['Expected Time of Dispatch'] || '');
+      setNextOrderFixedDate(order['Next Order Fixed Date'] || '');
+      setReoccurrenceInterval(order['Reoccurrence Interval'] || '');
+      setEndDate(order['End Date'] || '');
       setRocketClient(order['Rocket Client'] || '');
-      setRemarksKairali(order['Remarks - Show to Kairali Team'] || '');
+      setRemarks(order['Remarks'] || '');
+      setRemarksKairaliTeam(order['Remarks - Show to Kairali Team'] || '');
       setRemarksInvoice(order['Remarks - Show in Invoice'] || '');
-      setRemarksDispatch(order['Remarks - Show to Dispatch Team'] || '');
+      setRemarksDispatchTeam(order['Remarks - Show to Dispatch Team'] || '');
       setAvailableMRASM(order['Available MR/ASM'] || '');
-      setImagesInvoice(order['Images/Invoice Upload'] || '');
+      setImagesInvoiceUpload(order['Images/Invoice Upload'] || '');
+      
+      setOrderType(order['Order Type'] || 'New Order');
+      setPartyName(order['Party Name'] || '');
+      setPartyState(order['State (Order Placed to Party)'] || '');
+      setDeliveryParty(order['Delivery Party From'] || '');
+      
+      // Parse and set order items
+      if (order['Order Items']) {
+        try {
+          const items = JSON.parse(order['Order Items']);
+          setOrderItems(items);
+        } catch (e) {
+          console.error('Error parsing order items:', e);
+          setOrderItems([]);
+        }
+      }
     }
   }, [order]);
 
-  // Load products
+  // Load setup data after order is loaded
   useEffect(() => {
-    if (products && products.length > 0) {
-      setProductList(products);
-      calculateTotals(products);
-    }
-  }, [products]);
-
-  const calculateTotals = (products) => {
-    const newTotals = products.reduce((acc, product) => {
-      return {
-        mrpTotal: acc.mrpTotal + parseFloat(product.mrp || 0),
-        qtyTotal: acc.qtyTotal + parseFloat(product.quantity || 0),
-        discountTotal: acc.discountTotal + parseFloat(product.discountAmt || 0),
-        taxBeforeTotal: acc.taxBeforeTotal + parseFloat(product.beforeTax || 0),
-        taxAfterTotal: acc.taxAfterTotal + parseFloat(product.afterDiscount || 0),
-        totalAmount: acc.totalAmount + parseFloat(product.total || 0)
-      };
-    }, {
-      mrpTotal: 0,
-      qtyTotal: 0,
-      discountTotal: 0,
-      taxBeforeTotal: 0,
-      taxAfterTotal: 0,
-      totalAmount: 0
-    });
+    const loadSetupData = async () => {
+      try {
+        const data = await SetupDataService.getSetupData();
+        
+        setClientTypes(data.clientTypes || []);
+        setClientCategories(data.clientCategories || []);
+        setOrderTypes(data.orderTypes || []);
+        setPartyNames(data.partyNames || []);
+        setStates(data.states || []);
+        setMrNames(data.mrNames || []);
+        setPaymentTermsList(data.paymentTerms || []);
+        setPaymentModes(data.paymentModes || []);
+        setDiscountTiers(data.discountTiers || []);
+        setPriorities(data.priorities || []);
+      } catch (error) {
+        console.error('Error loading setup data:', error);
+      }
+    };
     
-    setTotals(newTotals);
+    loadSetupData();
+  }, []);
+
+  // Handle shipping address same as billing
+  useEffect(() => {
+    if (isShippingSameAsBilling) {
+      setShippingAddress(billingAddress);
+      setShippingPincode(billingPincode);
+    }
+  }, [isShippingSameAsBilling, billingAddress, billingPincode]);
+
+  // Handle product selection
+  const handleProductChange = (index, field, value) => {
+    const newItems = [...orderItems];
+    newItems[index] = {
+      ...newItems[index],
+      [field]: value
+    };
+    
+    // Recalculate total for this item
+    if (field === 'quantity' || field === 'rate') {
+      newItems[index].total = (newItems[index].quantity || 0) * (newItems[index].rate || 0);
+    }
+    
+    setOrderItems(newItems);
+  };
+
+  const addProductLine = () => {
+    setOrderItems([...orderItems, {
+      productName: '',
+      hsn: '',
+      quantity: 0,
+      rate: 0,
+      total: 0
+    }]);
+  };
+
+  const removeProductLine = (index) => {
+    const newItems = orderItems.filter((_, i) => i !== index);
+    setOrderItems(newItems);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
-    setErrorMessage('');
+    
+    // Prepare order data with all fields including hidden ones
+    const orderData = {
+      'Name of Client': clientName,
+      'Mobile': mobile,
+      'Email': email,
+      'Client Type': clientType,
+      'Client Category': clientCategory,
+      'GST No': gstNo,
+      'Billing Address': billingAddress,
+      'Shipping Address': shippingAddress,
+      'Pin code': shippingPincode,
+      'Taluk': taluk,
+      'District': district,
+      'State': state,
+      'Order Type': orderType,
+      'Party Name': partyName,
+      'State (Order Placed to Party)': partyState,
+      'Delivery Party From': deliveryParty,
+      'MR Name': mrName,
+      'Delivery Required Date': deliveryDate && deliveryTime ? `${deliveryDate} ${deliveryTime}` : deliveryDate,
+      'Payment Terms': paymentTerms,
+      'Payment Mode': paymentMode,
+      'Payment Date (to be paid)': paymentDate,
+      'Order Taken By': orderBy,
+      'Reoccurance': reoccurance,
+      'Next Order Date': nextOrderDate,
+      'End Order Date': endOrderDate,
+      'Priority': priority,
+      'Discount Tier': discountTier,
+      'Shipping Charges': shippingCharges,
+      'Packing Charges': packingCharges,
+      'Delivery Charges': deliveryCharges,
+      'Order Items': JSON.stringify(orderItems),
+      'Edit Order Status': editOrderStatus,
+      
+      // Include all hidden fields with their values
+      'Shipping, Packing and Delivery Charges': shippingPackingCharges,
+      'Note (Remarks)': noteRemarks,
+      'Type of (Remarks)': typeOfRemarks1,
+      'Total Shipping Charge': totalShippingCharge,
+      'Type of (Remarks) 2': typeOfRemarks2,
+      'Preferred Call Time 2': preferredCallTime2,
+      'Expected Time of Dispatch': expectedDispatchTime,
+      'Next Order Fixed Date': nextOrderFixedDate,
+      'Reoccurrence Interval': reoccurrenceInterval,
+      'End Date': endDate,
+      'Rocket Client': rocketClient,
+      'Remarks': remarks,
+      'Remarks - Show to Kairali Team': remarksKairaliTeam,
+      'Remarks - Show in Invoice': remarksInvoice,
+      'Remarks - Show to Dispatch Team': remarksDispatchTeam,
+      'Available MR/ASM': availableMRASM,
+      'Images/Invoice Upload': imagesInvoiceUpload,
+    };
     
     try {
-      // Prepare data for API
-      const apiData = {
-        // Order identification
-        buyerId: order['Buyer ID'],
-        orderNumber: order['Oder ID'],
-        editStatus: editOrderStatus,
-        
-        // Client details
-        clientName: clientName,
-        mobile: mobile,
-        email: email,
-        clientType: clientType,
-        clientCategory: clientCategory,
-        billingPincode: billingPincode,
-        gstNumber: gstNo,
-        billingAddress: billingAddress,
-        shippingAddress: shippingAddress,
-        orderType: orderType,
-        
-        // Location
-        taluk: taluk,
-        district: district,
-        state: state,
-        
-        // Delivery party
-        deliveryParty: partyName,
-        partyName: partyName,
-        partyname: partyName,
-        partyState: partyState,
-        
-        // Products
-        products: productList.map(product => ({
-          name: product.productName,
-          mrp: product.mrp,
-          packingSize: product.packingSize,
-          quantity: product.quantity,
-          discountPercent: product.discountPer,
-          discountType: '%',
-          discountAmount: product.discountAmt,
-          beforeTax: product.beforeTax,
-          afterDiscount: product.afterDiscount,
-          cgstAmount: '0',
-          cgstPercent: product.cgst,
-          sgstAmount: '0', 
-          sgstPercent: product.sgst,
-          igstAmount: '0',
-          igstPercent: product.igst,
-          total: product.total,
-          splitQuantity: product.splitQty || '0'
-        })),
-        
-        // Totals
-        totals: {
-          mrpTotal: totals.mrpTotal,
-          quantityTotal: totals.qtyTotal,
-          discountTotal: totals.discountTotal,
-          taxBeforeTotal: totals.taxBeforeTotal,
-          taxAfterTotal: totals.taxAfterTotal,
-          totalAmount: totals.totalAmount
-        },
-        
-        // Shipping and additional details
-        shippingCharge: shippingCharges,
-        packingDeliveryCharges: packingDeliveryCharges,
-        totalShippingCharge: totalShippingCharge,
-        remarks: remarks,
-        remarksType: remarksType,
-        shippingRemarksType: shippingRemarksType,
-        preferredCallTime2: preferredCallTime2,
-        expectedDispatchTime: expectedDispatchTime,
-        nextOrderDate: nextOrderDate,
-        reoccurance: reoccurance,
-        endOrderDate: endOrderDate,
-        rocketClient: rocketClient,
-        remarksKairali: remarksKairali,
-        remarksInvoice: remarksInvoice,
-        remarksDispatch: remarksDispatch,
-        availableMRASM: availableMRASM,
-        imagesInvoice: imagesInvoice,
-        
-        // Other fields
-        deliveryDate: deliveryDate,
-        deliveryTime: deliveryTime,
-        paymentTerms: paymentTerms,
-        paymentMode: paymentMode,
-        paymentDate: paymentDate,
-        orderBy: orderBy,
-        priority: priority,
-        discountTier: discountTier,
-        mrName: mrName
-      };
-
-      const response = await EditOrderAPI.updateOrder(apiData);
-      
-      if (response.success) {
-        alert('Order updated successfully!');
-        if (onSave) onSave(response.data);
-      } else {
-        throw new Error(response.message || 'Failed to update order');
-      }
+      await onSave(orderData);
     } catch (error) {
-      console.error('Error updating order:', error);
-      setErrorMessage(error.message || 'Failed to update order. Please try again.');
-    } finally {
-      setLoading(false);
+      console.error('Error saving order:', error);
+      alert('Failed to save order. Please try again.');
     }
   };
 
-  if (loading) {
-    return (
-      <div className={styles.editForm}>
-        <div style={{ textAlign: 'center', padding: '40px' }}>
-          <p>Loading order data...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <form onSubmit={handleSubmit} className={styles.editForm}>
-      {errorMessage && (
-        <div className={styles.errorMessage}>
-          {errorMessage}
+      <div className={styles.formHeader}>
+        <h2>{editMode === 'split' ? 'Edit and Split Order' : 'Edit Order'}</h2>
+        
+        {/* Checkbox to show/hide additional fields */}
+        <div className={styles.toggleFieldsContainer}>
+          <label className={styles.toggleFieldsLabel}>
+            <input
+              type="checkbox"
+              checked={showAdditionalFields}
+              onChange={(e) => setShowAdditionalFields(e.target.checked)}
+              className={styles.toggleCheckbox}
+            />
+            <span>Show Additional Fields</span>
+          </label>
         </div>
-      )}
-
-      {/* Toggle Advanced Fields Checkbox */}
-      <div className={styles.toggleSection}>
-        <label className={styles.toggleLabel}>
-          <input
-            type="checkbox"
-            checked={showAdvancedFields}
-            onChange={(e) => setShowAdvancedFields(e.target.checked)}
-            className={styles.toggleCheckbox}
-          />
-          <span className={styles.toggleText}>Show Advanced/Hidden Fields</span>
-          <span className={styles.toggleHint}>(Buyer Details, Order Type, State, Additional Details, etc.)</span>
-        </label>
       </div>
 
-      {/* Edit Order Status */}
-      <div className={styles.section}>
-        <h3 className={styles.sectionTitle}>Edit Order Status</h3>
-        <div className={styles.grid3}>
-          <div className={styles.field}>
-            <label>Edit Order Status</label>
-            <input 
-              type="text" 
-              value={editOrderStatus} 
-              readOnly 
-              className={styles.readonly}
+      {/* Client Information Section - Always visible but individual fields can be hidden */}
+      <div className={styles.formSection}>
+        <h3 className={styles.sectionTitle}>Client Information</h3>
+        <div className={styles.formGrid}>
+          {/* These fields are hidden by default */}
+          {showAdditionalFields && (
+            <>
+              <div className={styles.formGroup}>
+                <label className={styles.required}>Client Name *</label>
+                <input
+                  type="text"
+                  value={clientName}
+                  onChange={(e) => setClientName(e.target.value)}
+                  required
+                  className={styles.input}
+                />
+              </div>
+
+              <div className={styles.formGroup}>
+                <label className={styles.required}>Mobile *</label>
+                <input
+                  type="tel"
+                  value={mobile}
+                  onChange={(e) => setMobile(e.target.value)}
+                  required
+                  className={styles.input}
+                />
+              </div>
+
+              <div className={styles.formGroup}>
+                <label className={styles.required}>Email *</label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className={styles.input}
+                />
+              </div>
+
+              <div className={styles.formGroup}>
+                <label>Taluk</label>
+                <input
+                  type="text"
+                  value={taluk}
+                  onChange={(e) => setTaluk(e.target.value)}
+                  className={styles.input}
+                />
+              </div>
+
+              <div className={styles.formGroup}>
+                <label>District</label>
+                <input
+                  type="text"
+                  value={district}
+                  onChange={(e) => setDistrict(e.target.value)}
+                  className={styles.input}
+                />
+              </div>
+
+              <div className={styles.formGroup}>
+                <label>State</label>
+                <select
+                  value={state}
+                  onChange={(e) => setState(e.target.value)}
+                  className={styles.select}
+                >
+                  <option value="">Select State</option>
+                  {states.map((s, idx) => (
+                    <option key={idx} value={s}>{s}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className={styles.formGroup}>
+                <label className={styles.required}>GST No. *</label>
+                <input
+                  type="text"
+                  value={gstNo}
+                  onChange={(e) => setGstNo(e.target.value)}
+                  required
+                  className={styles.input}
+                />
+              </div>
+
+              <div className={styles.formGroup}>
+                <label className={styles.required}>Client Type *</label>
+                <select
+                  value={clientType}
+                  onChange={(e) => setClientType(e.target.value)}
+                  required
+                  className={styles.select}
+                >
+                  <option value="">Select Client Type</option>
+                  {clientTypes.map((type, idx) => (
+                    <option key={idx} value={type}>{type}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className={styles.formGroup}>
+                <label className={styles.required}>Client Category *</label>
+                <select
+                  value={clientCategory}
+                  onChange={(e) => setClientCategory(e.target.value)}
+                  required
+                  className={styles.select}
+                >
+                  <option value="">Select Client Category</option>
+                  {clientCategories.map((cat, idx) => (
+                    <option key={idx} value={cat}>{cat}</option>
+                  ))}
+                </select>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Address Section */}
+      <div className={styles.formSection}>
+        <h3 className={styles.sectionTitle}>Address Information</h3>
+        <div className={styles.formGrid}>
+          <div className={styles.formGroup} style={{ gridColumn: '1 / -1' }}>
+            <label className={styles.required}>Billing Address *</label>
+            <textarea
+              value={billingAddress}
+              onChange={(e) => setBillingAddress(e.target.value)}
+              required
+              rows={3}
+              className={styles.textarea}
+            />
+          </div>
+
+          <div className={styles.formGroup}>
+            <label className={styles.required}>Billing Pincode *</label>
+            <input
+              type="text"
+              value={billingPincode}
+              onChange={(e) => setBillingPincode(e.target.value)}
+              required
+              className={styles.input}
+            />
+          </div>
+
+          <div className={styles.formGroup} style={{ gridColumn: '1 / -1' }}>
+            <label className={styles.checkboxLabel}>
+              <input
+                type="checkbox"
+                checked={isShippingSameAsBilling}
+                onChange={(e) => setIsShippingSameAsBilling(e.target.checked)}
+              />
+              Shipping address same as billing address
+            </label>
+          </div>
+
+          <div className={styles.formGroup} style={{ gridColumn: '1 / -1' }}>
+            <label className={styles.required}>Shipping Address *</label>
+            <textarea
+              value={shippingAddress}
+              onChange={(e) => setShippingAddress(e.target.value)}
+              required
+              disabled={isShippingSameAsBilling}
+              rows={3}
+              className={styles.textarea}
+            />
+          </div>
+
+          <div className={styles.formGroup}>
+            <label className={styles.required}>Shipping Pincode *</label>
+            <input
+              type="text"
+              value={shippingPincode}
+              onChange={(e) => setShippingPincode(e.target.value)}
+              required
+              disabled={isShippingSameAsBilling}
+              className={styles.input}
             />
           </div>
         </div>
       </div>
 
-      {/* Buyer Details - HIDDEN BY DEFAULT */}
-      {showAdvancedFields && (
-        <div className={styles.section}>
-          <h3 className={styles.sectionTitle}>Buyer Details</h3>
-          <div className={styles.grid3}>
-            <div className={styles.field}>
-              <label>Client Name <span className={styles.mandatory}>*</span></label>
-              <input type="text" value={clientName} readOnly className={styles.readonly} />
-            </div>
-            <div className={styles.field}>
-              <label>Mobile <span className={styles.mandatory}>*</span></label>
-              <input type="tel" value={mobile} readOnly className={styles.readonly} />
-            </div>
-            <div className={styles.field}>
-              <label>Email <span className={styles.mandatory}>*</span></label>
-              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
-            </div>
-            <div className={styles.field}>
-              <label>Taluk</label>
-              <input type="text" value={taluk} readOnly className={styles.readonly} />
-            </div>
-            <div className={styles.field}>
-              <label>District</label>
-              <input type="text" value={district} readOnly className={styles.readonly} />
-            </div>
-            <div className={styles.field}>
-              <label>State</label>
-              <input type="text" value={state} readOnly className={styles.readonly} />
-            </div>
-            <div className={styles.field}>
-              <label>GST No. <span className={styles.mandatory}>*</span></label>
-              <input type="text" value={gstNo} onChange={(e) => setGstNo(e.target.value)} />
-            </div>
-            <div className={styles.field}>
-              <label>Client Type <span className={styles.mandatory}>*</span></label>
-              <input type="text" value={clientType} readOnly className={styles.readonly} />
-            </div>
-            <div className={styles.field}>
-              <label>Client Category <span className={styles.mandatory}>*</span></label>
-              <input type="text" value={clientCategory} readOnly className={styles.readonly} />
-            </div>
-            <div className={styles.field}>
-              <label>Order Type <span className={styles.mandatory}>*</span></label>
-              <select value={orderType} onChange={(e) => setOrderType(e.target.value)} required>
-                <option value="">-- select --</option>
-                <option value="New Order">New Order</option>
-                <option value="Sample Order">Sample Order</option>
-              </select>
-            </div>
-            <div className={styles.field}>
-              <label>State (Order Placed to Party) <span className={styles.mandatory}>*</span></label>
-              <input type="text" value={partyState} onChange={(e) => setPartyState(e.target.value)} />
-            </div>
+      {/* Order Details Section */}
+      <div className={styles.formSection}>
+        <h3 className={styles.sectionTitle}>Order Details</h3>
+        <div className={styles.formGrid}>
+          {showAdditionalFields && (
+            <>
+              <div className={styles.formGroup}>
+                <label className={styles.required}>Order Type *</label>
+                <select
+                  value={orderType}
+                  onChange={(e) => setOrderType(e.target.value)}
+                  required
+                  className={styles.select}
+                >
+                  <option value="">Select Order Type</option>
+                  {orderTypes.map((type, idx) => (
+                    <option key={idx} value={type}>{type}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className={styles.formGroup}>
+                <label className={styles.required}>State (Order Placed to Party) *</label>
+                <select
+                  value={partyState}
+                  onChange={(e) => setPartyState(e.target.value)}
+                  required
+                  className={styles.select}
+                >
+                  <option value="">Select State</option>
+                  {states.map((s, idx) => (
+                    <option key={idx} value={s}>{s}</option>
+                  ))}
+                </select>
+              </div>
+            </>
+          )}
+
+          <div className={styles.formGroup}>
+            <label>Party Name</label>
+            <select
+              value={partyName}
+              onChange={(e) => setPartyName(e.target.value)}
+              className={styles.select}
+            >
+              <option value="">Select Party</option>
+              {partyNames.map((name, idx) => (
+                <option key={idx} value={name}>{name}</option>
+              ))}
+            </select>
           </div>
 
-          {/* Billing and Shipping Address */}
-          <div className={styles.grid2}>
-            <div className={styles.field}>
-              <label>Billing Address <span className={styles.mandatory}>*</span></label>
-              <textarea 
-                value={billingAddress} 
-                onChange={(e) => setBillingAddress(e.target.value)} 
-                required 
-                rows="3" 
+          <div className={styles.formGroup}>
+            <label>Delivery Party</label>
+            <input
+              type="text"
+              value={deliveryParty}
+              onChange={(e) => setDeliveryParty(e.target.value)}
+              className={styles.input}
+            />
+          </div>
+
+          <div className={styles.formGroup}>
+            <label>MR Name</label>
+            <select
+              value={mrName}
+              onChange={(e) => setMrName(e.target.value)}
+              className={styles.select}
+            >
+              <option value="">Select MR</option>
+              {mrNames.map((name, idx) => (
+                <option key={idx} value={name}>{name}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {/* Delivery & Payment Section */}
+      <div className={styles.formSection}>
+        <h3 className={styles.sectionTitle}>Delivery & Payment</h3>
+        <div className={styles.formGrid}>
+          <div className={styles.formGroup}>
+            <label>Delivery Date</label>
+            <input
+              type="date"
+              value={deliveryDate}
+              onChange={(e) => setDeliveryDate(e.target.value)}
+              className={styles.input}
+            />
+          </div>
+
+          <div className={styles.formGroup}>
+            <label>Delivery Time</label>
+            <input
+              type="time"
+              value={deliveryTime}
+              onChange={(e) => setDeliveryTime(e.target.value)}
+              className={styles.input}
+            />
+          </div>
+
+          <div className={styles.formGroup}>
+            <label>Payment Terms</label>
+            <select
+              value={paymentTerms}
+              onChange={(e) => setPaymentTerms(e.target.value)}
+              className={styles.select}
+            >
+              <option value="">Select Payment Terms</option>
+              {paymentTermsList.map((term, idx) => (
+                <option key={idx} value={term}>{term}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className={styles.formGroup}>
+            <label>Payment Mode</label>
+            <select
+              value={paymentMode}
+              onChange={(e) => setPaymentMode(e.target.value)}
+              className={styles.select}
+            >
+              <option value="">Select Payment Mode</option>
+              {paymentModes.map((mode, idx) => (
+                <option key={idx} value={mode}>{mode}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className={styles.formGroup}>
+            <label>Payment Date</label>
+            <input
+              type="date"
+              value={paymentDate}
+              onChange={(e) => setPaymentDate(e.target.value)}
+              className={styles.input}
+            />
+          </div>
+
+          <div className={styles.formGroup}>
+            <label>Order Taken By</label>
+            <input
+              type="text"
+              value={orderBy}
+              onChange={(e) => setOrderBy(e.target.value)}
+              className={styles.input}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Recurring Orders Section */}
+      <div className={styles.formSection}>
+        <h3 className={styles.sectionTitle}>Recurring Orders</h3>
+        <div className={styles.formGrid}>
+          <div className={styles.formGroup}>
+            <label>Reoccurrence</label>
+            <input
+              type="text"
+              value={reoccurance}
+              onChange={(e) => setReoccurance(e.target.value)}
+              className={styles.input}
+              placeholder="e.g., Monthly, Weekly"
+            />
+          </div>
+
+          {showAdditionalFields && (
+            <>
+              <div className={styles.formGroup}>
+                <label>Next Order Fixed Date</label>
+                <input
+                  type="date"
+                  value={nextOrderFixedDate}
+                  onChange={(e) => setNextOrderFixedDate(e.target.value)}
+                  className={styles.input}
+                />
+              </div>
+
+              <div className={styles.formGroup}>
+                <label>Reoccurrence Interval</label>
+                <input
+                  type="text"
+                  value={reoccurrenceInterval}
+                  onChange={(e) => setReoccurrenceInterval(e.target.value)}
+                  className={styles.input}
+                  placeholder="e.g., 30 days"
+                />
+              </div>
+
+              <div className={styles.formGroup}>
+                <label>End Date</label>
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className={styles.input}
+                />
+              </div>
+            </>
+          )}
+
+          <div className={styles.formGroup}>
+            <label>Next Order Date</label>
+            <input
+              type="date"
+              value={nextOrderDate}
+              onChange={(e) => setNextOrderDate(e.target.value)}
+              className={styles.input}
+            />
+          </div>
+
+          <div className={styles.formGroup}>
+            <label>End Order Date</label>
+            <input
+              type="date"
+              value={endOrderDate}
+              onChange={(e) => setEndOrderDate(e.target.value)}
+              className={styles.input}
+            />
+          </div>
+
+          <div className={styles.formGroup}>
+            <label>Priority</label>
+            <select
+              value={priority}
+              onChange={(e) => setPriority(e.target.value)}
+              className={styles.select}
+            >
+              <option value="">Select Priority</option>
+              {priorities.map((p, idx) => (
+                <option key={idx} value={p}>{p}</option>
+              ))}
+            </select>
+          </div>
+
+          {showAdditionalFields && (
+            <div className={styles.formGroup}>
+              <label>Rocket Client</label>
+              <input
+                type="text"
+                value={rocketClient}
+                onChange={(e) => setRocketClient(e.target.value)}
+                className={styles.input}
               />
             </div>
-            
-            <div className={styles.field}>
-              <label>Shipping Address <span className={styles.mandatory}>*</span></label>
-              <div>
-                <div className={styles.checkboxGroup}>
-                  <input
-                    type="checkbox"
-                    id="sameAsBilling"
-                    checked={isShippingSameAsBilling}
-                    onChange={() => {
-                      setIsShippingSameAsBilling(!isShippingSameAsBilling);
-                      if (!isShippingSameAsBilling) {
-                        setShippingAddress(billingAddress);
-                      }
-                    }}
-                  />
-                  <label htmlFor="sameAsBilling">Check if billing and shipping is same</label>
-                </div>
-                <textarea 
-                  value={shippingAddress} 
-                  onChange={(e) => setShippingAddress(e.target.value)} 
-                  required 
-                  rows="3" 
+          )}
+        </div>
+      </div>
+
+      {/* Charges Section */}
+      <div className={styles.formSection}>
+        <h3 className={styles.sectionTitle}>Charges & Discounts</h3>
+        <div className={styles.formGrid}>
+          <div className={styles.formGroup}>
+            <label>Discount Tier</label>
+            <select
+              value={discountTier}
+              onChange={(e) => setDiscountTier(e.target.value)}
+              className={styles.select}
+            >
+              <option value="">Select Discount Tier</option>
+              {discountTiers.map((tier, idx) => (
+                <option key={idx} value={tier}>{tier}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className={styles.formGroup}>
+            <label>Shipping Charges</label>
+            <input
+              type="number"
+              step="0.01"
+              value={shippingCharges}
+              onChange={(e) => setShippingCharges(e.target.value)}
+              className={styles.input}
+            />
+          </div>
+
+          <div className={styles.formGroup}>
+            <label>Packing Charges</label>
+            <input
+              type="number"
+              step="0.01"
+              value={packingCharges}
+              onChange={(e) => setPackingCharges(e.target.value)}
+              className={styles.input}
+            />
+          </div>
+
+          <div className={styles.formGroup}>
+            <label>Delivery Charges</label>
+            <input
+              type="number"
+              step="0.01"
+              value={deliveryCharges}
+              onChange={(e) => setDeliveryCharges(e.target.value)}
+              className={styles.input}
+            />
+          </div>
+
+          {showAdditionalFields && (
+            <>
+              <div className={styles.formGroup}>
+                <label>Shipping, Packing and Delivery Charges (Amount):</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={shippingPackingCharges}
+                  onChange={(e) => setShippingPackingCharges(e.target.value)}
+                  className={styles.input}
                 />
+              </div>
+
+              <div className={styles.formGroup}>
+                <label>Total Shipping Charge (Amount):</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={totalShippingCharge}
+                  onChange={(e) => setTotalShippingCharge(e.target.value)}
+                  className={styles.input}
+                />
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Additional Hidden Fields Section */}
+      {showAdditionalFields && (
+        <div className={styles.formSection}>
+          <h3 className={styles.sectionTitle}>Additional Information</h3>
+          <div className={styles.formGrid}>
+            <div className={styles.formGroup} style={{ gridColumn: '1 / -1' }}>
+              <label>Note (Remarks):</label>
+              <textarea
+                value={noteRemarks}
+                onChange={(e) => setNoteRemarks(e.target.value)}
+                rows={3}
+                className={styles.textarea}
+              />
+            </div>
+
+            <div className={styles.formGroup}>
+              <label>Type of (Remarks):</label>
+              <input
+                type="text"
+                value={typeOfRemarks1}
+                onChange={(e) => setTypeOfRemarks1(e.target.value)}
+                className={styles.input}
+              />
+            </div>
+
+            <div className={styles.formGroup}>
+              <label>Type of (Remarks):</label>
+              <input
+                type="text"
+                value={typeOfRemarks2}
+                onChange={(e) => setTypeOfRemarks2(e.target.value)}
+                className={styles.input}
+              />
+            </div>
+
+            <div className={styles.formGroup}>
+              <label>Preferred Call Time 2</label>
+              <input
+                type="time"
+                value={preferredCallTime2}
+                onChange={(e) => setPreferredCallTime2(e.target.value)}
+                className={styles.input}
+              />
+            </div>
+
+            <div className={styles.formGroup}>
+              <label>Expected Time of Dispatch</label>
+              <input
+                type="datetime-local"
+                value={expectedDispatchTime}
+                onChange={(e) => setExpectedDispatchTime(e.target.value)}
+                className={styles.input}
+              />
+            </div>
+
+            <div className={styles.formGroup} style={{ gridColumn: '1 / -1' }}>
+              <label>Remarks</label>
+              <textarea
+                value={remarks}
+                onChange={(e) => setRemarks(e.target.value)}
+                rows={3}
+                className={styles.textarea}
+              />
+            </div>
+
+            <div className={styles.formGroup} style={{ gridColumn: '1 / -1' }}>
+              <label>Remarks - Show to Kairali Team</label>
+              <textarea
+                value={remarksKairaliTeam}
+                onChange={(e) => setRemarksKairaliTeam(e.target.value)}
+                rows={3}
+                className={styles.textarea}
+              />
+            </div>
+
+            <div className={styles.formGroup} style={{ gridColumn: '1 / -1' }}>
+              <label>Remarks - Show in Invoice</label>
+              <textarea
+                value={remarksInvoice}
+                onChange={(e) => setRemarksInvoice(e.target.value)}
+                rows={3}
+                className={styles.textarea}
+              />
+            </div>
+
+            <div className={styles.formGroup} style={{ gridColumn: '1 / -1' }}>
+              <label>Remarks - Show to Dispatch Team</label>
+              <textarea
+                value={remarksDispatchTeam}
+                onChange={(e) => setRemarksDispatchTeam(e.target.value)}
+                rows={3}
+                className={styles.textarea}
+              />
+            </div>
+
+            <div className={styles.formGroup}>
+              <label>Available MR/ASM</label>
+              <input
+                type="text"
+                value={availableMRASM}
+                onChange={(e) => setAvailableMRASM(e.target.value)}
+                className={styles.input}
+              />
+            </div>
+
+            <div className={styles.formGroup}>
+              <label>Images/Invoice Upload</label>
+              <input
+                type="text"
+                value={imagesInvoiceUpload}
+                onChange={(e) => setImagesInvoiceUpload(e.target.value)}
+                className={styles.input}
+                placeholder="URL or file path"
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Order Items Section */}
+      <div className={styles.formSection}>
+        <h3 className={styles.sectionTitle}>Order Items</h3>
+        
+        {orderItems.map((item, index) => (
+          <div key={index} className={styles.productLine}>
+            <div className={styles.formGrid}>
+              <div className={styles.formGroup}>
+                <label>Product Name</label>
+                <select
+                  value={item.productName}
+                  onChange={(e) => {
+                    const selectedProduct = products.find(p => p.name === e.target.value);
+                    handleProductChange(index, 'productName', e.target.value);
+                    if (selectedProduct) {
+                      handleProductChange(index, 'hsn', selectedProduct.hsn);
+                      handleProductChange(index, 'rate', selectedProduct.rate);
+                    }
+                  }}
+                  className={styles.select}
+                >
+                  <option value="">Select Product</option>
+                  {products.map((product, idx) => (
+                    <option key={idx} value={product.name}>{product.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className={styles.formGroup}>
+                <label>HSN Code</label>
+                <input
+                  type="text"
+                  value={item.hsn}
+                  onChange={(e) => handleProductChange(index, 'hsn', e.target.value)}
+                  className={styles.input}
+                />
+              </div>
+
+              <div className={styles.formGroup}>
+                <label>Quantity</label>
+                <input
+                  type="number"
+                  value={item.quantity}
+                  onChange={(e) => handleProductChange(index, 'quantity', parseFloat(e.target.value) || 0)}
+                  className={styles.input}
+                />
+              </div>
+
+              <div className={styles.formGroup}>
+                <label>Rate</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={item.rate}
+                  onChange={(e) => handleProductChange(index, 'rate', parseFloat(e.target.value) || 0)}
+                  className={styles.input}
+                />
+              </div>
+
+              <div className={styles.formGroup}>
+                <label>Total</label>
+                <input
+                  type="number"
+                  value={item.total}
+                  readOnly
+                  className={styles.input}
+                  style={{ background: '#f8fafc' }}
+                />
+              </div>
+
+              <div className={styles.formGroup}>
+                <button
+                  type="button"
+                  onClick={() => removeProductLine(index)}
+                  className={styles.removeButton}
+                >
+                  Remove
+                </button>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        ))}
 
-      {/* Party Details - Always Visible */}
-      <div className={styles.section}>
-        <h3 className={styles.sectionTitle}>Party Details</h3>
-        <div className={styles.grid3}>
-          <div className={styles.field}>
-            <label>Party Name <span className={styles.mandatory}>*</span></label>
-            <input 
-              type="text" 
-              value={partyName} 
-              onChange={(e) => setPartyName(e.target.value)} 
-              required 
-            />
-          </div>
-        </div>
+        <button
+          type="button"
+          onClick={addProductLine}
+          className={styles.addButton}
+        >
+          + Add Product Line
+        </button>
       </div>
 
-      {/* Product Details - Always Visible */}
-      <div className={styles.section}>
-        <h3 className={styles.sectionTitle}>Product Details</h3>
-        <div className={styles.productTable}>
-          <table>
-            <thead>
-              <tr>
-                <th>Product Name</th>
-                <th>MRP</th>
-                <th>Packing Size</th>
-                <th>Quantity</th>
-                <th>Discount %</th>
-                <th>Discount Amt</th>
-                <th>Before Tax</th>
-                <th>After Discount</th>
-                <th>CGST %</th>
-                <th>SGST %</th>
-                <th>IGST %</th>
-                <th>Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              {productList.map((product, index) => (
-                <tr key={index}>
-                  <td>{product.productName}</td>
-                  <td>{product.mrp}</td>
-                  <td>{product.packingSize}</td>
-                  <td>{product.quantity}</td>
-                  <td>{product.discountPer}</td>
-                  <td>{product.discountAmt}</td>
-                  <td>{product.beforeTax}</td>
-                  <td>{product.afterDiscount}</td>
-                  <td>{product.cgst}</td>
-                  <td>{product.sgst}</td>
-                  <td>{product.igst}</td>
-                  <td>{product.total}</td>
-                </tr>
-              ))}
-            </tbody>
-            <tfoot>
-              <tr>
-                <td><strong>Totals:</strong></td>
-                <td><strong>{totals.mrpTotal.toFixed(2)}</strong></td>
-                <td></td>
-                <td><strong>{totals.qtyTotal}</strong></td>
-                <td></td>
-                <td><strong>{totals.discountTotal.toFixed(2)}</strong></td>
-                <td><strong>{totals.taxBeforeTotal.toFixed(2)}</strong></td>
-                <td><strong>{totals.taxAfterTotal.toFixed(2)}</strong></td>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td><strong>{totals.totalAmount.toFixed(2)}</strong></td>
-              </tr>
-            </tfoot>
-          </table>
-        </div>
-      </div>
-
-      {/* Delivery and Payment Details - Always Visible */}
-      <div className={styles.section}>
-        <h3 className={styles.sectionTitle}>Delivery & Payment Details</h3>
-        <div className={styles.grid3}>
-          <div className={styles.field}>
-            <label>Delivery Required Date</label>
-            <input 
-              type="date" 
-              value={deliveryDate} 
-              onChange={(e) => setDeliveryDate(e.target.value)} 
-            />
-          </div>
-          <div className={styles.field}>
-            <label>Delivery Time</label>
-            <input 
-              type="time" 
-              value={deliveryTime} 
-              onChange={(e) => setDeliveryTime(e.target.value)} 
-            />
-          </div>
-          <div className={styles.field}>
-            <label>Payment Terms</label>
-            <input 
-              type="text" 
-              value={paymentTerms} 
-              onChange={(e) => setPaymentTerms(e.target.value)} 
-            />
-          </div>
-          <div className={styles.field}>
-            <label>Payment Mode</label>
-            <input 
-              type="text" 
-              value={paymentMode} 
-              onChange={(e) => setPaymentMode(e.target.value)} 
-            />
-          </div>
-          <div className={styles.field}>
-            <label>Payment Date</label>
-            <input 
-              type="date" 
-              value={paymentDate} 
-              onChange={(e) => setPaymentDate(e.target.value)} 
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Additional Details - HIDDEN BY DEFAULT */}
-      {showAdvancedFields && (
-        <div className={styles.section}>
-          <h3 className={styles.sectionTitle}>Additional Details</h3>
-          <div className={styles.grid3}>
-            <div className={styles.field}>
-              <label>Shipping, Packing and Delivery Charges (Amount):</label>
-              <input 
-                type="number" 
-                step="0.01"
-                value={packingDeliveryCharges} 
-                onChange={(e) => setPackingDeliveryCharges(e.target.value)} 
-              />
-            </div>
-            <div className={styles.field}>
-              <label>Note (Remarks):</label>
-              <textarea 
-                value={remarks} 
-                onChange={(e) => setRemarks(e.target.value)} 
-                rows="2"
-              />
-            </div>
-            <div className={styles.field}>
-              <label>Type of (Remarks):</label>
-              <input 
-                type="text" 
-                value={remarksType} 
-                onChange={(e) => setRemarksType(e.target.value)} 
-              />
-            </div>
-            <div className={styles.field}>
-              <label>Total Shipping Charge (Amount):</label>
-              <input 
-                type="number" 
-                step="0.01"
-                value={totalShippingCharge} 
-                onChange={(e) => setTotalShippingCharge(e.target.value)} 
-              />
-            </div>
-            <div className={styles.field}>
-              <label>Type of (Remarks):</label>
-              <input 
-                type="text" 
-                value={shippingRemarksType} 
-                onChange={(e) => setShippingRemarksType(e.target.value)} 
-              />
-            </div>
-            <div className={styles.field}>
-              <label>Preferred Call Time 2</label>
-              <input 
-                type="text" 
-                value={preferredCallTime2} 
-                onChange={(e) => setPreferredCallTime2(e.target.value)} 
-              />
-            </div>
-            <div className={styles.field}>
-              <label>Expected Time of Dispatch</label>
-              <input 
-                type="text" 
-                value={expectedDispatchTime} 
-                onChange={(e) => setExpectedDispatchTime(e.target.value)} 
-              />
-            </div>
-            <div className={styles.field}>
-              <label>Next Order Fixed Date</label>
-              <input 
-                type="date" 
-                value={nextOrderDate} 
-                onChange={(e) => setNextOrderDate(e.target.value)} 
-              />
-            </div>
-            <div className={styles.field}>
-              <label>Reoccurrence Interval</label>
-              <input 
-                type="text" 
-                value={reoccurance} 
-                onChange={(e) => setReoccurance(e.target.value)} 
-              />
-            </div>
-            <div className={styles.field}>
-              <label>End Date</label>
-              <input 
-                type="date" 
-                value={endOrderDate} 
-                onChange={(e) => setEndOrderDate(e.target.value)} 
-              />
-            </div>
-            <div className={styles.field}>
-              <label>Rocket Client</label>
-              <input 
-                type="text" 
-                value={rocketClient} 
-                onChange={(e) => setRocketClient(e.target.value)} 
-              />
-            </div>
-            <div className={styles.field}>
-              <label>Remarks</label>
-              <textarea 
-                value={remarks} 
-                onChange={(e) => setRemarks(e.target.value)} 
-                rows="2"
-              />
-            </div>
-            <div className={styles.field}>
-              <label>Remarks - Show to Kairali Team</label>
-              <textarea 
-                value={remarksKairali} 
-                onChange={(e) => setRemarksKairali(e.target.value)} 
-                rows="2"
-              />
-            </div>
-            <div className={styles.field}>
-              <label>Remarks - Show in Invoice</label>
-              <textarea 
-                value={remarksInvoice} 
-                onChange={(e) => setRemarksInvoice(e.target.value)} 
-                rows="2"
-              />
-            </div>
-            <div className={styles.field}>
-              <label>Remarks - Show to Dispatch Team</label>
-              <textarea 
-                value={remarksDispatch} 
-                onChange={(e) => setRemarksDispatch(e.target.value)} 
-                rows="2"
-              />
-            </div>
-            <div className={styles.field}>
-              <label>Available MR/ASM</label>
-              <input 
-                type="text" 
-                value={availableMRASM} 
-                onChange={(e) => setAvailableMRASM(e.target.value)} 
-              />
-            </div>
-            <div className={styles.field}>
-              <label>Images/Invoice Upload</label>
-              <input 
-                type="text" 
-                value={imagesInvoice} 
-                onChange={(e) => setImagesInvoice(e.target.value)} 
-              />
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Action Buttons */}
-      <div className={styles.actionButtons}>
-        <button 
-          type="button" 
-          onClick={onCancel} 
+      {/* Form Actions */}
+      <div className={styles.formActions}>
+        <button
+          type="button"
+          onClick={onCancel}
           className={styles.cancelButton}
-          disabled={loading}
         >
           Cancel
         </button>
-        <button 
-          type="submit" 
+        <button
+          type="submit"
           className={styles.saveButton}
-          disabled={loading}
         >
-          {loading ? 'Saving...' : 'Save Changes'}
+          {editMode === 'split' ? 'Save and Split' : 'Save Changes'}
         </button>
       </div>
     </form>
