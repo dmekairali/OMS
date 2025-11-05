@@ -113,59 +113,97 @@ const [deliveryDateBy, setDeliveryDateBy] = useState('');
   // Calculate totals whenever productList changes
   useEffect(() => {
     calculateTotals();
-  }, [productList]);
+  }, [productList, state, partyState]); // Added state and partyState as dependencies
+
+  // NEW: Effect to update tax rates when state or partyState changes
+useEffect(() => {
+  if (productList.length > 0 && state && partyState) {
+    const updatedProducts = updateTaxRatesBasedOnState(productList);
+    setProductList(updatedProducts);
+  }
+}, [state, partyState]); // Run when state or partyState changes
 
   const calculateTotals = () => {
-    let mrpSum = 0;
-    let qtySum = 0;
-    let discountSum = 0;
-    let taxBeforeSum = 0;
-    let taxAfterSum = 0;
-    let totalSum = 0;
-     // NEW: Track highest tax rate
-    let highestTaxRate = 0;
+  let mrpSum = 0;
+  let qtySum = 0;
+  let discountSum = 0;
+  let taxBeforeSum = 0;
+  let taxAfterSum = 0;
+  let totalSum = 0;
+  
+  // Track highest tax rate
+  let highestTaxRate = 0;
 
-    productList.forEach(product => {
-      const productMrpTotal = (parseFloat(product.mrp) || 0) * (parseFloat(product.quantity) || 0);
-      mrpSum += productMrpTotal;
-      
-      qtySum += parseFloat(product.quantity || 0);
-      discountSum += parseFloat(product.discountAmt || 0);
-      taxBeforeSum += parseFloat(product.beforeTax || 0);
-      taxAfterSum += parseFloat(product.afterDiscount || 0);
-      totalSum += parseFloat(product.total || 0);
+  productList.forEach(product => {
+    const productMrpTotal = (parseFloat(product.mrp) || 0) * (parseFloat(product.quantity) || 0);
+    mrpSum += productMrpTotal;
+    
+    qtySum += parseFloat(product.quantity || 0);
+    discountSum += parseFloat(product.discountAmt || 0);
+    taxBeforeSum += parseFloat(product.beforeTax || 0);
+    taxAfterSum += parseFloat(product.afterDiscount || 0);
+    totalSum += parseFloat(product.total || 0);
+    
+    // Calculate highest tax rate for this product
+    const cgstRate = parseFloat(product.cgst) || 0;
+    const sgstRate = parseFloat(product.sgst) || 0;
+    const igstRate = parseFloat(product.igst) || 0;
+    
+    const cgstSgstSum = cgstRate + sgstRate;
+    const productHighestTax = Math.max(igstRate, cgstSgstSum);
+    
+    // Update overall highest tax rate
+    if (productHighestTax > highestTaxRate) {
+      highestTaxRate = productHighestTax;
+    }
+  });
 
-      // NEW: Calculate highest tax rate for this product
-      const cgstRate = parseFloat(product.cgst) || 0;
-      const sgstRate = parseFloat(product.sgst) || 0;
-      const igstRate = parseFloat(product.igst) || 0;
+  setTotals({
+    mrpTotal: mrpSum.toFixed(2),
+    qtyTotal: qtySum.toFixed(2),
+    discountTotal: discountSum.toFixed(2),
+    taxBeforeTotal: taxBeforeSum.toFixed(2),
+    taxAfterTotal: taxAfterSum.toFixed(2),
+    totalAmount: totalSum.toFixed(2)
+  });
+
+  setBeforeAmount(taxBeforeSum.toFixed(2));
+  setAfterAmount(totalSum.toFixed(2));
+  
+  // Set shipping tax percent to the highest tax rate found
+  setShippingTaxPercent(highestTaxRate.toFixed(2));
+};
+
+
+  // NEW: Function to update tax rates based on state matching
+const updateTaxRatesBasedOnState = (products) => {
+  return products.map(product => {
+    // Only update tax rates if product has a tax rate and product category
+    if (product.productCategory && product.mrp && product.mrp !== '0') {
+      const taxRate = parseFloat(product.cgst || 0) + parseFloat(product.sgst || 0) + parseFloat(product.igst || 0);
       
-      const cgstSgstSum = cgstRate + sgstRate;
-      const productHighestTax = Math.max(igstRate, cgstSgstSum);
-      
-      // Update overall highest tax rate
-      if (productHighestTax > highestTaxRate) {
-        highestTaxRate = productHighestTax;
+      if (state && partyState && state === partyState) {
+        // Same state: Split tax between CGST and SGST, set IGST to 0
+        return {
+          ...product,
+          cgst: (taxRate / 2).toFixed(2),
+          sgst: (taxRate / 2).toFixed(2),
+          igst: '0'
+        };
+      } else if (state && partyState && state !== partyState) {
+        // Different state: Use IGST only, set CGST and SGST to 0
+        return {
+          ...product,
+          cgst: '0',
+          sgst: '0',
+          igst: taxRate.toFixed(2)
+        };
       }
-    });
-
-    setTotals({
-      mrpTotal: mrpSum.toFixed(2),
-      qtyTotal: qtySum.toFixed(2),
-      discountTotal: discountSum.toFixed(2),
-      taxBeforeTotal: taxBeforeSum.toFixed(2),
-      taxAfterTotal: taxAfterSum.toFixed(2),
-      totalAmount: totalSum.toFixed(2)
-    });
-
-    setBeforeAmount(taxBeforeSum.toFixed(2));
-    setAfterAmount(totalSum.toFixed(2));
-
-    // NEW: Set shipping tax percent to the highest tax rate found
-    setShippingTaxPercent(highestTaxRate.toFixed(2));
-  };
-
-
+    }
+    return product;
+  });
+};
+  
    // Set edit status when component mounts or editMode changes
   useEffect(() => {
     const status = editMode === 'split' ? 'Edit and Split' : 'Edit Order';
@@ -428,12 +466,13 @@ const [deliveryDateBy, setDeliveryDateBy] = useState('');
   };
 
   const handlePartyNameChange = (selectedPartyName) => {
-    setPartyName(selectedPartyName);
-    const selectedParty = deliveryParties.find(p => p.name === selectedPartyName);
-    if (selectedParty) {
-      setPartyState(selectedParty.state);
-    }
-  };
+  setPartyName(selectedPartyName);
+  const selectedParty = deliveryParties.find(p => p.name === selectedPartyName);
+  if (selectedParty) {
+    setPartyState(selectedParty.state);
+    // Tax rates will be automatically updated via the useEffect above
+  }
+};
 
   const addProduct = () => {
     setProductList([...productList, {
@@ -474,18 +513,18 @@ const [deliveryDateBy, setDeliveryDateBy] = useState('');
       const presetDiscount = getPresetDiscount(selectedProduct.productCategory);
       updated[index].discountPer = presetDiscount;
       
-      // Set tax rates based on state matching
+      // Set initial tax rates based on state matching
       const taxRate = parseFloat(selectedProduct.taxRate || '0');
       if (state && partyState && state === partyState) {
         // Same state: Split between CGST and SGST
-        updated[index].cgst = (taxRate / 2).toString();
-        updated[index].sgst = (taxRate / 2).toString();
+        updated[index].cgst = (taxRate / 2).toFixed(2);
+        updated[index].sgst = (taxRate / 2).toFixed(2);
         updated[index].igst = '0';
       } else {
         // Different state: Use IGST only
         updated[index].cgst = '0';
         updated[index].sgst = '0';
-        updated[index].igst = taxRate.toString();
+        updated[index].igst = taxRate.toFixed(2);
       }
     }
   } 
