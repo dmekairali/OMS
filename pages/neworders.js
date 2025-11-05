@@ -357,29 +357,48 @@ export default function NewOrders() {
  const handleSaveEditOrder = (result) => {
   console.log('✅ Order saved successfully:', result);
   
-  // Update local state
-  setOrders(prevOrders => 
-    prevOrders.map(order => 
-      order['Oder ID'] === result.orderId 
-        ? { 
-            ...order, 
-            'Order Status': result.editStatus,
-            'Remarks*': editRemark,
-            'Last Edited At': new Date().toISOString()
-          }
-        : order
-    )
-  );
+  // Update local state (NO RELOAD - like Order Confirmation)
+  const updatedOrders = orders
+    .filter(order => order != null && order['Oder ID'])  // Safety: remove nulls
+    .map(order => {
+      if (order['Oder ID'] === selectedOrder['Oder ID']) {
+        return {
+          ...order,                                    // Keep all data
+          'Order Status': result.editStatus,           // Update status
+          'Remarks*': editRemark,                      // Update remarks
+          'Last Edited By': user.username,             // Update user
+          'Last Edited At': new Date().toISOString()   // Update time
+        };
+      }
+      return order;
+    });
+  
+  setOrders(updatedOrders);
   
   // Close edit view
   setShowEditView(false);
   setSelectedOrder(null);
   setEditRemark('');
+  setEditMode(null);
   
-  // Refresh orders list
+  // Show success (like Order Confirmation does)
+  setShowUpdateSummary(true);
+  setUpdateSummaryData({
+    orderId: result.orderId,
+    status: result.editStatus,
+    message: result.splitOrderId 
+      ? `Split created: ${result.splitOrderId}`
+      : 'Order updated!',
+    timestamp: new Date().toISOString()
+  });
+  
+  // Auto-close after 3 seconds
   setTimeout(() => {
-    loadOrders(false);
-  }, 500);
+    setShowUpdateSummary(false);
+  }, 3000);
+  
+  // Return to dashboard
+  handleBackToDashboard();
 };
 
   // NEW: Handle product quantity change
