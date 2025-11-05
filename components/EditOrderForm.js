@@ -4,9 +4,6 @@ import SetupDataService from '../services/SetupDataService';
 import EditOrderAPI from '../services/editOrderAPI';
 
 export default function EditOrderForm({ order, products, onSave, onCancel, editMode }) {
-  // Toggle state for showing additional fields
-  const [showAdditionalFields, setShowAdditionalFields] = useState(false);
-
   // Client Information
   const [clientName, setClientName] = useState('');
   const [mobile, setMobile] = useState('');
@@ -38,58 +35,133 @@ export default function EditOrderForm({ order, products, onSave, onCancel, editM
   const [paymentTerms, setPaymentTerms] = useState('');
   const [paymentMode, setPaymentMode] = useState('');
   const [paymentDate, setPaymentDate] = useState('');
-  const [orderBy, setOrderBy] = useState('');
   
-  // Additional fields that will be hidden by default
-  const [shippingPackingCharges, setShippingPackingCharges] = useState('');
-  const [noteRemarks, setNoteRemarks] = useState('');
-  const [typeOfRemarks1, setTypeOfRemarks1] = useState('');
-  const [totalShippingCharge, setTotalShippingCharge] = useState('');
-  const [typeOfRemarks2, setTypeOfRemarks2] = useState('');
-  const [preferredCallTime2, setPreferredCallTime2] = useState('');
-  const [expectedDispatchTime, setExpectedDispatchTime] = useState('');
-  const [nextOrderFixedDate, setNextOrderFixedDate] = useState('');
-  const [reoccurrenceInterval, setReoccurrenceInterval] = useState('');
-  const [endDate, setEndDate] = useState('');
-  const [rocketClient, setRocketClient] = useState('');
-  const [remarks, setRemarks] = useState('');
-  const [remarksKairaliTeam, setRemarksKairaliTeam] = useState('');
-  const [remarksInvoice, setRemarksInvoice] = useState('');
-  const [remarksDispatchTeam, setRemarksDispatchTeam] = useState('');
-  const [availableMRASM, setAvailableMRASM] = useState('');
-  const [imagesInvoiceUpload, setImagesInvoiceUpload] = useState('');
+  // Products
+  const [productList, setProductList] = useState([]);
   
-  // Recurring fields
+  // Totals
+  const [totals, setTotals] = useState({
+    mrpTotal: '0',
+    qtyTotal: '0',
+    discountTotal: '0',
+    taxBeforeTotal: '0',
+    taxAfterTotal: '0',
+    totalAmount: '0'
+  });
+
+  // Amounts
+  const [beforeAmount, setBeforeAmount] = useState('0');
+  const [afterAmount, setAfterAmount] = useState('0');
+
+  // Repeat Order
   const [reoccurance, setReoccurance] = useState('');
   const [nextOrderDate, setNextOrderDate] = useState('');
   const [endOrderDate, setEndOrderDate] = useState('');
   const [priority, setPriority] = useState('');
-  
-  // Discount & Charges
+
+  // Discounts
   const [discountTier, setDiscountTier] = useState('');
+  const [discounts, setDiscounts] = useState([{ category: '', percentage: '' }]);
+  const [showDiscounts, setShowDiscounts] = useState(false);
+
+  // Shipping Charges
   const [shippingCharges, setShippingCharges] = useState('');
-  const [packingCharges, setPackingCharges] = useState('');
-  const [deliveryCharges, setDeliveryCharges] = useState('');
-  
-  // Product Items
-  const [orderItems, setOrderItems] = useState([]);
-  
-  // Setup data from SetupDataService
-  const [clientTypes, setClientTypes] = useState([]);
-  const [clientCategories, setClientCategories] = useState([]);
-  const [orderTypes, setOrderTypes] = useState([]);
-  const [partyNames, setPartyNames] = useState([]);
-  const [states, setStates] = useState([]);
-  const [mrNames, setMrNames] = useState([]);
-  const [paymentTermsList, setPaymentTermsList] = useState([]);
-  const [paymentModes, setPaymentModes] = useState([]);
-  const [discountTiers, setDiscountTiers] = useState([]);
-  const [priorities, setPriorities] = useState([]);
-  
+  const [shippingChargesRemark, setShippingChargesRemark] = useState('');
+  const [shippingTaxPercent, setShippingTaxPercent] = useState('');
+  const [shippingTaxPercentRemark, setShippingTaxPercentRemark] = useState('');
+  const [totalShippingCharge, setTotalShippingCharge] = useState('');
+  const [totalShippingChargeRemark, setTotalShippingChargeRemark] = useState('');
+
+  // Payment, Delivery, and Remarks
+  const [preferredCallTime1, setPreferredCallTime1] = useState('');
+  const [preferredCallTime2, setPreferredCallTime2] = useState('');
+  const [dispatchDate, setDispatchDate] = useState('');
+  const [dispatchTime, setDispatchTime] = useState('');
+  const [saleTermRemark, setSaleTermRemark] = useState('');
+  const [invoiceRemark, setInvoiceRemark] = useState('');
+  const [warehouseRemark, setWarehouseRemark] = useState('');
+
+  // File Upload and OTIF
+  const [file, setFile] = useState(null);
+  const [fileData, setFileData] = useState(null);
+  const [orderBy, setOrderBy] = useState('');
+  const [orderInFull, setOrderInFull] = useState('');
+  const [orderInFullReason, setOrderInFullReason] = useState('');
+
   // Edit Order Status
-  const [editOrderStatus, setEditOrderStatus] = useState('Edit Order');
-  
-  // Set Edit Order Status based on editMode
+  const [editOrderStatus, setEditOrderStatus] = useState('');
+
+  // API data and validation
+  const [setupData, setSetupData] = useState(null);
+  const [deliveryParties, setDeliveryParties] = useState([]);
+  const [employeeList, setEmployeeList] = useState([]);
+  const [productListOptions, setProductListOptions] = useState([]);
+  const [discountStructure, setDiscountStructure] = useState([]);
+  const [clientNotFound, setClientNotFound] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+
+  // Additional payment dates
+  const [paymentDate2, setPaymentDate2] = useState('');
+  const [paymentDate3, setPaymentDate3] = useState('');
+  const [paymentDate4, setPaymentDate4] = useState('');
+  const [paymentDate5, setPaymentDate5] = useState('');
+  const [deliveryDateBy, setDeliveryDateBy] = useState('');
+
+  // NEW: State for showing/hiding additional fields
+  const [showAdditionalFields, setShowAdditionalFields] = useState(false);
+
+  // Calculate totals whenever productList changes
+  useEffect(() => {
+    calculateTotals();
+  }, [productList]);
+
+  const calculateTotals = () => {
+    let mrpSum = 0;
+    let qtySum = 0;
+    let discountSum = 0;
+    let taxBeforeSum = 0;
+    let taxAfterSum = 0;
+    let totalSum = 0;
+    let highestTaxRate = 0;
+
+    productList.forEach(product => {
+      const productMrpTotal = (parseFloat(product.mrp) || 0) * (parseFloat(product.quantity) || 0);
+      mrpSum += productMrpTotal;
+      
+      qtySum += parseFloat(product.quantity || 0);
+      discountSum += parseFloat(product.discountAmt || 0);
+      taxBeforeSum += parseFloat(product.beforeTax || 0);
+      taxAfterSum += parseFloat(product.afterDiscount || 0);
+      totalSum += parseFloat(product.total || 0);
+
+      const cgstRate = parseFloat(product.cgst) || 0;
+      const sgstRate = parseFloat(product.sgst) || 0;
+      const igstRate = parseFloat(product.igst) || 0;
+      
+      const cgstSgstSum = cgstRate + sgstRate;
+      const productHighestTax = Math.max(igstRate, cgstSgstSum);
+      
+      if (productHighestTax > highestTaxRate) {
+        highestTaxRate = productHighestTax;
+      }
+    });
+
+    setTotals({
+      mrpTotal: mrpSum.toFixed(2),
+      qtyTotal: qtySum.toFixed(2),
+      discountTotal: discountSum.toFixed(2),
+      taxBeforeTotal: taxBeforeSum.toFixed(2),
+      taxAfterTotal: taxAfterSum.toFixed(2),
+      totalAmount: totalSum.toFixed(2)
+    });
+
+    setBeforeAmount(taxBeforeSum.toFixed(2));
+    setAfterAmount(totalSum.toFixed(2));
+    setShippingTaxPercent(highestTaxRate.toFixed(2));
+  };
+
+  // Set edit status when component mounts or editMode changes
   useEffect(() => {
     const status = editMode === 'split' ? 'Edit and Split' : 'Edit Order';
     setEditOrderStatus(status);
@@ -98,7 +170,6 @@ export default function EditOrderForm({ order, products, onSave, onCancel, editM
   // Load order data first
   useEffect(() => {
     if (order) {
-      
       setClientName(order['Name of Client'] || '');
       setMobile(order['Mobile'] || '');
       setEmail(order['Email'] || '');
@@ -133,932 +204,1044 @@ export default function EditOrderForm({ order, products, onSave, onCancel, editM
       
       setDiscountTier(order['Discount Tier'] || '');
       setShippingCharges(order['Shipping Charges'] || '');
-      setPackingCharges(order['Packing Charges'] || '');
-      setDeliveryCharges(order['Delivery Charges'] || '');
-      
-      // Load additional hidden fields
-      setShippingPackingCharges(order['Shipping, Packing and Delivery Charges'] || '');
-      setNoteRemarks(order['Note (Remarks)'] || '');
-      setTypeOfRemarks1(order['Type of (Remarks)'] || '');
+      setShippingChargesRemark(order['Shipping Charges Remark'] || '');
+      setShippingTaxPercent(order['Shipping Tax Percent'] || '');
+      setShippingTaxPercentRemark(order['Shipping Tax Percent Remark'] || '');
       setTotalShippingCharge(order['Total Shipping Charge'] || '');
-      setTypeOfRemarks2(order['Type of (Remarks) 2'] || '');
+      setTotalShippingChargeRemark(order['Total Shipping Charge Remark'] || '');
+      
+      setPreferredCallTime1(order['Preferred Call Time 1'] || '');
       setPreferredCallTime2(order['Preferred Call Time 2'] || '');
-      setExpectedDispatchTime(order['Expected Time of Dispatch'] || '');
-      setNextOrderFixedDate(order['Next Order Fixed Date'] || '');
-      setReoccurrenceInterval(order['Reoccurrence Interval'] || '');
-      setEndDate(order['End Date'] || '');
-      setRocketClient(order['Rocket Client'] || '');
-      setRemarks(order['Remarks'] || '');
-      setRemarksKairaliTeam(order['Remarks - Show to Kairali Team'] || '');
-      setRemarksInvoice(order['Remarks - Show in Invoice'] || '');
-      setRemarksDispatchTeam(order['Remarks - Show to Dispatch Team'] || '');
-      setAvailableMRASM(order['Available MR/ASM'] || '');
-      setImagesInvoiceUpload(order['Images/Invoice Upload'] || '');
-      
-      setOrderType(order['Order Type'] || 'New Order');
-      setPartyName(order['Party Name'] || '');
-      setPartyState(order['State (Order Placed to Party)'] || '');
-      setDeliveryParty(order['Delivery Party From'] || '');
-      
-      // Parse and set order items
-      if (order['Order Items']) {
-        try {
-          const items = JSON.parse(order['Order Items']);
-          setOrderItems(items);
-        } catch (e) {
-          console.error('Error parsing order items:', e);
-          setOrderItems([]);
+      setDispatchDate(order['Dispatch Date'] || '');
+      setDispatchTime(order['Dispatch Time'] || '');
+      setSaleTermRemark(order['Sale Term Remark'] || '');
+      setInvoiceRemark(order['Invoice Remark'] || '');
+      setWarehouseRemark(order['Warehouse Remark'] || '');
+      setOrderInFull(order['Order In Full'] || '');
+      setOrderInFullReason(order['Order In Full Reason'] || '');
+    }
+    
+    if (products && products.length > 0) {
+      const initialProducts = products.map(p => ({
+        productName: p['Product Name'] || '',
+        sku: p['SKU Code'] || '',
+        mrp: p['MRP'] || '0',
+        packingSize: p['Packing Size'] || '',
+        quantity: p['Quantity'] || p['QNT'] || '0',
+        orderQty: p['Order QTY'] || p['Quantity'] || p['QNT'] || '0',
+        discountPer: p['Discount %'] || '0',
+        discountAmt: p['Discount Amount'] || '0',
+        beforeTax: p['Before Tax'] || '0',
+        afterDiscount: p['After Discount'] || '0',
+        cgst: p['CGST %'] || '0',
+        sgst: p['SGST %'] || '0',
+        igst: p['IGST %'] || '0',
+        total: p['Total'] || '0',
+        splitQty: '0',
+        productCategory: ''
+      }));
+      setProductList(initialProducts);
+    }
+  }, [order, products]);
+
+  // Fetch setup data after order is loaded
+  useEffect(() => {
+    if (order && mobile) {
+      fetchSetupData();
+    }
+  }, [order, mobile, clientType]);
+
+  const fetchSetupData = async () => {
+    setLoading(true);
+    setClientNotFound(false);
+    setErrorMessage('');
+
+    try {
+      const data = await SetupDataService.loadAllData();
+      setSetupData(data);
+
+      const clientData = processClientList(data.clientList, mobile);
+      const employees = processEmployeeList(data.employeeList);
+      setEmployeeList(employees);
+
+      const parties = processDeliveryParties(data.distributorList);
+      setDeliveryParties(parties);
+
+      const productOpts = processProductList(data.productList);
+      setProductListOptions(productOpts);
+
+      const discountCaps = processDiscountCaps(data.discountList);
+      setDiscountStructure(discountCaps);
+
+      if (clientData.found) {
+        setDiscountTier(clientData.discountTier);
+        setTaluk(clientData.taluk);
+        setDistrict(clientData.district);
+        setState(clientData.state);
+        setMrName(clientData.mrName);
+
+        const discountData = processDiscountModule(
+          data.discountStructure,
+          clientData.discountTier,
+          clientType
+        );
+
+        if (discountData.length > 0) {
+          setDiscounts(discountData);
         }
+      } else {
+        setClientNotFound(true);
+        setErrorMessage('Client mobile number not found or not verified in Client List. This order cannot be edited.');
       }
+    } catch (error) {
+      console.error('Error fetching setup data:', error);
+      setErrorMessage('Failed to load required data. Please try again.');
+    } finally {
+      setLoading(false);
     }
-  }, [order]);
-
-  // Load setup data after order is loaded
-  useEffect(() => {
-    const loadSetupData = async () => {
-      try {
-        const data = await SetupDataService.getSetupData();
-        
-        setClientTypes(data.clientTypes || []);
-        setClientCategories(data.clientCategories || []);
-        setOrderTypes(data.orderTypes || []);
-        setPartyNames(data.partyNames || []);
-        setStates(data.states || []);
-        setMrNames(data.mrNames || []);
-        setPaymentTermsList(data.paymentTerms || []);
-        setPaymentModes(data.paymentModes || []);
-        setDiscountTiers(data.discountTiers || []);
-        setPriorities(data.priorities || []);
-      } catch (error) {
-        console.error('Error loading setup data:', error);
-      }
-    };
-    
-    loadSetupData();
-  }, []);
-
-  // Handle shipping address same as billing
-  useEffect(() => {
-    if (isShippingSameAsBilling) {
-      setShippingAddress(billingAddress);
-      setShippingPincode(billingPincode);
-    }
-  }, [isShippingSameAsBilling, billingAddress, billingPincode]);
-
-  // Handle product selection
-  const handleProductChange = (index, field, value) => {
-    const newItems = [...orderItems];
-    newItems[index] = {
-      ...newItems[index],
-      [field]: value
-    };
-    
-    // Recalculate total for this item
-    if (field === 'quantity' || field === 'rate') {
-      newItems[index].total = (newItems[index].quantity || 0) * (newItems[index].rate || 0);
-    }
-    
-    setOrderItems(newItems);
   };
 
-  const addProductLine = () => {
-    setOrderItems([...orderItems, {
+  const processClientList = (clientList, mobileNumber) => {
+    if (!clientList || !clientList.rows) {
+      return { found: false };
+    }
+
+    const client = clientList.rows.find(row => {
+      const contactNo = row['Company Contact No'];
+      const activeStatus = row['Active/Non Active'];
+      
+      return (contactNo === mobileNumber || contactNo === String(mobileNumber)) && 
+             activeStatus === 'Verified';
+    });
+
+    if (client) {
+      return {
+        found: true,
+        discountTier: client['Discount Tier'] || '',
+        taluk: client['TALUK'] || '',
+        district: client['DISTRICT'] || '',
+        state: client['STATE/U.T.'] || '',
+        mrName: client['Alloted MR Name'] || ''
+      };
+    }
+
+    return { found: false };
+  };
+
+  const processDiscountModule = (discountStructure, tier, type) => {
+    if (!discountStructure || !discountStructure.rows || !tier || !type) {
+      return [];
+    }
+
+    const matchingDiscounts = discountStructure.rows.filter(row => {
+      const rowClientType = row['Client Type'] || '';
+      const rowTier = row['Tier'] || '';
+      
+      return rowClientType === type && rowTier === tier;
+    });
+
+    return matchingDiscounts.map(row => ({
+      category: row['Category'] || '',
+      percentage: row['TD'] || ''
+    }));
+  };
+
+  const processEmployeeList = (employeeList) => {
+    if (!employeeList || !employeeList.rows) {
+      return [];
+    }
+
+    const users = employeeList.rows
+      .map(row => row['ALL USERS'])
+      .filter(user => user && user.trim() !== '');
+
+    return [...new Set(users)];
+  };
+
+  const processDeliveryParties = (distributorList) => {
+    if (!distributorList || !distributorList.rows) {
+      return [];
+    }
+
+    const partiesMap = new Map();
+
+    distributorList.rows.forEach(row => {
+      const partyName = row['Delivery Party Name'];
+      const state = row['State'];
+      
+      if (partyName && partyName.trim() !== '') {
+        if (!partiesMap.has(partyName)) {
+          partiesMap.set(partyName, state || '');
+        }
+      }
+    });
+
+    return Array.from(partiesMap.entries()).map(([name, state]) => ({
+      name,
+      state
+    }));
+  };
+
+  const processProductList = (productList) => {
+    if (!productList || !productList.rows) {
+      return [];
+    }
+
+    return productList.rows
+      .filter(row => row['As Per Factory- Status'] !== 'Discontinue')
+      .map(row => ({
+        combinedName: row['Combined Name'] || '',
+        productSKU: row['SKU'] || '',
+        pack: row['Pack'] || '',
+        price: row['Price'] || '0',
+        productCategory: row['Products Category'] || '',
+        taxRate: row['TAX RATE'] || '0'
+      }))
+      .filter(p => p.combinedName);
+  };
+
+  const processDiscountCaps = (discountList) => {
+    if (!discountList || !discountList.rows) {
+      return [];
+    }
+
+    return discountList.rows.map(row => ({
+      category: row['Discount Category'] || '',
+      maxDiscount: parseFloat(row['Discount %'] || '100')
+    })).filter(d => d.category);
+  };
+
+  const getPresetDiscount = (productCategory) => {
+    const discount = discounts.find(d => d.category === productCategory);
+    return discount ? discount.percentage : '0';
+  };
+
+  const getMaxDiscount = (productCategory) => {
+    const cap = discountStructure.find(d => d.category === productCategory);
+    return cap ? cap.maxDiscount : 100;
+  };
+
+  const handlePartyNameChange = (selectedPartyName) => {
+    setPartyName(selectedPartyName);
+    const selectedParty = deliveryParties.find(p => p.name === selectedPartyName);
+    if (selectedParty) {
+      setPartyState(selectedParty.state);
+    }
+  };
+
+  const addProduct = () => {
+    setProductList([...productList, {
       productName: '',
-      hsn: '',
-      quantity: 0,
-      rate: 0,
-      total: 0
+      sku: '',
+      mrp: '0',
+      packingSize: '',
+      quantity: '1',
+      orderQty: '1',
+      discountPer: '0',
+      discountAmt: '0',
+      beforeTax: '0',
+      afterDiscount: '0',
+      cgst: '0',
+      sgst: '0',
+      igst: '0',
+      total: '0',
+      splitQty: '0',
+      productCategory: ''
     }]);
   };
 
-  const removeProductLine = (index) => {
-    const newItems = orderItems.filter((_, i) => i !== index);
-    setOrderItems(newItems);
+  const updateProduct = (index, field, value) => {
+    const updated = [...productList];
+    
+    if (field === 'productName') {
+      const selectedProduct = productListOptions.find(p => p.combinedName === value);
+      
+      if (selectedProduct) {
+        updated[index].productName = selectedProduct.combinedName;
+        updated[index].sku = selectedProduct.productSKU;
+        updated[index].mrp = selectedProduct.price;
+        updated[index].packingSize = selectedProduct.pack;
+        updated[index].productCategory = selectedProduct.productCategory;
+        
+        const presetDiscount = getPresetDiscount(selectedProduct.productCategory);
+        updated[index].discountPer = presetDiscount;
+        
+        const taxRate = parseFloat(selectedProduct.taxRate || '0');
+        if (state && partyState && state === partyState) {
+          updated[index].cgst = (taxRate / 2).toString();
+          updated[index].sgst = (taxRate / 2).toString();
+          updated[index].igst = '0';
+        } else {
+          updated[index].cgst = '0';
+          updated[index].sgst = '0';
+          updated[index].igst = taxRate.toString();
+        }
+      }
+    } 
+    else if (field === 'discountPer') {
+      const maxDiscount = getMaxDiscount(updated[index].productCategory);
+      const enteredDiscount = parseFloat(value) || 0;
+      
+      if (enteredDiscount > maxDiscount) {
+        updated[index][field] = maxDiscount.toString();
+        alert(`Maximum discount allowed for ${updated[index].productCategory} is ${maxDiscount}%`);
+      } else if (enteredDiscount < 0) {
+        updated[index][field] = '0';
+      } else {
+        updated[index][field] = value;
+      }
+    } 
+    else {
+      updated[index][field] = value;
+    }
+    
+    const qty = parseFloat(updated[index].quantity) || 0;
+    const mrp = parseFloat(updated[index].mrp) || 0;
+    const discPer = parseFloat(updated[index].discountPer) || 0;
+    
+    const beforeTax = qty * mrp;
+    updated[index].beforeTax = beforeTax.toFixed(2);
+    
+    const discAmt = (beforeTax * discPer) / 100;
+    updated[index].discountAmt = discAmt.toFixed(2);
+    
+    const afterDisc = beforeTax - discAmt;
+    updated[index].afterDiscount = afterDisc.toFixed(2);
+    
+    const cgstRate = parseFloat(updated[index].cgst) || 0;
+    const sgstRate = parseFloat(updated[index].sgst) || 0;
+    const igstRate = parseFloat(updated[index].igst) || 0;
+    
+    const cgstAmount = (afterDisc * cgstRate) / 100;
+    const sgstAmount = (afterDisc * sgstRate) / 100;
+    const igstAmount = (afterDisc * igstRate) / 100;
+    
+    const totalAmount = afterDisc + cgstAmount + sgstAmount + igstAmount;
+    updated[index].total = totalAmount.toFixed(2);
+    
+    setProductList(updated);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    // Prepare order data with all fields including hidden ones
-    const orderData = {
-      'Name of Client': clientName,
-      'Mobile': mobile,
-      'Email': email,
-      'Client Type': clientType,
-      'Client Category': clientCategory,
-      'GST No': gstNo,
-      'Billing Address': billingAddress,
-      'Shipping Address': shippingAddress,
-      'Pin code': shippingPincode,
-      'Taluk': taluk,
-      'District': district,
-      'State': state,
-      'Order Type': orderType,
-      'Party Name': partyName,
-      'State (Order Placed to Party)': partyState,
-      'Delivery Party From': deliveryParty,
-      'MR Name': mrName,
-      'Delivery Required Date': deliveryDate && deliveryTime ? `${deliveryDate} ${deliveryTime}` : deliveryDate,
-      'Payment Terms': paymentTerms,
-      'Payment Mode': paymentMode,
-      'Payment Date (to be paid)': paymentDate,
-      'Order Taken By': orderBy,
-      'Reoccurance': reoccurance,
-      'Next Order Date': nextOrderDate,
-      'End Order Date': endOrderDate,
-      'Priority': priority,
-      'Discount Tier': discountTier,
-      'Shipping Charges': shippingCharges,
-      'Packing Charges': packingCharges,
-      'Delivery Charges': deliveryCharges,
-      'Order Items': JSON.stringify(orderItems),
-      'Edit Order Status': editOrderStatus,
-      
-      // Include all hidden fields with their values
-      'Shipping, Packing and Delivery Charges': shippingPackingCharges,
-      'Note (Remarks)': noteRemarks,
-      'Type of (Remarks)': typeOfRemarks1,
-      'Total Shipping Charge': totalShippingCharge,
-      'Type of (Remarks) 2': typeOfRemarks2,
-      'Preferred Call Time 2': preferredCallTime2,
-      'Expected Time of Dispatch': expectedDispatchTime,
-      'Next Order Fixed Date': nextOrderFixedDate,
-      'Reoccurrence Interval': reoccurrenceInterval,
-      'End Date': endDate,
-      'Rocket Client': rocketClient,
-      'Remarks': remarks,
-      'Remarks - Show to Kairali Team': remarksKairaliTeam,
-      'Remarks - Show in Invoice': remarksInvoice,
-      'Remarks - Show to Dispatch Team': remarksDispatchTeam,
-      'Available MR/ASM': availableMRASM,
-      'Images/Invoice Upload': imagesInvoiceUpload,
-    };
+    setLoading(true);
+    setErrorMessage('');
     
     try {
-      await onSave(orderData);
+      const apiData = {
+        buyerId: order['Buyer ID'],
+        orderNumber: order['Oder ID'],
+        editStatus: editOrderStatus,
+        
+        clientName: clientName,
+        mobile: mobile,
+        email: email,
+        clientType: clientType,
+        clientCategory: clientCategory,
+        billingPincode: billingPincode,
+        gstNumber: gstNo,
+        billingAddress: billingAddress,
+        shippingAddress: shippingAddress,
+        orderType: orderType,
+        
+        taluk: taluk,
+        district: district,
+        state: state,
+        
+        deliveryParty: partyName,
+        partyName: partyName,
+        partyname: partyName,
+        partyState: partyState,
+        
+        products: productList.map(product => ({
+          name: product.productName,
+          mrp: product.mrp,
+          packingSize: product.packingSize,
+          quantity: product.quantity,
+          discountPercent: product.discountPer,
+          discountType: '%',
+          discountAmount: product.discountAmt,
+          beforeTax: product.beforeTax,
+          afterDiscount: product.afterDiscount,
+          cgstAmount: '0',
+          cgstPercent: product.cgst,
+          sgstAmount: '0', 
+          sgstPercent: product.sgst,
+          igstAmount: '0',
+          igstPercent: product.igst,
+          total: product.total,
+          splitQuantity: product.splitQty || '0'
+        })),
+        
+        totals: {
+          mrpTotal: totals.mrpTotal,
+          quantityTotal: totals.qtyTotal,
+          discountTotal: totals.discountTotal,
+          taxBeforeTotal: totals.taxBeforeTotal,
+          taxAfterTotal: totals.taxAfterTotal,
+          totalAmount: totals.totalAmount
+        },
+        
+        shippingCharge: shippingCharges || '0',
+        shippingRemark: shippingChargesRemark || '',
+        shippingTax: totalShippingCharge || '0',
+        shippingTaxRemark: totalShippingChargeRemark || '',
+        shippingTaxPercent: shippingTaxPercent || '0',
+        shippingTaxPercentRemark: shippingTaxPercentRemark || '',
+        
+        beforeAmount: beforeAmount,
+        afterAmount: afterAmount,
+        
+        paymentTerm: paymentTerms,
+        paymentMode: paymentMode,
+        paymentDates: [
+          paymentDate,
+          paymentDate2 || '',
+          paymentDate3 || '',
+          paymentDate4 || '',
+          paymentDate5 || ''
+        ],
+        
+        deliveryDate: deliveryDate,
+        deliveryTime: deliveryTime,
+        deliveryDateBy: deliveryDateBy || '',
+        
+        saleTermRemark: saleTermRemark || '',
+        invoiceRemark: invoiceRemark || '',
+        warehouseRemark: warehouseRemark || '',
+        
+        orderBy: orderBy,
+        mrName: mrName || 'NO MR',
+        
+        callTime1: preferredCallTime1 || '',
+        callTime2: preferredCallTime2 || '',
+        
+        orderInFull: orderInFull || '',
+        orderInFullReason: orderInFullReason || '',
+        
+        nextOrderDate: nextOrderDate || '',
+        recurrence: reoccurance || '',
+        endOrderDate: endOrderDate || '',
+        priority: priority || '',
+        
+        file: file || null
+      };
+      
+      console.log('🔍 Product data being sent:', apiData.products);
+      console.log('🔍 First product details:', {
+        productName: productList[0]?.productName,
+        discountPer: productList[0]?.discountPer,
+        splitQty: productList[0]?.splitQty
+      });
+      
+      const result = await EditOrderAPI.submitEditOrder(apiData);
+      
+      if (onSave) {
+        onSave(result);
+      }
+      
     } catch (error) {
-      console.error('Error saving order:', error);
-      alert('Failed to save order. Please try again.');
+      console.error('❌ Error saving order:', error);
+      console.error('❌ Error details:', error.response?.data || error.message);
+      setErrorMessage(error.message || 'Failed to save order. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
+  if (loading) {
+    return (
+      <div className={styles.editForm}>
+        <div style={{ textAlign: 'center', padding: '40px' }}>
+          <p>Loading order data...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <form onSubmit={handleSubmit} className={styles.editForm}>
-      <div className={styles.formHeader}>
-        <h2>{editMode === 'split' ? 'Edit and Split Order' : 'Edit Order'}</h2>
-        
-        {/* Checkbox to show/hide additional fields */}
-        <div className={styles.toggleFieldsContainer}>
-          <label className={styles.toggleFieldsLabel}>
-            <input
-              type="checkbox"
-              checked={showAdditionalFields}
-              onChange={(e) => setShowAdditionalFields(e.target.checked)}
-              className={styles.toggleCheckbox}
-            />
-            <span>Show Additional Fields</span>
+      {errorMessage && (
+        <div className={styles.errorMessage}>
+          {errorMessage}
+        </div>
+      )}
+
+      {/* NEW: Toggle checkbox for additional fields */}
+      <div className={styles.toggleSection}>
+        <div className={styles.toggleCheckbox}>
+          <input
+            type="checkbox"
+            id="showAdditionalFields"
+            checked={showAdditionalFields}
+            onChange={(e) => setShowAdditionalFields(e.target.checked)}
+          />
+          <label htmlFor="showAdditionalFields">
+            Show Additional Fields (Client Info, Shipping Details, Remarks, etc.)
           </label>
         </div>
       </div>
 
-      {/* Client Information Section - Always visible but individual fields can be hidden */}
-      <div className={styles.formSection}>
-        <h3 className={styles.sectionTitle}>Client Information</h3>
-        <div className={styles.formGrid}>
-          {/* These fields are hidden by default */}
+      {/* Edit Order Status */}
+      <div className={styles.section}>
+        <h3 className={styles.sectionTitle}>Edit Order Status</h3>
+        <div className={styles.grid3}>
+          <div className={styles.field}>
+            <label>Edit Order Status</label>
+            <input 
+              type="text" 
+              value={editOrderStatus} 
+              readOnly 
+              className={styles.readonly}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Buyer Details */}
+      <div className={styles.section}>
+        <h3 className={styles.sectionTitle}>Buyer Details</h3>
+        <div className={styles.grid3}>
+          {/* CONDITIONAL: Hidden fields */}
           {showAdditionalFields && (
             <>
-              <div className={styles.formGroup}>
-                <label className={styles.required}>Client Name *</label>
-                <input
-                  type="text"
-                  value={clientName}
-                  onChange={(e) => setClientName(e.target.value)}
-                  required
-                  className={styles.input}
-                />
+              <div className={styles.field}>
+                <label>Client Name <span className={styles.mandatory}>*</span></label>
+                <input type="text" value={clientName} readOnly className={styles.readonly} />
               </div>
-
-              <div className={styles.formGroup}>
-                <label className={styles.required}>Mobile *</label>
-                <input
-                  type="tel"
-                  value={mobile}
-                  onChange={(e) => setMobile(e.target.value)}
-                  required
-                  className={styles.input}
-                />
+              <div className={styles.field}>
+                <label>Mobile <span className={styles.mandatory}>*</span></label>
+                <input type="tel" value={mobile} readOnly className={styles.readonly} />
               </div>
-
-              <div className={styles.formGroup}>
-                <label className={styles.required}>Email *</label>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  className={styles.input}
-                />
+              <div className={styles.field}>
+                <label>Email <span className={styles.mandatory}>*</span></label>
+                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
               </div>
-
-              <div className={styles.formGroup}>
+            </>
+          )}
+          
+          <div className={styles.field}>
+            <label>PIN CODE <span className={styles.mandatory}>*</span></label>
+            <input type="text" value={billingPincode} onChange={(e) => setBillingPincode(e.target.value)} required />
+          </div>
+          
+          {/* CONDITIONAL: Hidden fields */}
+          {showAdditionalFields && (
+            <>
+              <div className={styles.field}>
                 <label>Taluk</label>
-                <input
-                  type="text"
-                  value={taluk}
-                  onChange={(e) => setTaluk(e.target.value)}
-                  className={styles.input}
-                />
+                <input type="text" value={taluk} readOnly className={styles.readonly} />
               </div>
-
-              <div className={styles.formGroup}>
+              <div className={styles.field}>
                 <label>District</label>
-                <input
-                  type="text"
-                  value={district}
-                  onChange={(e) => setDistrict(e.target.value)}
-                  className={styles.input}
-                />
+                <input type="text" value={district} readOnly className={styles.readonly} />
               </div>
-
-              <div className={styles.formGroup}>
+              <div className={styles.field}>
                 <label>State</label>
-                <select
-                  value={state}
-                  onChange={(e) => setState(e.target.value)}
-                  className={styles.select}
-                >
-                  <option value="">Select State</option>
-                  {states.map((s, idx) => (
-                    <option key={idx} value={s}>{s}</option>
-                  ))}
-                </select>
+                <input type="text" value={state} readOnly className={styles.readonly} />
               </div>
-
-              <div className={styles.formGroup}>
-                <label className={styles.required}>GST No. *</label>
-                <input
-                  type="text"
-                  value={gstNo}
-                  onChange={(e) => setGstNo(e.target.value)}
-                  required
-                  className={styles.input}
-                />
+              <div className={styles.field}>
+                <label>GST No. <span className={styles.mandatory}>*</span></label>
+                <input type="text" value={gstNo} onChange={(e) => setGstNo(e.target.value)} />
               </div>
-
-              <div className={styles.formGroup}>
-                <label className={styles.required}>Client Type *</label>
-                <select
-                  value={clientType}
-                  onChange={(e) => setClientType(e.target.value)}
-                  required
-                  className={styles.select}
-                >
-                  <option value="">Select Client Type</option>
-                  {clientTypes.map((type, idx) => (
-                    <option key={idx} value={type}>{type}</option>
-                  ))}
-                </select>
+              <div className={styles.field}>
+                <label>Client Type <span className={styles.mandatory}>*</span></label>
+                <input type="text" value={clientType} readOnly className={styles.readonly} />
               </div>
-
-              <div className={styles.formGroup}>
-                <label className={styles.required}>Client Category *</label>
-                <select
-                  value={clientCategory}
-                  onChange={(e) => setClientCategory(e.target.value)}
-                  required
-                  className={styles.select}
-                >
-                  <option value="">Select Client Category</option>
-                  {clientCategories.map((cat, idx) => (
-                    <option key={idx} value={cat}>{cat}</option>
-                  ))}
+              <div className={styles.field}>
+                <label>Client Category <span className={styles.mandatory}>*</span></label>
+                <input type="text" value={clientCategory} readOnly className={styles.readonly} />
+              </div>
+              <div className={styles.field}>
+                <label>Order Type <span className={styles.mandatory}>*</span></label>
+                <select value={orderType} onChange={(e) => setOrderType(e.target.value)} required>
+                  <option value="">-- select --</option>
+                  <option value="New Order">New Order</option>
+                  <option value="Sample Order">Sample Order</option>
                 </select>
               </div>
             </>
           )}
         </div>
-      </div>
 
-      {/* Address Section */}
-      <div className={styles.formSection}>
-        <h3 className={styles.sectionTitle}>Address Information</h3>
-        <div className={styles.formGrid}>
-          <div className={styles.formGroup} style={{ gridColumn: '1 / -1' }}>
-            <label className={styles.required}>Billing Address *</label>
-            <textarea
-              value={billingAddress}
-              onChange={(e) => setBillingAddress(e.target.value)}
-              required
-              rows={3}
-              className={styles.textarea}
+        {/* Billing and Shipping Address */}
+        <div className={styles.grid2}>
+          <div className={styles.field}>
+            <label>Billing Address <span className={styles.mandatory}>*</span></label>
+            <textarea 
+              value={billingAddress} 
+              onChange={(e) => setBillingAddress(e.target.value)} 
+              required 
+              rows="3" 
             />
           </div>
-
-          <div className={styles.formGroup}>
-            <label className={styles.required}>Billing Pincode *</label>
-            <input
-              type="text"
-              value={billingPincode}
-              onChange={(e) => setBillingPincode(e.target.value)}
-              required
-              className={styles.input}
-            />
-          </div>
-
-          <div className={styles.formGroup} style={{ gridColumn: '1 / -1' }}>
-            <label className={styles.checkboxLabel}>
-              <input
-                type="checkbox"
-                checked={isShippingSameAsBilling}
-                onChange={(e) => setIsShippingSameAsBilling(e.target.checked)}
+          
+          <div className={styles.field}>
+            <label>Shipping Address <span className={styles.mandatory}>*</span></label>
+            <div>
+              <div className={styles.checkboxGroup}>
+                <input
+                  type="checkbox"
+                  id="sameAsBilling"
+                  checked={isShippingSameAsBilling}
+                  onChange={() => {
+                    setIsShippingSameAsBilling(!isShippingSameAsBilling);
+                    if (!isShippingSameAsBilling) {
+                      setShippingAddress(billingAddress);
+                    }
+                  }}
+                />
+                <label htmlFor="sameAsBilling">Check if billing and shipping is same</label>
+              </div>
+              <textarea 
+                value={shippingAddress} 
+                onChange={(e) => setShippingAddress(e.target.value)} 
+                required 
+                rows="3" 
               />
-              Shipping address same as billing address
-            </label>
+            </div>
           </div>
+        </div>
 
-          <div className={styles.formGroup} style={{ gridColumn: '1 / -1' }}>
-            <label className={styles.required}>Shipping Address *</label>
-            <textarea
-              value={shippingAddress}
-              onChange={(e) => setShippingAddress(e.target.value)}
+        <div className={styles.grid2}>
+          <div className={styles.field}>
+            <label>Order Placed to Party <span className={styles.mandatory}>*</span></label>
+            <select 
+              value={partyName} 
+              onChange={(e) => handlePartyNameChange(e.target.value)}
               required
-              disabled={isShippingSameAsBilling}
-              rows={3}
-              className={styles.textarea}
-            />
+            >
+              <option value="">-- Select Party --</option>
+              {deliveryParties.map((party, idx) => (
+                <option key={idx} value={party.name}>
+                  {party.name}
+                </option>
+              ))}
+            </select>
           </div>
-
-          <div className={styles.formGroup}>
-            <label className={styles.required}>Shipping Pincode *</label>
-            <input
-              type="text"
-              value={shippingPincode}
-              onChange={(e) => setShippingPincode(e.target.value)}
-              required
-              disabled={isShippingSameAsBilling}
-              className={styles.input}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Order Details Section */}
-      <div className={styles.formSection}>
-        <h3 className={styles.sectionTitle}>Order Details</h3>
-        <div className={styles.formGrid}>
+          
+          {/* CONDITIONAL: Hidden field */}
           {showAdditionalFields && (
-            <>
-              <div className={styles.formGroup}>
-                <label className={styles.required}>Order Type *</label>
-                <select
-                  value={orderType}
-                  onChange={(e) => setOrderType(e.target.value)}
-                  required
-                  className={styles.select}
-                >
-                  <option value="">Select Order Type</option>
-                  {orderTypes.map((type, idx) => (
-                    <option key={idx} value={type}>{type}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div className={styles.formGroup}>
-                <label className={styles.required}>State (Order Placed to Party) *</label>
-                <select
-                  value={partyState}
-                  onChange={(e) => setPartyState(e.target.value)}
-                  required
-                  className={styles.select}
-                >
-                  <option value="">Select State</option>
-                  {states.map((s, idx) => (
-                    <option key={idx} value={s}>{s}</option>
-                  ))}
-                </select>
-              </div>
-            </>
-          )}
-
-          <div className={styles.formGroup}>
-            <label>Party Name</label>
-            <select
-              value={partyName}
-              onChange={(e) => setPartyName(e.target.value)}
-              className={styles.select}
-            >
-              <option value="">Select Party</option>
-              {partyNames.map((name, idx) => (
-                <option key={idx} value={name}>{name}</option>
-              ))}
-            </select>
-          </div>
-
-          <div className={styles.formGroup}>
-            <label>Delivery Party</label>
-            <input
-              type="text"
-              value={deliveryParty}
-              onChange={(e) => setDeliveryParty(e.target.value)}
-              className={styles.input}
-            />
-          </div>
-
-          <div className={styles.formGroup}>
-            <label>MR Name</label>
-            <select
-              value={mrName}
-              onChange={(e) => setMrName(e.target.value)}
-              className={styles.select}
-            >
-              <option value="">Select MR</option>
-              {mrNames.map((name, idx) => (
-                <option key={idx} value={name}>{name}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-      </div>
-
-      {/* Delivery & Payment Section */}
-      <div className={styles.formSection}>
-        <h3 className={styles.sectionTitle}>Delivery & Payment</h3>
-        <div className={styles.formGrid}>
-          <div className={styles.formGroup}>
-            <label>Delivery Date</label>
-            <input
-              type="date"
-              value={deliveryDate}
-              onChange={(e) => setDeliveryDate(e.target.value)}
-              className={styles.input}
-            />
-          </div>
-
-          <div className={styles.formGroup}>
-            <label>Delivery Time</label>
-            <input
-              type="time"
-              value={deliveryTime}
-              onChange={(e) => setDeliveryTime(e.target.value)}
-              className={styles.input}
-            />
-          </div>
-
-          <div className={styles.formGroup}>
-            <label>Payment Terms</label>
-            <select
-              value={paymentTerms}
-              onChange={(e) => setPaymentTerms(e.target.value)}
-              className={styles.select}
-            >
-              <option value="">Select Payment Terms</option>
-              {paymentTermsList.map((term, idx) => (
-                <option key={idx} value={term}>{term}</option>
-              ))}
-            </select>
-          </div>
-
-          <div className={styles.formGroup}>
-            <label>Payment Mode</label>
-            <select
-              value={paymentMode}
-              onChange={(e) => setPaymentMode(e.target.value)}
-              className={styles.select}
-            >
-              <option value="">Select Payment Mode</option>
-              {paymentModes.map((mode, idx) => (
-                <option key={idx} value={mode}>{mode}</option>
-              ))}
-            </select>
-          </div>
-
-          <div className={styles.formGroup}>
-            <label>Payment Date</label>
-            <input
-              type="date"
-              value={paymentDate}
-              onChange={(e) => setPaymentDate(e.target.value)}
-              className={styles.input}
-            />
-          </div>
-
-          <div className={styles.formGroup}>
-            <label>Order Taken By</label>
-            <input
-              type="text"
-              value={orderBy}
-              onChange={(e) => setOrderBy(e.target.value)}
-              className={styles.input}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Recurring Orders Section */}
-      <div className={styles.formSection}>
-        <h3 className={styles.sectionTitle}>Recurring Orders</h3>
-        <div className={styles.formGrid}>
-          <div className={styles.formGroup}>
-            <label>Reoccurrence</label>
-            <input
-              type="text"
-              value={reoccurance}
-              onChange={(e) => setReoccurance(e.target.value)}
-              className={styles.input}
-              placeholder="e.g., Monthly, Weekly"
-            />
-          </div>
-
-          {showAdditionalFields && (
-            <>
-              <div className={styles.formGroup}>
-                <label>Next Order Fixed Date</label>
-                <input
-                  type="date"
-                  value={nextOrderFixedDate}
-                  onChange={(e) => setNextOrderFixedDate(e.target.value)}
-                  className={styles.input}
-                />
-              </div>
-
-              <div className={styles.formGroup}>
-                <label>Reoccurrence Interval</label>
-                <input
-                  type="text"
-                  value={reoccurrenceInterval}
-                  onChange={(e) => setReoccurrenceInterval(e.target.value)}
-                  className={styles.input}
-                  placeholder="e.g., 30 days"
-                />
-              </div>
-
-              <div className={styles.formGroup}>
-                <label>End Date</label>
-                <input
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  className={styles.input}
-                />
-              </div>
-            </>
-          )}
-
-          <div className={styles.formGroup}>
-            <label>Next Order Date</label>
-            <input
-              type="date"
-              value={nextOrderDate}
-              onChange={(e) => setNextOrderDate(e.target.value)}
-              className={styles.input}
-            />
-          </div>
-
-          <div className={styles.formGroup}>
-            <label>End Order Date</label>
-            <input
-              type="date"
-              value={endOrderDate}
-              onChange={(e) => setEndOrderDate(e.target.value)}
-              className={styles.input}
-            />
-          </div>
-
-          <div className={styles.formGroup}>
-            <label>Priority</label>
-            <select
-              value={priority}
-              onChange={(e) => setPriority(e.target.value)}
-              className={styles.select}
-            >
-              <option value="">Select Priority</option>
-              {priorities.map((p, idx) => (
-                <option key={idx} value={p}>{p}</option>
-              ))}
-            </select>
-          </div>
-
-          {showAdditionalFields && (
-            <div className={styles.formGroup}>
-              <label>Rocket Client</label>
-              <input
-                type="text"
-                value={rocketClient}
-                onChange={(e) => setRocketClient(e.target.value)}
-                className={styles.input}
-              />
+            <div className={styles.field}>
+              <label>State (Order Placed to Party) <span className={styles.mandatory}>*</span></label>
+              <input type="text" value={partyState} readOnly className={styles.readonly} />
             </div>
           )}
         </div>
       </div>
 
-      {/* Charges Section */}
-      <div className={styles.formSection}>
-        <h3 className={styles.sectionTitle}>Charges & Discounts</h3>
-        <div className={styles.formGrid}>
-          <div className={styles.formGroup}>
-            <label>Discount Tier</label>
-            <select
-              value={discountTier}
-              onChange={(e) => setDiscountTier(e.target.value)}
-              className={styles.select}
-            >
-              <option value="">Select Discount Tier</option>
-              {discountTiers.map((tier, idx) => (
-                <option key={idx} value={tier}>{tier}</option>
+      {/* Discounts */}
+      <div className={styles.section}>
+        <div className={styles.sectionHeader}>
+          <h3 className={styles.sectionTitle}>Discounts</h3>
+          <button 
+            type="button" 
+            className={styles.toggleButton}
+            onClick={() => setShowDiscounts(!showDiscounts)}
+          >
+            {showDiscounts ? '▲ Hide' : '▼ Show'} Discounts
+          </button>
+        </div>
+        
+        <div className={styles.grid3}>
+          <div className={styles.field}>
+            <label>Discount Tier <span className={styles.mandatory}>*</span></label>
+            <input 
+              type="text" 
+              value={discountTier} 
+              readOnly 
+              className={styles.readonly}
+            />
+          </div>
+        </div>
+
+        {showDiscounts && (
+          <div className={styles.discountTable}>
+            <table className={styles.table}>
+              <thead>
+                <tr>
+                  <th>Discount Category</th>
+                  <th>Discount %</th>
+                </tr>
+              </thead>
+              <tbody>
+                {discounts.map((d, i) => (
+                  <tr key={i}>
+                    <td>
+                      <input
+                        type="text"
+                        value={d.category}
+                        readOnly
+                        className={styles.readonly}
+                      />
+                    </td>
+                    <td>
+                      <input
+                        type="number"
+                        value={d.percentage}
+                        readOnly
+                        className={styles.readonly}
+                      />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Products */}
+      <div className={styles.section}>
+        <div className={styles.sectionHeader}>
+          <h3 className={styles.sectionTitle}>Add Product Details</h3>
+          <button type="button" onClick={addProduct} className={styles.btnAdd}>+ Add More</button>
+        </div>
+        
+        <div className={styles.productsTable}>
+          <table className={styles.productsTable}>
+            <thead>
+              <tr>
+                <th>Select Products</th>
+                <th>MRP</th>
+                <th>Packing Size</th>
+                <th>Qty.</th>
+                <th colSpan="2">Discount %</th>
+                <th>Dis. Amt</th>
+                <th>Taxable Before Dis.</th>
+                <th>Taxable After Dis.</th>
+                <th colSpan="2">Tax(CGST)</th>
+                <th colSpan="2">Tax(SGST)</th>
+                <th colSpan="2">Tax(IGST)</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {productList.map((product, index) => (
+                <tr key={index}>
+                  <td>
+                    <select 
+                      value={product.productName}
+                      onChange={(e) => updateProduct(index, 'productName', e.target.value)}
+                      className={styles.productDropdown}
+                    >
+                      <option value="">-- Select Product --</option>
+                      {productListOptions.map((p, i) => (
+                        <option key={i} value={p.combinedName}>
+                          {p.combinedName}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
+                  <td><input type="text" value={product.mrp} readOnly className={styles.readonly} /></td>
+                  <td><input type="text" value={product.packingSize} readOnly className={styles.readonly} /></td>
+                  <td>
+                    <input 
+                      type="number" 
+                      value={product.quantity}
+                      onChange={(e) => updateProduct(index, 'quantity', e.target.value)}
+                      className={styles.numberInput}
+                    />
+                  </td>
+                  <td colSpan="2">
+                    <input 
+                      type="number" 
+                      value={product.discountPer}
+                      onChange={(e) => updateProduct(index, 'discountPer', e.target.value)}
+                      title={`Max: ${getMaxDiscount(product.productCategory)}%`}
+                      className={styles.numberInput}
+                    />
+                  </td>
+                  <td><input type="text" value={product.discountAmt} readOnly className={styles.readonly} /></td>
+                  <td><input type="text" value={product.beforeTax} readOnly className={styles.readonly} /></td>
+                  <td><input type="text" value={product.afterDiscount} readOnly className={styles.readonly} /></td>
+                  <td colSpan="2"><input type="text" value={product.cgst} readOnly className={styles.readonly} /></td>
+                  <td colSpan="2"><input type="text" value={product.sgst} readOnly className={styles.readonly} /></td>
+                  <td colSpan="2"><input type="text" value={product.igst} readOnly className={styles.readonly} /></td>
+                  <td><input type="text" value={product.total} readOnly className={styles.readonly} /></td>
+                </tr>
               ))}
-            </select>
+              {/* Total Row */}
+              <tr className={styles.totalRow}>
+                <td className={styles.totalLabel}>Total</td>
+                <td><input type="text" value={totals.mrpTotal} readOnly className={styles.readonly} /></td>
+                <td></td>
+                <td><input type="text" value={totals.qtyTotal} readOnly className={styles.readonly} /></td>
+                <td colSpan="2"></td>
+                <td><input type="text" value={totals.discountTotal} readOnly className={styles.readonly} /></td>
+                <td><input type="text" value={totals.taxBeforeTotal} readOnly className={styles.readonly} /></td>
+                <td><input type="text" value={totals.taxAfterTotal} readOnly className={styles.readonly} /></td>
+                <td colSpan="6"></td>
+                <td className={styles.finalTotal}><input type="text" value={totals.totalAmount} readOnly className={styles.readonly} /></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        {/* Total Amount Display */}
+        <div className={styles.totalAmountSection}>
+          <div className={styles.totalAmountRow}>
+            <span>Total Amount Before Discount:</span>
+            <strong className={styles.beforeAmount}>Rs. {beforeAmount}/-</strong>
           </div>
-
-          <div className={styles.formGroup}>
-            <label>Shipping Charges</label>
-            <input
-              type="number"
-              step="0.01"
-              value={shippingCharges}
-              onChange={(e) => setShippingCharges(e.target.value)}
-              className={styles.input}
-            />
+          <div className={styles.totalAmountRow}>
+            <span>Total Amount After Discount:</span>
+            <strong className={styles.afterAmount}>Rs. {afterAmount}/-</strong>
           </div>
-
-          <div className={styles.formGroup}>
-            <label>Packing Charges</label>
-            <input
-              type="number"
-              step="0.01"
-              value={packingCharges}
-              onChange={(e) => setPackingCharges(e.target.value)}
-              className={styles.input}
-            />
-          </div>
-
-          <div className={styles.formGroup}>
-            <label>Delivery Charges</label>
-            <input
-              type="number"
-              step="0.01"
-              value={deliveryCharges}
-              onChange={(e) => setDeliveryCharges(e.target.value)}
-              className={styles.input}
-            />
-          </div>
-
-          {showAdditionalFields && (
-            <>
-              <div className={styles.formGroup}>
-                <label>Shipping, Packing and Delivery Charges (Amount):</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={shippingPackingCharges}
-                  onChange={(e) => setShippingPackingCharges(e.target.value)}
-                  className={styles.input}
-                />
-              </div>
-
-              <div className={styles.formGroup}>
-                <label>Total Shipping Charge (Amount):</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={totalShippingCharge}
-                  onChange={(e) => setTotalShippingCharge(e.target.value)}
-                  className={styles.input}
-                />
-              </div>
-            </>
-          )}
         </div>
       </div>
 
-      {/* Additional Hidden Fields Section */}
+      {/* Additional Details - CONDITIONAL */}
       {showAdditionalFields && (
-        <div className={styles.formSection}>
-          <h3 className={styles.sectionTitle}>Additional Information</h3>
-          <div className={styles.formGrid}>
-            <div className={styles.formGroup} style={{ gridColumn: '1 / -1' }}>
+        <div className={styles.section}>
+          <h3 className={styles.sectionTitle}>Additional Details</h3>
+          <div className={styles.grid3}>
+            <div className={styles.field}>
+              <label>Shipping, Packing and Delivery Charges (Amount):</label>
+              <input type="number" value={shippingCharges} onChange={(e) => setShippingCharges(e.target.value)} />
+            </div>
+            <div className={styles.field}>
               <label>Note (Remarks):</label>
-              <textarea
-                value={noteRemarks}
-                onChange={(e) => setNoteRemarks(e.target.value)}
-                rows={3}
-                className={styles.textarea}
-              />
+              <input type="text" value={shippingChargesRemark} onChange={(e) => setShippingChargesRemark(e.target.value)} />
             </div>
-
-            <div className={styles.formGroup}>
+            <div className={styles.field}>
+              <label>Shipping Tax (%):</label>
+              <input type="number" value={shippingTaxPercent} readOnly className={styles.readonly} />
+            </div>
+            <div className={styles.field}>
               <label>Type of (Remarks):</label>
-              <input
-                type="text"
-                value={typeOfRemarks1}
-                onChange={(e) => setTypeOfRemarks1(e.target.value)}
-                className={styles.input}
-              />
+              <input type="text" value={shippingTaxPercentRemark} onChange={(e) => setShippingTaxPercentRemark(e.target.value)} />
             </div>
-
-            <div className={styles.formGroup}>
+            <div className={styles.field}>
+              <label>Total Shipping Charge (Amount):</label>
+              <input type="number" value={totalShippingCharge} readOnly className={styles.readonly} />
+            </div>
+            <div className={styles.field}>
               <label>Type of (Remarks):</label>
-              <input
-                type="text"
-                value={typeOfRemarks2}
-                onChange={(e) => setTypeOfRemarks2(e.target.value)}
-                className={styles.input}
-              />
-            </div>
-
-            <div className={styles.formGroup}>
-              <label>Preferred Call Time 2</label>
-              <input
-                type="time"
-                value={preferredCallTime2}
-                onChange={(e) => setPreferredCallTime2(e.target.value)}
-                className={styles.input}
-              />
-            </div>
-
-            <div className={styles.formGroup}>
-              <label>Expected Time of Dispatch</label>
-              <input
-                type="datetime-local"
-                value={expectedDispatchTime}
-                onChange={(e) => setExpectedDispatchTime(e.target.value)}
-                className={styles.input}
-              />
-            </div>
-
-            <div className={styles.formGroup} style={{ gridColumn: '1 / -1' }}>
-              <label>Remarks</label>
-              <textarea
-                value={remarks}
-                onChange={(e) => setRemarks(e.target.value)}
-                rows={3}
-                className={styles.textarea}
-              />
-            </div>
-
-            <div className={styles.formGroup} style={{ gridColumn: '1 / -1' }}>
-              <label>Remarks - Show to Kairali Team</label>
-              <textarea
-                value={remarksKairaliTeam}
-                onChange={(e) => setRemarksKairaliTeam(e.target.value)}
-                rows={3}
-                className={styles.textarea}
-              />
-            </div>
-
-            <div className={styles.formGroup} style={{ gridColumn: '1 / -1' }}>
-              <label>Remarks - Show in Invoice</label>
-              <textarea
-                value={remarksInvoice}
-                onChange={(e) => setRemarksInvoice(e.target.value)}
-                rows={3}
-                className={styles.textarea}
-              />
-            </div>
-
-            <div className={styles.formGroup} style={{ gridColumn: '1 / -1' }}>
-              <label>Remarks - Show to Dispatch Team</label>
-              <textarea
-                value={remarksDispatchTeam}
-                onChange={(e) => setRemarksDispatchTeam(e.target.value)}
-                rows={3}
-                className={styles.textarea}
-              />
-            </div>
-
-            <div className={styles.formGroup}>
-              <label>Available MR/ASM</label>
-              <input
-                type="text"
-                value={availableMRASM}
-                onChange={(e) => setAvailableMRASM(e.target.value)}
-                className={styles.input}
-              />
-            </div>
-
-            <div className={styles.formGroup}>
-              <label>Images/Invoice Upload</label>
-              <input
-                type="text"
-                value={imagesInvoiceUpload}
-                onChange={(e) => setImagesInvoiceUpload(e.target.value)}
-                className={styles.input}
-                placeholder="URL or file path"
-              />
+              <input type="text" value={totalShippingChargeRemark} onChange={(e) => setTotalShippingChargeRemark(e.target.value)} />
             </div>
           </div>
         </div>
       )}
 
-      {/* Order Items Section */}
-      <div className={styles.formSection}>
-        <h3 className={styles.sectionTitle}>Order Items</h3>
-        
-        {orderItems.map((item, index) => (
-          <div key={index} className={styles.productLine}>
-            <div className={styles.formGrid}>
-              <div className={styles.formGroup}>
-                <label>Product Name</label>
-                <select
-                  value={item.productName}
-                  onChange={(e) => {
-                    const selectedProduct = products.find(p => p.name === e.target.value);
-                    handleProductChange(index, 'productName', e.target.value);
-                    if (selectedProduct) {
-                      handleProductChange(index, 'hsn', selectedProduct.hsn);
-                      handleProductChange(index, 'rate', selectedProduct.rate);
-                    }
-                  }}
-                  className={styles.select}
-                >
-                  <option value="">Select Product</option>
-                  {products.map((product, idx) => (
-                    <option key={idx} value={product.name}>{product.name}</option>
-                  ))}
-                </select>
-              </div>
+      {/* Payment and Delivery */}
+      <div className={styles.section}>
+        <h3 className={styles.sectionTitle}>Payment and Delivery</h3>
+        <div className={styles.grid3}>
+          <div className={styles.field}>
+            <label>Preferred Call Time 1</label>
+            <input type="time" value={preferredCallTime1} onChange={(e) => setPreferredCallTime1(e.target.value)} />
+          </div>
+          
+          {/* CONDITIONAL: Hidden field */}
+          {showAdditionalFields && (
+            <div className={styles.field}>
+              <label>Preferred Call Time 2</label>
+              <input type="time" value={preferredCallTime2} onChange={(e) => setPreferredCallTime2(e.target.value)} />
+            </div>
+          )}
+          
+          <div className={styles.field}>
+            <label>Delivery Required By - Date</label>
+            <input type="date" value={deliveryDate} onChange={(e) => setDeliveryDate(e.target.value)} />
+          </div>
+          <div className={styles.field}>
+            <label>Payment Terms <span className={styles.mandatory}>*</span></label>
+            <select value={paymentTerms} onChange={(e) => setPaymentTerms(e.target.value)} required>
+              <option value="">-- Select Payment Terms --</option>
+              <option value="Credit">Credit</option>
+              <option value="Post Dated Cheque - Credit">Post Dated Cheque - Credit</option>
+              <option value="Advance">Advance</option>
+              <option value="Fully Paid">Fully Paid</option>
+              <option value="Sample">Sample</option>
+              <option value="Barter">Barter</option>
+              <option value="Others">Others</option>
+            </select>
+          </div>
+          <div className={styles.field}>
+            <label>Payment Mode <span className={styles.mandatory}>*</span></label>
+            <select value={paymentMode} onChange={(e) => setPaymentMode(e.target.value)} required>
+              <option value="">-- Select Payment Mode --</option>
+              <option value="Cash">Cash</option>
+              <option value="Cheque">Cheque</option>
+              <option value="COD">COD</option>
+              <option value="UPI">UPI</option>
+              <option value="Bank Transfer">Bank Transfer</option>
+              <option value="Wallet">Wallet</option>
+              <option value="Credit">Credit</option>
+              <option value="Paytm">Paytm</option>
+              <option value="Sample/Barter">Sample/Barter</option>
+              <option value="Credit Card">Credit Card</option>
+              <option value="Others">Others</option>
+            </select>
+          </div>
+          <div className={styles.field}>
+            <label>Payment collection date 1</label>
+            <input type="date" value={paymentDate} onChange={(e) => setPaymentDate(e.target.value)} />
+          </div>
+        </div>
+      </div>
 
-              <div className={styles.formGroup}>
-                <label>HSN Code</label>
-                <input
-                  type="text"
-                  value={item.hsn}
-                  onChange={(e) => handleProductChange(index, 'hsn', e.target.value)}
-                  className={styles.input}
+      {/* Payment Terms and Others - CONDITIONAL */}
+      {showAdditionalFields && (
+        <div className={styles.section}>
+          <h3 className={styles.sectionTitle}>Payment Terms and Others</h3>
+          <div className={styles.grid3}>
+            <div className={styles.field}>
+              <label>Expected Date of Dispatch</label>
+              <input type="date" value={dispatchDate} onChange={(e) => setDispatchDate(e.target.value)} />
+            </div>
+            <div className={styles.field}>
+              <label>Expected Time of Dispatch</label>
+              <input type="time" value={dispatchTime} onChange={(e) => setDispatchTime(e.target.value)} />
+            </div>
+            <div className={styles.field}>
+              <label>Next Order Fixed Date</label>
+              <input type="date" value={nextOrderDate} onChange={(e) => setNextOrderDate(e.target.value)} />
+            </div>
+            <div className={styles.field}>
+              <label>Reoccurrence Interval</label>
+              <select value={reoccurance} onChange={(e) => setReoccurance(e.target.value)}>
+                <option value="">-- select --</option>
+                <option value="Weekly">Weekly</option>
+                <option value="Monthly">Monthly</option>
+                <option value="Yearly">Yearly</option>
+              </select>
+            </div>
+            <div className={styles.field}>
+              <label>End Date</label>
+              <input type="date" value={endOrderDate} onChange={(e) => setEndOrderDate(e.target.value)} />
+            </div>
+            <div className={styles.field}>
+              <label>Rocket Client</label>
+              <div className={styles.checkboxGroup}>
+                <input 
+                  type="checkbox" 
+                  id="priority" 
+                  checked={priority === 'Yes'}
+                  onChange={(e) => setPriority(e.target.checked ? 'Yes' : '')}
                 />
-              </div>
-
-              <div className={styles.formGroup}>
-                <label>Quantity</label>
-                <input
-                  type="number"
-                  value={item.quantity}
-                  onChange={(e) => handleProductChange(index, 'quantity', parseFloat(e.target.value) || 0)}
-                  className={styles.input}
-                />
-              </div>
-
-              <div className={styles.formGroup}>
-                <label>Rate</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={item.rate}
-                  onChange={(e) => handleProductChange(index, 'rate', parseFloat(e.target.value) || 0)}
-                  className={styles.input}
-                />
-              </div>
-
-              <div className={styles.formGroup}>
-                <label>Total</label>
-                <input
-                  type="number"
-                  value={item.total}
-                  readOnly
-                  className={styles.input}
-                  style={{ background: '#f8fafc' }}
-                />
-              </div>
-
-              <div className={styles.formGroup}>
-                <button
-                  type="button"
-                  onClick={() => removeProductLine(index)}
-                  className={styles.removeButton}
-                >
-                  Remove
-                </button>
+                <label htmlFor="priority">Yes</label>
               </div>
             </div>
           </div>
-        ))}
+        </div>
+      )}
 
-        <button
-          type="button"
-          onClick={addProductLine}
-          className={styles.addButton}
-        >
-          + Add Product Line
-        </button>
+      {/* Remarks - CONDITIONAL */}
+      {showAdditionalFields && (
+        <div className={styles.section}>
+          <h3 className={styles.sectionTitle}>Remarks</h3>
+          <div className={styles.grid3}>
+            <div className={styles.field}>
+              <label>Remarks - Show to Kairali Team</label>
+              <input type="text" value={saleTermRemark} onChange={(e) => setSaleTermRemark(e.target.value)} />
+            </div>
+            <div className={styles.field}>
+              <label>Remarks - Show in Invoice</label>
+              <input type="text" value={invoiceRemark} onChange={(e) => setInvoiceRemark(e.target.value)} />
+            </div>
+            <div className={styles.field}>
+              <label>Remarks - Show to Dispatch Team</label>
+              <input type="text" value={warehouseRemark} onChange={(e) => setWarehouseRemark(e.target.value)} />
+            </div>
+            <div className={styles.field}>
+              <label>Available MR/ASM</label>
+              <input type="text" value={mrName} readOnly className={styles.readonly} />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* File Upload and OTIF */}
+      <div className={styles.section}>
+        <h3 className={styles.sectionTitle}>Images/ Invoice Upload & Others</h3>
+        <div className={styles.grid3}>
+          {/* CONDITIONAL: Hidden field */}
+          {showAdditionalFields && (
+            <div className={styles.field}>
+              <label>Images/Invoice Upload</label>
+              <input type="file" onChange={(e) => {
+                const selectedFile = e.target.files[0];
+                if (selectedFile) {
+                  const reader = new FileReader();
+                  reader.onloadend = () => {
+                    setFileData(reader.result.split(',')[1]);
+                    setFile(selectedFile);
+                  };
+                  reader.readAsDataURL(selectedFile);
+                }
+              }} />
+            </div>
+          )}
+          
+          <div className={styles.field}>
+            <label>Order Place by</label>
+            <select 
+              value={orderBy} 
+              onChange={(e) => setOrderBy(e.target.value)}
+              required
+            >
+              <option value="">-- Select Employee --</option>
+              {employeeList.map((employee, idx) => (
+                <option key={idx} value={employee}>
+                  {employee}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className={styles.field}>
+            <label>Is order in Full - Yes/No <span className={styles.mandatory}>*</span></label>
+            <select value={orderInFull} onChange={(e) => setOrderInFull(e.target.value)} required>
+              <option value="">--Select--</option>
+              <option value="Yes">Yes</option>
+              <option value="No">No</option>
+            </select>
+          </div>
+          <div className={styles.field}>
+            <label>Reason (If No)</label>
+            <select value={orderInFullReason} onChange={(e) => setOrderInFullReason(e.target.value)}>
+              <option value="">--Select--</option>
+              <option value="Shortage of Stock">Shortage of Stock</option>
+              <option value="Incorrect Discount">Incorrect Discount</option>
+              <option value="Payment issue">Payment issue</option>
+              <option value="Shippers issue">Shippers issue</option>
+              <option value="Employee issue such as leave, absent etc">Employee issue such as leave, absent etc</option>
+              <option value="Technical Issues">Technical Issues</option>
+              <option value="Short Expiry">Short Expiry</option>
+              <option value="Duplicate Order">Duplicate Order</option>
+              <option value="Edited and Reorderd">Edited and Reorderd</option>
+              <option value="Labelling issue">Labelling issue</option>
+              <option value="Botteling issue">Botteling issue</option>
+              <option value="Packaging issue">Packaging issue</option>
+              <option value="Raw material supply issue">Raw material supply issue</option>
+              <option value="Production damage">Production damage</option>
+              <option value="Storage damage">Storage damage</option>
+              <option value="Others">Others</option>
+            </select>
+          </div>
+        </div>
       </div>
 
       {/* Form Actions */}
       <div className={styles.formActions}>
-        <button
-          type="button"
-          onClick={onCancel}
-          className={styles.cancelButton}
-        >
+        <button type="button" onClick={onCancel} className={styles.btnCancel}>
           Cancel
         </button>
-        <button
-          type="submit"
-          className={styles.saveButton}
+        <button 
+          type="submit" 
+          className={styles.btnSubmit}
+          disabled={clientNotFound}
         >
-          {editMode === 'split' ? 'Save and Split' : 'Save Changes'}
+          Save Changes
         </button>
       </div>
+
+      {clientNotFound && (
+        <div className={styles.errorMessage}>
+          ⚠️ This order cannot be edited because the mobile number was not found or not verified in the Client List.
+        </div>
+      )}
     </form>
   );
 }
