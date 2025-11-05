@@ -106,8 +106,8 @@ const [paymentDate3, setPaymentDate3] = useState('');
 const [paymentDate4, setPaymentDate4] = useState('');
 const [paymentDate5, setPaymentDate5] = useState('');
 const [deliveryDateBy, setDeliveryDateBy] = useState('');
-const [orderType, setOrderType] = useState('');
-const [partyState, setPartyState] = useState('');
+
+
 
   // Calculate totals whenever productList changes
   useEffect(() => {
