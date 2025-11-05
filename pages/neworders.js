@@ -370,7 +370,8 @@ const handleSaveEditOrder = async (result) => {
       'Order Status': newOrderStatus,
       'Remarks*': editRemark,
       'Last Edited By': user.username,
-      'Last Edited At': new Date().toISOString()
+      'Last Edited At': new Date().toISOString(),
+       'Actual': new Date().toISOString()  // 🔥 Set Actual field on client side
     };
 
     const columnUpdates = {
