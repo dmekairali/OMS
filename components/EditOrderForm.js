@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import Select from 'react-select';
 import styles from '../styles/EditOrderForm.module.css';
 import SetupDataService from '../services/SetupDataService';
 import EditOrderAPI from '../services/editOrderAPI';
@@ -777,11 +778,15 @@ const [deliveryDateBy, setDeliveryDateBy] = useState('');
           </div>
           <div className={styles.field}>
             <label>Order Type <span className={styles.mandatory}>*</span></label>
-            <select value={orderType} onChange={(e) => setOrderType(e.target.value)} required>
-              <option value="">-- select --</option>
-              <option value="New Order">New Order</option>
-              <option value="Sample Order">Sample Order</option>
-            </select>
+            <Select
+              value={{ label: orderType, value: orderType }}
+              onChange={(selectedOption) => setOrderType(selectedOption.value)}
+              options={[
+                { value: 'New Order', label: 'New Order' },
+                { value: 'Sample Order', label: 'Sample Order' },
+              ]}
+              required
+            />
           </div>
         </div>
 
@@ -827,18 +832,15 @@ const [deliveryDateBy, setDeliveryDateBy] = useState('');
         <div className={styles.grid2}>
           <div className={styles.field}>
             <label>Order Placed to Party <span className={styles.mandatory}>*</span></label>
-            <select 
-              value={partyName} 
-              onChange={(e) => handlePartyNameChange(e.target.value)}
+            <Select
+              value={{ label: partyName, value: partyName }}
+              onChange={(selectedOption) => handlePartyNameChange(selectedOption.value)}
+              options={deliveryParties.map((party) => ({
+                value: party.name,
+                label: party.name,
+              }))}
               required
-            >
-              <option value="">-- Select Party --</option>
-              {deliveryParties.map((party, idx) => (
-                <option key={idx} value={party.name}>
-                  {party.name}
-                </option>
-              ))}
-            </select>
+            />
           </div>
           <div className={styles.field}>
             <label>State (Order Placed to Party) <span className={styles.mandatory}>*</span></label>
@@ -937,18 +939,20 @@ const [deliveryDateBy, setDeliveryDateBy] = useState('');
               {productList.map((product, index) => (
                 <tr key={index}>
                   <td>
-                    <select 
-                      value={product.productName}
-                      onChange={(e) => updateProduct(index, 'productName', e.target.value)}
+                    <Select
+                      value={{
+                        label: product.productName,
+                        value: product.productName,
+                      }}
+                      onChange={(selectedOption) =>
+                        updateProduct(index, 'productName', selectedOption.value)
+                      }
+                      options={productListOptions.map((p) => ({
+                        value: p.combinedName,
+                        label: p.combinedName,
+                      }))}
                       className={styles.productDropdown}
-                    >
-                      <option value="">-- Select Product --</option>
-                      {productListOptions.map((p, i) => (
-                        <option key={i} value={p.combinedName}>
-                          {p.combinedName}
-                        </option>
-                      ))}
-                    </select>
+                    />
                   </td>
                   <td><input type="text" value={product.mrp} readOnly className={styles.readonly} /></td>
                   <td><input type="text" value={product.packingSize} readOnly className={styles.readonly} /></td>
@@ -1070,20 +1074,24 @@ const [deliveryDateBy, setDeliveryDateBy] = useState('');
           </div>
           <div className={styles.field}>
             <label>Payment Mode <span className={styles.mandatory}>*</span></label>
-            <select value={paymentMode} onChange={(e) => setPaymentMode(e.target.value)} required>
-              <option value="">-- Select Payment Mode --</option>
-              <option value="Cash">Cash</option>
-              <option value="Cheque">Cheque</option>
-              <option value="COD">COD</option>
-              <option value="UPI">UPI</option>
-              <option value="Bank Transfer">Bank Transfer</option>
-              <option value="Wallet">Wallet</option>
-              <option value="Credit">Credit</option>
-              <option value="Paytm">Paytm</option>
-              <option value="Sample/Barter">Sample/Barter</option>
-              <option value="Credit Card">Credit Card</option>
-              <option value="Others">Others</option>
-            </select>
+            <Select
+              value={{ label: paymentMode, value: paymentMode }}
+              onChange={(selectedOption) => setPaymentMode(selectedOption.value)}
+              options={[
+                { value: 'Cash', label: 'Cash' },
+                { value: 'Cheque', label: 'Cheque' },
+                { value: 'COD', label: 'COD' },
+                { value: 'UPI', label: 'UPI' },
+                { value: 'Bank Transfer', label: 'Bank Transfer' },
+                { value: 'Wallet', label: 'Wallet' },
+                { value: 'Credit', label: 'Credit' },
+                { value: 'Paytm', label: 'Paytm' },
+                { value: 'Sample/Barter', label: 'Sample/Barter' },
+                { value: 'Credit Card', label: 'Credit Card' },
+                { value: 'Others', label: 'Others' },
+              ]}
+              required
+            />
           </div>
           <div className={styles.field}>
             <label>Payment collection date 1</label>
@@ -1110,12 +1118,15 @@ const [deliveryDateBy, setDeliveryDateBy] = useState('');
           </div>
           <div className={styles.field}>
             <label>Reoccurrence Interval</label>
-            <select value={reoccurance} onChange={(e) => setReoccurance(e.target.value)}>
-              <option value="">-- select --</option>
-              <option value="Weekly">Weekly</option>
-              <option value="Monthly">Monthly</option>
-              <option value="Yearly">Yearly</option>
-            </select>
+            <Select
+              value={{ label: reoccurance, value: reoccurance }}
+              onChange={(selectedOption) => setReoccurance(selectedOption.value)}
+              options={[
+                { value: 'Weekly', label: 'Weekly' },
+                { value: 'Monthly', label: 'Monthly' },
+                { value: 'Yearly', label: 'Yearly' },
+              ]}
+            />
           </div>
           <div className={styles.field}>
             <label>End Date</label>
@@ -1179,48 +1190,66 @@ const [deliveryDateBy, setDeliveryDateBy] = useState('');
           </div>
           <div className={styles.field}>
             <label>Order Place by</label>
-            <select 
-              value={orderBy} 
-              onChange={(e) => setOrderBy(e.target.value)}
+            <Select
+              value={{ label: orderBy, value: orderBy }}
+              onChange={(selectedOption) => setOrderBy(selectedOption.value)}
+              options={employeeList.map((employee) => ({
+                value: employee,
+                label: employee,
+              }))}
               required
-            >
-              <option value="">-- Select Employee --</option>
-              {employeeList.map((employee, idx) => (
-                <option key={idx} value={employee}>
-                  {employee}
-                </option>
-              ))}
-            </select>
+            />
           </div>
           <div className={styles.field}>
             <label>Is order in Full - Yes/No <span className={styles.mandatory}>*</span></label>
-            <select value={orderInFull} onChange={(e) => setOrderInFull(e.target.value)} required>
-              <option value="">--Select--</option>
-              <option value="Yes">Yes</option>
-              <option value="No">No</option>
-            </select>
+            <Select
+              value={{ label: orderInFull, value: orderInFull }}
+              onChange={(selectedOption) => setOrderInFull(selectedOption.value)}
+              options={[
+                { value: 'Yes', label: 'Yes' },
+                { value: 'No', label: 'No' },
+              ]}
+              required
+            />
           </div>
           <div className={styles.field}>
             <label>Reason (If No)</label>
-            <select value={orderInFullReason} onChange={(e) => setOrderInFullReason(e.target.value)}>
-              <option value="">--Select--</option>
-              <option value="Shortage of Stock">Shortage of Stock</option>
-              <option value="Incorrect Discount">Incorrect Discount</option>
-              <option value="Payment issue">Payment issue</option>
-              <option value="Shippers issue">Shippers issue</option>
-              <option value="Employee issue such as leave, absent etc">Employee issue such as leave, absent etc</option>
-              <option value="Technical Issues">Technical Issues</option>
-              <option value="Short Expiry">Short Expiry</option>
-              <option value="Duplicate Order">Duplicate Order</option>
-              <option value="Edited and Reorderd">Edited and Reorderd</option>
-              <option value="Labelling issue">Labelling issue</option>
-              <option value="Botteling issue">Botteling issue</option>
-              <option value="Packaging issue">Packaging issue</option>
-              <option value="Raw material supply issue">Raw material supply issue</option>
-              <option value="Production damage">Production damage</option>
-              <option value="Storage damage">Storage damage</option>
-              <option value="Others">Others</option>
-            </select>
+            <Select
+              value={{
+                label: orderInFullReason,
+                value: orderInFullReason,
+              }}
+              onChange={(selectedOption) =>
+                setOrderInFullReason(selectedOption.value)
+              }
+              options={[
+                { value: 'Shortage of Stock', label: 'Shortage of Stock' },
+                {
+                  value: 'Incorrect Discount',
+                  label: 'Incorrect Discount',
+                },
+                { value: 'Payment issue', label: 'Payment issue' },
+                { value: 'Shippers issue', label: 'Shippers issue' },
+                {
+                  value: 'Employee issue such as leave, absent etc',
+                  label: 'Employee issue such as leave, absent etc',
+                },
+                { value: 'Technical Issues', label: 'Technical Issues' },
+                { value: 'Short Expiry', label: 'Short Expiry' },
+                { value: 'Duplicate Order', label: 'Duplicate Order' },
+                { value: 'Edited and Reorderd', label: 'Edited and Reorderd' },
+                { value: 'Labelling issue', label: 'Labelling issue' },
+                { value: 'Botteling issue', label: 'Botteling issue' },
+                { value: 'Packaging issue', label: 'Packaging issue' },
+                {
+                  value: 'Raw material supply issue',
+                  label: 'Raw material supply issue',
+                },
+                { value: 'Production damage', label: 'Production damage' },
+                { value: 'Storage damage', label: 'Storage damage' },
+                { value: 'Others', label: 'Others' },
+              ]}
+            />
           </div>
         </div>
       </div>
