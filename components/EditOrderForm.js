@@ -111,59 +111,133 @@ const [deliveryDateBy, setDeliveryDateBy] = useState('');
 
 
   // Calculate totals whenever productList changes
-  useEffect(() => {
-    calculateTotals();
-  }, [productList]);
+useEffect(() => {
+  calculateTotals();
+}, [productList]);
 
-  const calculateTotals = () => {
-    let mrpSum = 0;
-    let qtySum = 0;
-    let discountSum = 0;
-    let taxBeforeSum = 0;
-    let taxAfterSum = 0;
-    let totalSum = 0;
-     // NEW: Track highest tax rate
-    let highestTaxRate = 0;
+const calculateTotals = () => {
+  let mrpSum = 0;
+  let qtySum = 0;
+  let discountSum = 0;
+  let taxBeforeSum = 0;
+  let taxAfterSum = 0;
+  let totalSum = 0;
+  let highestTaxRate = 0;
 
-    productList.forEach(product => {
-      const productMrpTotal = (parseFloat(product.mrp) || 0) * (parseFloat(product.quantity) || 0);
-      mrpSum += productMrpTotal;
+  // Create updated product list with correct tax rates
+  const updatedProductList = productList.map(product => {
+    // Find the product in productListOptions by SKU
+    const matchedProduct = productListOptions.find(p => p.productSKU === product.sku);
+    
+    let cgst = product.cgst;
+    let sgst = product.sgst;
+    let igst = product.igst;
+    
+    // If product is found in productListOptions and has valid tax rate info
+    if (matchedProduct && matchedProduct.taxRate && !isNaN(parseFloat(matchedProduct.taxRate))) {
+      const taxRate = parseFloat(matchedProduct.taxRate) || 0;
       
-      qtySum += parseFloat(product.quantity || 0);
-      discountSum += parseFloat(product.discountAmt || 0);
-      taxBeforeSum += parseFloat(product.beforeTax || 0);
-      taxAfterSum += parseFloat(product.afterDiscount || 0);
-      totalSum += parseFloat(product.total || 0);
-
-      // NEW: Calculate highest tax rate for this product
-      const cgstRate = parseFloat(product.cgst) || 0;
-      const sgstRate = parseFloat(product.sgst) || 0;
-      const igstRate = parseFloat(product.igst) || 0;
-      
-      const cgstSgstSum = cgstRate + sgstRate;
-      const productHighestTax = Math.max(igstRate, cgstSgstSum);
-      
-      // Update overall highest tax rate
-      if (productHighestTax > highestTaxRate) {
-        highestTaxRate = productHighestTax;
+      // Set tax rates based on state matching
+      if (state && partyState && state === partyState) {
+        // Same state: Split between CGST and SGST
+        cgst = (taxRate / 2).toString();
+        sgst = (taxRate / 2).toString();
+        igst = '0';
+      } else {
+        // Different state: Use IGST only
+        cgst = '0';
+        sgst = '0';
+        igst = taxRate.toString();
       }
-    });
+    } else {
+      // SAFETY CHECK: Product not found or tax rate invalid - apply default 5% tax rate
+      console.warn(`Product with SKU "${product.sku}" not found in product list or has invalid tax rate. Applying default 5% tax.`);
+      
+      if (state && partyState && state === partyState) {
+        // Same state: Split 5% between CGST and SGST (2.5% each)
+        cgst = '2.5';
+        sgst = '2.5';
+        igst = '0';
+      } else {
+        // Different state: Use 5% IGST only
+        cgst = '0';
+        sgst = '0';
+        igst = '5';
+      }
+    }
+    
+    // Update highest tax rate for shipping calculation
+    const cgstRate = parseFloat(cgst) || 0;
+    const sgstRate = parseFloat(sgst) || 0;
+    const igstRate = parseFloat(igst) || 0;
+    const cgstSgstSum = cgstRate + sgstRate;
+    const productHighestTax = Math.max(igstRate, cgstSgstSum);
+    
+    if (productHighestTax > highestTaxRate) {
+      highestTaxRate = productHighestTax;
+    }
 
-    setTotals({
-      mrpTotal: mrpSum.toFixed(2),
-      qtyTotal: qtySum.toFixed(2),
-      discountTotal: discountSum.toFixed(2),
-      taxBeforeTotal: taxBeforeSum.toFixed(2),
-      taxAfterTotal: taxAfterSum.toFixed(2),
-      totalAmount: totalSum.toFixed(2)
-    });
+    // Calculate product values
+    const qty = parseFloat(product.quantity) || 0;
+    const mrp = parseFloat(product.mrp) || 0;
+    const discPer = parseFloat(product.discountPer) || 0;
+    
+    // Step 1: Calculate Before Tax = MRP × Quantity
+    const beforeTax = qty * mrp;
+    
+    // Step 2: Calculate Discount Amount = (Before Tax × Discount%) / 100
+    const discAmt = (beforeTax * discPer) / 100;
+    
+    // Step 3: Calculate After Discount = Before Tax - Discount Amount
+    const afterDisc = beforeTax - discAmt;
+    
+    // Step 4: Calculate tax amounts
+    const cgstAmount = (afterDisc * cgstRate) / 100;
+    const sgstAmount = (afterDisc * sgstRate) / 100;
+    const igstAmount = (afterDisc * igstRate) / 100;
+    
+    // Step 5: Calculate Final Total = After Discount + All Taxes
+    const totalAmount = afterDisc + cgstAmount + sgstAmount + igstAmount;
+    
+    // Accumulate totals
+    mrpSum += beforeTax;
+    qtySum += qty;
+    discountSum += discAmt;
+    taxBeforeSum += beforeTax;
+    taxAfterSum += afterDisc;
+    totalSum += totalAmount;
+    
+    return {
+      ...product,
+      cgst,
+      sgst,
+      igst,
+      discountAmt: discAmt.toFixed(2),
+      beforeTax: beforeTax.toFixed(2),
+      afterDiscount: afterDisc.toFixed(2),
+      total: totalAmount.toFixed(2)
+    };
+  });
 
-    setBeforeAmount(taxBeforeSum.toFixed(2));
-    setAfterAmount(totalSum.toFixed(2));
+  // Update the product list with correct tax rates and calculations
+  setProductList(updatedProductList);
 
-    // NEW: Set shipping tax percent to the highest tax rate found
-    setShippingTaxPercent(highestTaxRate.toFixed(2));
-  };
+  setTotals({
+    mrpTotal: mrpSum.toFixed(2),
+    qtyTotal: qtySum.toFixed(2),
+    discountTotal: discountSum.toFixed(2),
+    taxBeforeTotal: taxBeforeSum.toFixed(2),
+    taxAfterTotal: taxAfterSum.toFixed(2),
+    totalAmount: totalSum.toFixed(2)
+  });
+
+  setBeforeAmount(taxBeforeSum.toFixed(2));
+  setAfterAmount(totalSum.toFixed(2));
+
+  // Set shipping tax percent to the highest tax rate found (minimum 5% default)
+  const finalShippingTax = highestTaxRate > 0 ? highestTaxRate : 5;
+  setShippingTaxPercent(finalShippingTax.toFixed(2));
+};
 
 
    // Set edit status when component mounts or editMode changes
@@ -456,7 +530,7 @@ const [deliveryDateBy, setDeliveryDateBy] = useState('');
     }]);
   };
 
-  const updateProduct = (index, field, value) => {
+ const updateProduct = (index, field, value) => {
   const updated = [...productList];
   
   // Handle product selection from dropdown
@@ -474,19 +548,7 @@ const [deliveryDateBy, setDeliveryDateBy] = useState('');
       const presetDiscount = getPresetDiscount(selectedProduct.productCategory);
       updated[index].discountPer = presetDiscount;
       
-      // Set tax rates based on state matching
-      const taxRate = parseFloat(selectedProduct.taxRate || '0');
-      if (state && partyState && state === partyState) {
-        // Same state: Split between CGST and SGST
-        updated[index].cgst = (taxRate / 2).toString();
-        updated[index].sgst = (taxRate / 2).toString();
-        updated[index].igst = '0';
-      } else {
-        // Different state: Use IGST only
-        updated[index].cgst = '0';
-        updated[index].sgst = '0';
-        updated[index].igst = taxRate.toString();
-      }
+      // Tax rates will be set automatically in calculateTotals
     }
   } 
   // Handle discount percentage with validation
@@ -508,43 +570,7 @@ const [deliveryDateBy, setDeliveryDateBy] = useState('');
     updated[index][field] = value;
   }
   
-  // =====================================================
-  // AUTOMATIC CALCULATIONS - Runs for every field change
-  // =====================================================
-  
-  // Parse current values (default to 0 if invalid)
-  const qty = parseFloat(updated[index].quantity) || 0;
-  const mrp = parseFloat(updated[index].mrp) || 0;
-  const discPer = parseFloat(updated[index].discountPer) || 0;
-  
-  // Step 1: Calculate Before Tax = MRP × Quantity
-  const beforeTax = qty * mrp;
-  updated[index].beforeTax = beforeTax.toFixed(2);
-  
-  // Step 2: Calculate Discount Amount = (Before Tax × Discount%) / 100
-  const discAmt = (beforeTax * discPer) / 100;
-  updated[index].discountAmt = discAmt.toFixed(2);
-  
-  // Step 3: Calculate After Discount = Before Tax - Discount Amount
-  const afterDisc = beforeTax - discAmt;
-  updated[index].afterDiscount = afterDisc.toFixed(2);
-  
-  // Step 4: Get tax percentages
-  const cgstRate = parseFloat(updated[index].cgst) || 0;
-  const sgstRate = parseFloat(updated[index].sgst) || 0;
-  const igstRate = parseFloat(updated[index].igst) || 0;
-  
-  // Step 5: Calculate tax amounts in BACKGROUND (not stored in state)
-  // Tax is calculated on After Discount amount
-  const cgstAmount = (afterDisc * cgstRate) / 100;
-  const sgstAmount = (afterDisc * sgstRate) / 100;
-  const igstAmount = (afterDisc * igstRate) / 100;
-  
-  // Step 6: Calculate Final Total = After Discount + All Taxes
-  const totalAmount = afterDisc + cgstAmount + sgstAmount + igstAmount;
-  updated[index].total = totalAmount.toFixed(2);
-  
-  // Update the product list state
+  // Update the product list - calculateTotals will handle the calculations
   setProductList(updated);
 };
 
