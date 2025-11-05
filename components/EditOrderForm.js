@@ -122,6 +122,8 @@ const [deliveryDateBy, setDeliveryDateBy] = useState('');
     let taxBeforeSum = 0;
     let taxAfterSum = 0;
     let totalSum = 0;
+     // NEW: Track highest tax rate
+    let highestTaxRate = 0;
 
     productList.forEach(product => {
       const productMrpTotal = (parseFloat(product.mrp) || 0) * (parseFloat(product.quantity) || 0);
@@ -132,6 +134,19 @@ const [deliveryDateBy, setDeliveryDateBy] = useState('');
       taxBeforeSum += parseFloat(product.beforeTax || 0);
       taxAfterSum += parseFloat(product.afterDiscount || 0);
       totalSum += parseFloat(product.total || 0);
+
+      // NEW: Calculate highest tax rate for this product
+      const cgstRate = parseFloat(product.cgst) || 0;
+      const sgstRate = parseFloat(product.sgst) || 0;
+      const igstRate = parseFloat(product.igst) || 0;
+      
+      const cgstSgstSum = cgstRate + sgstRate;
+      const productHighestTax = Math.max(igstRate, cgstSgstSum);
+      
+      // Update overall highest tax rate
+      if (productHighestTax > highestTaxRate) {
+        highestTaxRate = productHighestTax;
+      }
     });
 
     setTotals({
@@ -145,6 +160,9 @@ const [deliveryDateBy, setDeliveryDateBy] = useState('');
 
     setBeforeAmount(taxBeforeSum.toFixed(2));
     setAfterAmount(totalSum.toFixed(2));
+
+    // NEW: Set shipping tax percent to the highest tax rate found
+    setShippingTaxPercent(highestTaxRate.toFixed(2));
   };
 
 
@@ -561,8 +579,7 @@ const [deliveryDateBy, setDeliveryDateBy] = useState('');
       district: district,
       state: state,
       
-     
-       // Delivery party - FIXED: Use exact field names
+      // Delivery party - FIXED: Use exact field names
       deliveryParty: partyName,  // Use partyName here since deliveryParty is empty
       partyName: partyName,
       partyname: partyName,  // Make sure this is exactly 'partyname'
@@ -654,17 +671,13 @@ const [deliveryDateBy, setDeliveryDateBy] = useState('');
       file: file || null
     };
     
-     // Debug: Check what's actually in apiData
-    console.log('🔍 DEBUG - API data delivery party fields:', {
-      deliveryParty: apiData.deliveryParty,
-      partyName: apiData.partyName,
-      partyname: apiData.partyname,
-      'partyname[0]': apiData['partyname[0]'],
-      partyState: apiData.partyState
+    // Debug: Check product data before sending
+    console.log('🔍 Product data being sent:', apiData.products);
+    console.log('🔍 First product details:', {
+      productName: productList[0]?.productName,
+      discountPer: productList[0]?.discountPer,
+      splitQty: productList[0]?.splitQty
     });
-    
-   setLoading(false);
-return; // This stops the function completely
     
     // Submit via API
     const result = await EditOrderAPI.submitEditOrder(apiData);
