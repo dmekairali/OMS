@@ -563,6 +563,7 @@ const [deliveryDateBy, setDeliveryDateBy] = useState('');
       
       // Delivery party
       deliveryParty: deliveryParty,
+      partyName: partyName,  // 🔥 ADDED THIS LINE
       partyState: partyState,
       
       // Products - FIXED FIELD MAPPINGS
