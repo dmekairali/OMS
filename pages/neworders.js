@@ -357,8 +357,6 @@ export default function NewOrders() {
   setSelectedStatus('');
 };
 
- // FIXED: Save Edit Order with API call for NewOrders sheet update
-// FIXED: Save Edit Order with API call for NewOrders sheet update (SAFE VERSION)
 const handleSaveEditOrder = async (result) => {
   console.log('✅ Edit form saved successfully:', result);
   
@@ -375,15 +373,14 @@ const handleSaveEditOrder = async (result) => {
     };
 
     const columnUpdates = {
-      45: newOrderStatus,  // Order Status column
-      47: editRemark,      // Remarks column
-      78: user.username,   // Last Edited By column
-      79: new Date().toISOString() // Last Edited At column
+      45: newOrderStatus,
+      47: editRemark,
+      78: user.username,
+      79: new Date().toISOString()
     };
 
     console.log('🔄 Updating NewOrders sheet with:', { updates, columnUpdates });
 
-    // Call API to update NewOrders sheet
     const response = await fetch('/api/orders', {
       method: 'PUT',
       headers: {
@@ -400,19 +397,16 @@ const handleSaveEditOrder = async (result) => {
     if (response.ok) {
       console.log('✅ NewOrders sheet updated successfully');
       
-      // SAFE: Update local state - filter out null values first
-      const updatedOrders = orders
-        .filter(order => order != null && order['Oder ID'])  // Remove nulls and invalid orders
-        .map(order => {
-          if (order['Oder ID'] === selectedOrder['Oder ID']) {
-            return {
-              ...order,
-              ...updates
-            };
-          }
-          return order;
-        })
-        .filter(order => order != null); // Final safety check
+      // Update local state
+      const updatedOrders = orders.map(order => {
+        if (order['Oder ID'] === selectedOrder['Oder ID']) {
+          return {
+            ...order,
+            ...updates
+          };
+        }
+        return order;
+      });
 
       setOrders(updatedOrders);
       
@@ -420,10 +414,7 @@ const handleSaveEditOrder = async (result) => {
       const targetFilter = newOrderStatus;
       
       setActiveFilter(targetFilter);
-      
-      // SAFE: Filter orders before passing to filterOrders
-      const safeOrders = updatedOrders.filter(order => order != null && order['Oder ID']);
-      filterOrders(safeOrders, targetFilter, searchTerm);
+      filterOrders(updatedOrders, targetFilter, searchTerm);
 
       const summary = {
         orderId: selectedOrder['Oder ID'],
@@ -441,18 +432,20 @@ const handleSaveEditOrder = async (result) => {
         })
       };
 
-      setUpdateSummaryData(summary);
-      setShowUpdateSummary(true);
-
-      // Close edit view
+      // FIRST: Close the edit view but keep selectedOrder for the summary
       setShowEditView(false);
-      setSelectedOrder(null);
       setEditRemark('');
       setEditMode('');
 
-      // Auto-close after 5 seconds
+      // SECOND: Show the success summary
+      setUpdateSummaryData(summary);
+      setShowUpdateSummary(true);
+
+      // THIRD: After summary is shown and auto-closes, THEN clear selectedOrder and go back
       setTimeout(() => {
         setShowUpdateSummary(false);
+        // NOW clear selectedOrder and go back to dashboard
+        setSelectedOrder(null);
         handleBackToDashboard();
       }, 5000);
 
