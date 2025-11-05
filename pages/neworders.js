@@ -354,26 +354,32 @@ export default function NewOrders() {
   setSelectedStatus('');
 };
 
- const handleSaveEditOrder = async (result) => {
-  console.log('✅ Order saved successfully:', result);
+ // FIXED: Save Edit Order with API call for NewOrders sheet update
+const handleSaveEditOrder = async (result) => {
+  console.log('✅ Edit form saved successfully:', result);
   
   try {
-    // Prepare updates for Google Sheet (like Order Confirmation does)
+    // Determine the correct status for NewOrders sheet
+    const newOrderStatus = editMode === 'split' ? 'Edit and Split' : 'Edit Order';
+    
+    // Prepare updates for NewOrders Google Sheet (EXACTLY like Order Confirmation)
     const updates = {
-      'Order Status': result.editStatus,
+      'Order Status': newOrderStatus,
       'Remarks*': editRemark,
       'Last Edited By': user.username,
       'Last Edited At': new Date().toISOString()
     };
 
     const columnUpdates = {
-      45: result.editStatus,  // Order Status column
-      47: editRemark,         // Remarks column
-      78: user.username,      // Last Edited By column
+      45: newOrderStatus,  // Order Status column
+      47: editRemark,      // Remarks column
+      78: user.username,   // Last Edited By column
       79: new Date().toISOString() // Last Edited At column
     };
 
-    // Call API to update Google Sheet (CRITICAL - this was missing)
+    console.log('🔄 Updating NewOrders sheet with:', { updates, columnUpdates });
+
+    // CRITICAL: Call the SAME API as Order Confirmation to update NewOrders sheet
     const response = await fetch('/api/orders', {
       method: 'PUT',
       headers: {
@@ -388,7 +394,9 @@ export default function NewOrders() {
     });
 
     if (response.ok) {
-      // Update local state (like Order Confirmation does)
+      console.log('✅ NewOrders sheet updated successfully');
+      
+      // Update local state
       const updatedOrders = orders.map(order => {
         if (order['Oder ID'] === selectedOrder['Oder ID']) {
           return {
@@ -401,22 +409,15 @@ export default function NewOrders() {
 
       setOrders(updatedOrders);
       
-      // Show success summary (like Order Confirmation does)
-      const newStatus = result.editStatus;
-      let targetFilter = 'All';
-      
-      if (newStatus && newStatus.trim() !== '') {
-        targetFilter = newStatus;
-      } else {
-        targetFilter = 'Pending';
-      }
+      // Show success summary (like Order Confirmation)
+      const targetFilter = newOrderStatus;
       
       setActiveFilter(targetFilter);
       filterOrders(updatedOrders, targetFilter, searchTerm);
 
       const summary = {
         orderId: selectedOrder['Oder ID'],
-        status: newStatus,
+        status: newOrderStatus,
         newFilter: targetFilter,
         fields: Object.keys(updates),
         updates: updates,
@@ -437,9 +438,9 @@ export default function NewOrders() {
       setShowEditView(false);
       setSelectedOrder(null);
       setEditRemark('');
-      setEditMode(null);
+      setEditMode('');
 
-      // Auto-close after 5 seconds (like Order Confirmation)
+      // Auto-close after 5 seconds
       setTimeout(() => {
         setShowUpdateSummary(false);
         handleBackToDashboard();
@@ -452,123 +453,14 @@ export default function NewOrders() {
 
     } else {
       const errorData = await response.json();
-      alert('Failed to update order: ' + (errorData.error || 'Unknown error'));
+      console.error('❌ Failed to update NewOrders sheet:', errorData);
+      alert('Edit form saved but failed to update order status: ' + (errorData.error || 'Unknown error'));
     }
   } catch (error) {
-    console.error('Error updating order:', error);
-    alert('Failed to update order. Please try again.');
+    console.error('❌ Error updating NewOrders sheet:', error);
+    alert('Edit form saved but failed to update order status. Please try again.');
   }
 };
-
-  const handleFormSubmit = async (e) => {
-    e.preventDefault();
-    
-    const formData = new FormData(e.target);
-    const updates = {};
-    const columnUpdates = {};
-    
-    const fieldConfigs = ACTION_FIELDS[selectedStatus] || [];
-    
-    for (let [key, value] of formData.entries()) {
-      const fieldConfig = fieldConfigs.find(f => f.name === key);
-      
-      if (e.target.elements[key].type === 'checkbox') {
-        updates[key] = e.target.elements[key].checked ? 'TRUE' : 'FALSE';
-      } else {
-        updates[key] = value;
-      }
-      
-      if (fieldConfig && fieldConfig.columnNumber) {
-        columnUpdates[fieldConfig.columnNumber] = updates[key];
-      }
-    }
-    
-    const orderStatusField = fieldConfigs.find(f => f.name === 'Order Status');
-    if (orderStatusField) {
-      const orderStatusValue = orderStatusField.defaultValue || selectedStatus;
-      updates['Order Status'] = orderStatusValue;
-      if (orderStatusField.columnNumber) {
-        columnUpdates[orderStatusField.columnNumber] = orderStatusValue;
-      }
-    }
-
-    updates['Last Edited By'] = user.username;
-    updates['Last Edited At'] = new Date().toISOString();
-    columnUpdates[78] = user.username;
-    columnUpdates[79] = new Date().toISOString();
-
-    try {
-      const response = await fetch('/api/orders', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          orderId: selectedOrder['Oder ID'],
-          rowIndex: selectedOrder._rowIndex,
-          updates: updates,
-          columnUpdates: columnUpdates
-        }),
-      });
-
-      if (response.ok) {
-        const updatedOrders = orders.map(order => {
-          if (order['Oder ID'] === selectedOrder['Oder ID']) {
-            return { ...order, ...updates };
-          }
-          return order;
-        });
-        
-        setOrders(updatedOrders);
-        
-        const newStatus = updates['Order Status'];
-        let targetFilter = 'All';
-        
-        if (newStatus && newStatus.trim() !== '') {
-          targetFilter = newStatus;
-        } else {
-          targetFilter = 'Pending';
-        }
-        
-        setActiveFilter(targetFilter);
-        filterOrders(updatedOrders, targetFilter, searchTerm);
-        
-        const summary = {
-          orderId: selectedOrder['Oder ID'],
-          status: selectedStatus,
-          newFilter: targetFilter,
-          fields: Object.keys(updates).filter(key => key !== 'Last Edited By' && key !== 'Last Edited At'),
-          updates: updates,
-          timestamp: new Date().toLocaleString('en-IN', {
-            day: '2-digit',
-            month: 'short',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: true
-          })
-        };
-        
-        setUpdateSummaryData(summary);
-        setShowUpdateSummary(true);
-        
-        setTimeout(() => {
-          setShowUpdateSummary(false);
-          handleBackToDashboard();
-        }, 5000);
-        
-        setTimeout(() => {
-          loadOrders(false);
-        }, 1000);
-      } else {
-        const errorData = await response.json();
-        alert('Failed to update order: ' + (errorData.error || 'Unknown error'));
-      }
-    } catch (error) {
-      console.error('Error updating order:', error);
-      alert('Failed to update order. Please try again.');
-    }
-  };
 
   const handleLogout = () => {
     localStorage.removeItem('userSession');
@@ -1118,16 +1010,17 @@ export default function NewOrders() {
             </>
           ) : showEditView ? 
            (
-  <div className={styles.editOrderView}>
-    <EditOrderForm
-      order={editOrderData}
-      products={editProducts}
-      onSave={handleSaveEditOrder}
-      onCancel={handleCancelEdit}
-      editMode={editMode}
-
-    />
-  </div>
+ 
+<div className={styles.editOrderView}>
+  <EditOrderForm
+    order={editOrderData}
+    products={editProducts}
+    onSave={handleSaveEditOrder}  // This should be the FIXED function above
+    onCancel={handleCancelEdit}
+    editMode={editMode}
+    loading={loadingEdit}
+  />
+</div>
           ) : (
             <div className={styles.detailView}>
               <button onClick={handleBackToDashboard} className={styles.backBtn}>
