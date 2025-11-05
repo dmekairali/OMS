@@ -126,6 +126,8 @@ const calculateTotals = () => {
 
   // Create updated product list with correct tax rates
   const updatedProductList = productList.map(product => {
+    console.log('🔍 Looking for SKU:', product.sku, 'in productListOptions');
+    console.log('Available SKUs in productListOptions:', productListOptions.map(p => p.productSKU));
     // Find the product in productListOptions by SKU
     const matchedProduct = productListOptions.find(p => p.productSKU === product.sku);
     
@@ -247,82 +249,136 @@ const calculateTotals = () => {
   }, [editMode]);
 
   // Load order data first
-  useEffect(() => {
-    if (order) {
-      
-      setClientName(order['Name of Client'] || '');
-      setMobile(order['Mobile'] || '');
-      setEmail(order['Email'] || '');
-      setClientType(order['Client Type'] || '');
-      setClientCategory(order['Client Category'] || '');
-      setGstNo(order['GST No'] || '');
-      
-      setBillingAddress(order['Billing Address'] || '');
-      setShippingAddress(order['Shipping Address'] || '');
-      setBillingPincode(order['Pin code'] || '');
-      setShippingPincode(order['Pin code'] || '');
-      setTaluk(order['Taluk'] || '');
-      setDistrict(order['District'] || '');
-      setState(order['State'] || '');
-      
-      setMrName(order['MR Name'] || '');
-      
-      setDeliveryDate(order['Delivery Required Date']?.split(' ')[0] || '');
-      setDeliveryTime(order['Delivery Required Date']?.split(' ')[1] || '');
-      
-      setPaymentTerms(order['Payment Terms'] || '');
-      setPaymentMode(order['Payment Mode'] || '');
-      setOrderBy(order['Order Taken By'] || '');
-      
-      const payDates = (order['Payment Date (to be paid)'] || '').split(',').map(d => d.trim());
-      setPaymentDate(payDates[0] || '');
-      
-      setReoccurance(order['Reoccurance'] || '');
-      setNextOrderDate(order['Next Order Date'] || '');
-      setEndOrderDate(order['End Order Date'] || '');
-      setPriority(order['Priority'] || '');
-      
-      setDiscountTier(order['Discount Tier'] || '');
-      setShippingCharges(order['Shipping Charges'] || '');
-      setShippingChargesRemark(order['Shipping Charges Remark'] || '');
-      setShippingTaxPercent(order['Shipping Tax Percent'] || '');
-      setShippingTaxPercentRemark(order['Shipping Tax Percent Remark'] || '');
-      setTotalShippingCharge(order['Total Shipping Charge'] || '');
-      setTotalShippingChargeRemark(order['Total Shipping Charge Remark'] || '');
-      
-      setPreferredCallTime1(order['Preferred Call Time 1'] || '');
-      setPreferredCallTime2(order['Preferred Call Time 2'] || '');
-      setDispatchDate(order['Dispatch Date'] || '');
-      setDispatchTime(order['Dispatch Time'] || '');
-      setSaleTermRemark(order['Sale Term Remark'] || '');
-      setInvoiceRemark(order['Invoice Remark'] || '');
-      setWarehouseRemark(order['Warehouse Remark'] || '');
-      setOrderInFull(order['Order In Full'] || '');
-      setOrderInFullReason(order['Order In Full Reason'] || '');
+  // In your EditOrderForm component - around line 250-350 range
+useEffect(() => {
+  if (order) {
+    
+    setClientName(order['Name of Client'] || '');
+    setMobile(order['Mobile'] || '');
+    setEmail(order['Email'] || '');
+    setClientType(order['Client Type'] || '');
+    setClientCategory(order['Client Category'] || '');
+    setGstNo(order['GST No'] || '');
+    
+    setBillingAddress(order['Billing Address'] || '');
+    setShippingAddress(order['Shipping Address'] || '');
+    setBillingPincode(order['Pin code'] || '');
+    setShippingPincode(order['Pin code'] || '');
+    setTaluk(order['Taluk'] || '');
+    setDistrict(order['District'] || '');
+    setState(order['State'] || '');
+    
+    setMrName(order['MR Name'] || '');
+    
+    // FIX DATE FORMAT HERE - Delivery Date
+    const deliveryDateValue = order['Delivery Required Date']?.split(' ')[0] || '';
+    if (deliveryDateValue) {
+      // Convert DD/MM/YYYY to YYYY-MM-DD
+      const [day, month, year] = deliveryDateValue.split('/');
+      if (day && month && year) {
+        setDeliveryDate(`${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`);
+      } else {
+        setDeliveryDate(deliveryDateValue); // fallback
+      }
+    } else {
+      setDeliveryDate('');
     }
     
-    if (products && products.length > 0) {
-      const initialProducts = products.map(p => ({
-        productName: p['Product Name'] || '',
-        sku: p['SKU Code'] || '',
-        mrp: p['MRP'] || '0',
-        packingSize: p['Packing Size'] || '',
-        quantity: p['Quantity'] || p['QNT'] || '0',
-        orderQty: p['Order QTY'] || p['Quantity'] || p['QNT'] || '0',
-        discountPer: p['Discount %'] || '0',
-        discountAmt: p['Discount Amount'] || '0',
-        beforeTax: p['Before Tax'] || '0',
-        afterDiscount: p['After Discount'] || '0',
-        cgst: p['CGST %'] || '0',
-        sgst: p['SGST %'] || '0',
-        igst: p['IGST %'] || '0',
-        total: p['Total'] || '0',
-        splitQty: '0',
-        productCategory: ''
-      }));
-      setProductList(initialProducts);
+    setDeliveryTime(order['Delivery Required Date']?.split(' ')[1] || '');
+    
+    setPaymentTerms(order['Payment Terms'] || '');
+    setPaymentMode(order['Payment Mode'] || '');
+    setOrderBy(order['Order Taken By'] || '');
+    
+    // FIX DATE FORMAT HERE - Payment Dates
+    const payDates = (order['Payment Date (to be paid)'] || '').split(',').map(d => d.trim());
+    if (payDates[0]) {
+      const [day, month, year] = payDates[0].split('/');
+      if (day && month && year) {
+        setPaymentDate(`${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`);
+      } else {
+        setPaymentDate(payDates[0]);
+      }
     }
-  }, [order, products]);
+    
+    setReoccurance(order['Reoccurance'] || '');
+    
+    // FIX DATE FORMAT HERE - Next Order Date
+    const nextOrderDateValue = order['Next Order Date'] || '';
+    if (nextOrderDateValue) {
+      const [day, month, year] = nextOrderDateValue.split('/');
+      if (day && month && year) {
+        setNextOrderDate(`${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`);
+      } else {
+        setNextOrderDate(nextOrderDateValue);
+      }
+    }
+    
+    // FIX DATE FORMAT HERE - End Order Date
+    const endOrderDateValue = order['End Order Date'] || '';
+    if (endOrderDateValue) {
+      const [day, month, year] = endOrderDateValue.split('/');
+      if (day && month && year) {
+        setEndOrderDate(`${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`);
+      } else {
+        setEndOrderDate(endOrderDateValue);
+      }
+    }
+    
+    setPriority(order['Priority'] || '');
+    
+    setDiscountTier(order['Discount Tier'] || '');
+    setShippingCharges(order['Shipping Charges'] || '');
+    setShippingChargesRemark(order['Shipping Charges Remark'] || '');
+    setShippingTaxPercent(order['Shipping Tax Percent'] || '');
+    setShippingTaxPercentRemark(order['Shipping Tax Percent Remark'] || '');
+    setTotalShippingCharge(order['Total Shipping Charge'] || '');
+    setTotalShippingChargeRemark(order['Total Shipping Charge Remark'] || '');
+    
+    setPreferredCallTime1(order['Preferred Call Time 1'] || '');
+    setPreferredCallTime2(order['Preferred Call Time 2'] || '');
+    
+    // FIX DATE FORMAT HERE - Dispatch Date
+    const dispatchDateValue = order['Dispatch Date'] || '';
+    if (dispatchDateValue) {
+      const [day, month, year] = dispatchDateValue.split('/');
+      if (day && month && year) {
+        setDispatchDate(`${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`);
+      } else {
+        setDispatchDate(dispatchDateValue);
+      }
+    }
+    
+    setDispatchTime(order['Dispatch Time'] || '');
+    setSaleTermRemark(order['Sale Term Remark'] || '');
+    setInvoiceRemark(order['Invoice Remark'] || '');
+    setWarehouseRemark(order['Warehouse Remark'] || '');
+    setOrderInFull(order['Order In Full'] || '');
+    setOrderInFullReason(order['Order In Full Reason'] || '');
+  }
+  
+  if (products && products.length > 0) {
+    const initialProducts = products.map(p => ({
+      productName: p['Product Name'] || '',
+      sku: p['SKU Code'] || '',
+      mrp: p['MRP'] || '0',
+      packingSize: p['Packing Size'] || '',
+      quantity: p['Quantity'] || p['QNT'] || '0',
+      orderQty: p['Order QTY'] || p['Quantity'] || p['QNT'] || '0',
+      discountPer: p['Discount %'] || '0',
+      discountAmt: p['Discount Amount'] || '0',
+      beforeTax: p['Before Tax'] || '0',
+      afterDiscount: p['After Discount'] || '0',
+      cgst: p['CGST %'] || '0',
+      sgst: p['SGST %'] || '0',
+      igst: p['IGST %'] || '0',
+      total: p['Total'] || '0',
+      splitQty: '0',
+      productCategory: ''
+    }));
+    setProductList(initialProducts);
+  }
+}, [order, products]);
 
   // Fetch setup data after order is loaded
   useEffect(() => {
