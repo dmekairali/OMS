@@ -123,12 +123,12 @@ const calculateTotals = () => {
   let taxAfterSum = 0;
   let totalSum = 0;
   let highestTaxRate = 0;
-
+ console.log(highestTaxRate);
   // Create updated product list with correct tax rates
   const updatedProductList = productList.map(product => {
     // Find the product in productListOptions by SKU
     const matchedProduct = productListOptions.find(p => p.productSKU === product.sku);
-    console.log('🔍 Looking for SKU:', matchedProduct);
+    
     let cgst = product.cgst;
     let sgst = product.sgst;
     let igst = product.igst;
