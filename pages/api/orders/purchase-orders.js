@@ -130,15 +130,22 @@ export default async function handler(req, res) {
               // Additional fields for edit/split - READONLY
               'Split Quantity': 0,
               
-              // Tax fields (set to 0 as they're not available in this sheet)
-              'CGST %': 0,
-              'SGST %': 0,
-              'IGST %': 0,
-              'Before Tax': 0,
-              'After Discount': 0,
-              'CGST Amount': 0,
-              'SGST Amount': 0,
-              'IGST Amount': 0
+              
+  // Tax fields - CALCULATED VALUES
+  'CGST %': 0,
+  'SGST %': 0,
+  'IGST %': 5, // Fixed 5% as requested
+  
+  // Calculate Before Tax (MRP × Quantity)
+  'Before Tax': (parseFloat(row[columnMap1.mrp]) || 0) * (parseFloat(row[columnMap1.quantity]) || 0),
+  
+  // Calculate After Discount (Before Tax - Discount Amount)
+  'After Discount': ((parseFloat(row[columnMap1.mrp]) || 0) * (parseFloat(row[columnMap1.quantity]) || 0)) - (parseFloat(row[columnMap1.discountAmount]) || 0),
+  
+  // Tax amounts (CGST/SGST = 0, IGST = After Discount × 5%)
+  'CGST Amount': 0,
+  'SGST Amount': 0,
+  'IGST Amount': (((parseFloat(row[columnMap1.mrp]) || 0) * (parseFloat(row[columnMap1.quantity]) || 0)) - (parseFloat(row[columnMap1.discountAmount]) || 0)) * 0.05
             };
           });
         }
@@ -232,15 +239,22 @@ export default async function handler(req, res) {
                 // Additional fields for edit/split - READONLY
                 'Split Quantity': 0,
                 
-                // Tax fields (set to 0 as they're not available in this sheet)
-                'CGST %': 0,
-                'SGST %': 0,
-                'IGST %': 0,
-                'Before Tax': 0,
-                'After Discount': 0,
-                'CGST Amount': 0,
-                'SGST Amount': 0,
-                'IGST Amount': 0
+                
+  // Tax fields - CALCULATED VALUES
+  'CGST %': 0,
+  'SGST %': 0,
+  'IGST %': 5, // Fixed 5% as requested
+  
+  // Calculate Before Tax (MRP × Quantity)
+  'Before Tax': (parseFloat(row[columnMap2.mrp]) || 0) * (parseFloat(row[columnMap2.quantity]) || 0),
+  
+  // Calculate After Discount (Before Tax - Discount Amount)
+  'After Discount': ((parseFloat(row[columnMap2.mrp]) || 0) * (parseFloat(row[columnMap2.quantity]) || 0)) - (parseFloat(row[columnMap2.discountAmount]) || 0),
+  
+  // Tax amounts (CGST/SGST = 0, IGST = After Discount × 5%)
+  'CGST Amount': 0,
+  'SGST Amount': 0,
+  'IGST Amount': (((parseFloat(row[columnMap2.mrp]) || 0) * (parseFloat(row[columnMap2.quantity]) || 0)) - (parseFloat(row[columnMap2.discountAmount]) || 0)) * 0.05
               };
             });
           }
