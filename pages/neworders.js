@@ -324,32 +324,35 @@ export default function NewOrders() {
 
   // NEW: Handle Edit Order button click
   const handleEditOrderClick = async (mode) => {
-    if (!editRemark || editRemark.trim() === '') {
-      alert('Please enter remarks before editing');
-      return;
-    }
+  if (!editRemark || editRemark.trim() === '') {
+    alert('Please enter remarks before editing');
+    return;
+  }
 
-    setLoadingEdit(true);
-    setEditMode(mode);
+  setLoadingEdit(true);
+  setEditMode(mode);
 
-    try {
-      const response = await fetch(`/api/orders/load-edit?orderId=${selectedOrder['Oder ID']}`);
+  try {
+    // ✅ OPTIMIZED: Only fetch products, use existing order data
+    const response = await fetch(`/api/orders/products?orderId=${selectedOrder['Oder ID']}`);
+    
+    if (response.ok) {
+      const data = await response.json();
       
-      if (response.ok) {
-        const data = await response.json();
-        setEditOrderData(data.order);
-        setEditProducts(data.products || []);
-        setShowEditView(true);
-      } else {
-        alert('Failed to load order details');
-      }
-    } catch (error) {
-      console.error('Error loading edit data:', error);
-      alert('Error loading order data');
-    } finally {
-      setLoadingEdit(false);
+      // ✅ Use already-loaded order from selectedOrder
+      setEditOrderData(selectedOrder);  // No need to fetch again!
+      setEditProducts(data.products || []);
+      setShowEditView(true);
+    } else {
+      alert('Failed to load product details');
     }
-  };
+  } catch (error) {
+    console.error('Error loading products:', error);
+    alert('Error loading product data');
+  } finally {
+    setLoadingEdit(false);
+  }
+};
 
   const handleCancelEdit = () => {
   setShowEditView(false);
