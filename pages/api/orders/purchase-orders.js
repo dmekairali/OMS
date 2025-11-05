@@ -18,6 +18,7 @@ export default async function handler(req, res) {
   }
 
   try {
+    const { orderId } = req.query;
     const startTime = Date.now();
     
     const { google } = require('googleapis');
@@ -37,7 +38,7 @@ export default async function handler(req, res) {
     const fetchStart = Date.now();
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: purchaseSheetId,
-      range: 'MROrdersSKU!A1:Z', // Adjust sheet name if different
+      range: 'Sheet1!A1:Z', // Adjust sheet name if different
     });
     const fetchTime = Date.now() - fetchStart;
 
@@ -66,13 +67,35 @@ export default async function handler(req, res) {
       });
       return order;
     });
+
+    // Filter by orderId if provided
+    let filteredOrders = orders;
+    if (orderId) {
+      filteredOrders = orders.filter(order => order['Oder ID'] === orderId);
+      
+      if (filteredOrders.length === 0) {
+        const processTime = Date.now() - processStart;
+        const totalTime = Date.now() - startTime;
+        return res.status(404).json({
+          success: false,
+          error: 'Order not found',
+          orderId: orderId,
+          timing: {
+            total: totalTime,
+            fetch: fetchTime,
+            processing: processTime
+          }
+        });
+      }
+    }
+    
     const processTime = Date.now() - processStart;
     const totalTime = Date.now() - startTime;
 
     return res.status(200).json({
       success: true,
-      count: orders.length,
-      orders,
+      count: filteredOrders.length,
+      orders: filteredOrders,
       timing: {
         total: totalTime,
         fetch: fetchTime,
