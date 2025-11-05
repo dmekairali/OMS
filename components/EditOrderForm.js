@@ -563,27 +563,40 @@ const [deliveryDateBy, setDeliveryDateBy] = useState('');
       
       // Delivery party
       deliveryParty: deliveryParty,
+      partyName: partyName,
       partyState: partyState,
       
-      // Products
-      products: productList.map(product => ({
-        name: product.name,
-        mrp: product.mrp,
-        packingSize: product.packingSize,
-        quantity: product.quantity,
-        discountPercent: product.discountPercent || '0',
-        discountType: product.discountType || '%',
-        discountAmount: product.discountAmt,
-        beforeTax: product.beforeTax,
-        afterDiscount: product.afterDiscount,
-        cgstAmount: product.cgstAmount || '0',
-        cgstPercent: product.cgstPercent || '0',
-        sgstAmount: product.sgstAmount || '0',
-        sgstPercent: product.sgstPercent || '0',
-        igstAmount: product.igstAmount || '0',
-        igstPercent: product.igstPercent || '0',
-        total: product.total,
-        splitQuantity: product.splitQuantity || '0'
+      // Products - FIXED: BOTH CGSTAMT[i] AND CGST[i] AS PERCENTAGE VALUES
+      products: productList.map((product, index) => ({
+        // Basic product info
+        [`productname[${index}]`]: product.productName || '',
+        [`sku[${index}]`]: product.sku || '',
+        [`mrp[${index}]`]: product.mrp || '0',
+        [`packingsize[${index}]`]: product.packingSize || '',
+        [`quantity[${index}]`]: product.quantity || '0',
+        
+        // Discount
+        [`DISPER[${index}]`]: product.discountPer || '0',  // Discount percentage
+        [`DISAMT[${index}]`]: product.discountAmt || '0',  // Discount amount
+        
+        // Taxable amounts
+        [`BEFORETAX[${index}]`]: product.beforeTax || '0',
+        [`AFTERDISCOUNT[${index}]`]: product.afterDiscount || '0',
+        
+        // Tax percentages - BOTH FIELDS SEND SAME PERCENTAGE VALUE
+        [`CGST[${index}]`]: '%' || '0',      // CGST percentage (e.g., "5")
+        [`CGSTAMT[${index}]`]: product.cgst || '0',   // CGSTAMT also as percentage (e.g., "5")
+        [`SGST[${index}]`]: '%' || '0',      // SGST percentage (e.g., "5")  
+        [`SGSTAMT[${index}]`]: product.sgst || '0',   // SGSTAMT also as percentage (e.g., "5")
+        [`IGST[${index}]`]: '%' || '0',      // IGST percentage (e.g., "12")
+        [`IGSTAMT[${index}]`]: product.igst || '0',   // IGSTAMT also as percentage (e.g., "12")
+        
+        // Totals
+        [`total[${index}]`]: product.total || '0',
+        
+        // Split order
+        [`splitqty[${index}]`]: editMode === 'split' ? product.splitQty || '0' : '0',
+        [`productcategory[${index}]`]: product.productCategory || ''
       })),
       
       // Totals
@@ -650,6 +663,10 @@ const [deliveryDateBy, setDeliveryDateBy] = useState('');
       // File
       file: file || null
     };
+    
+    // Debug: Check what's being sent
+    console.log('🔍 Sending API data:', apiData);
+    console.log('🔍 Products data:', apiData.products);
     
     // Submit via API
     const result = await EditOrderAPI.submitEditOrder(apiData);
