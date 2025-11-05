@@ -1362,7 +1362,7 @@ export default function NewOrders() {
               <div className={styles.summaryDivider}></div>
               
               <div className={styles.summaryFields}>
-                <h4>Updated Fields ({updateSummaryData.fields.length})</h4>
+                <h4>Updated Fields ({updateSummaryData.fields?.length || 0})</h4>
                 {updateSummaryData.fields.map((fieldName, idx) => (
                   <div key={idx} className={styles.summaryFieldRow}>
                     <span className={styles.fieldName}>{fieldName}:</span>
