@@ -38,7 +38,7 @@ export default async function handler(req, res) {
     const fetchStart = Date.now();
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: purchaseSheetId,
-      range: 'Sheet1!A1:Z', // Adjust sheet name if different
+      range: 'MROrdersSKU!A1:Z', // Adjust sheet name if different
     });
     const fetchTime = Date.now() - fetchStart;
 
