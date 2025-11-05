@@ -540,91 +540,78 @@ const [deliveryDateBy, setDeliveryDateBy] = useState('');
     // Prepare data for API
     const apiData = {
       // Order identification
-      buyerId: order['Buyer ID'],
-      orderNumber: order['Oder ID'],
-      editStatus: editOrderStatus,
+      BuyId: order['Buyer ID'],
+      OrderNumber: order['Oder ID'],
+      editstatus: editOrderStatus,
       
       // Client details
-      clientName: clientName,
-      mobile: mobile,
-      email: email,
-      clientType: clientType,
-      clientCategory: clientCategory,
-      billingPincode: billingPincode,
-      gstNumber: gstNo,
-      billingAddress: billingAddress,
-      shippingAddress: shippingAddress,
-      orderType: orderType,
+      clientname: [clientName],
+      mobile: [mobile],
+      email: [email],
+      clienttypename: [clientType],
+      clientcategory1: [clientCategory],
+      BPINCODE: [billingPincode],
+      GSTNO: [gstNo],
+      Baddress: [billingAddress],
+      saddress: [shippingAddress],
+      ordertype: [orderType],
       
       // Location
-      taluk: taluk,
-      district: district,
-      state: state,
+      talukname: [taluk],
+      districtname: [district],
+      state: [state],
       
       // Delivery party
-      deliveryParty: deliveryParty,
-      partyName: partyName,
-      partyState: partyState,
+      partyname: [partyName],
+      partystatename: [partyState],
       
-      // Products - FIXED: BOTH CGSTAMT[i] AND CGST[i] AS PERCENTAGE VALUES
+      // Products - FIXED FIELD NAMES TO MATCH API
       products: productList.map((product, index) => ({
-        // Basic product info
+        // Basic product info - EXACT FIELD NAMES FROM API
         [`productname[${index}]`]: product.productName || '',
-        [`sku[${index}]`]: product.sku || '',
-        [`mrp[${index}]`]: product.mrp || '0',
-        [`packingsize[${index}]`]: product.packingSize || '',
-        [`quantity[${index}]`]: product.quantity || '0',
+        [`MRP[${index}]`]: product.mrp || '0',
+        [`PACKINGSIZE[${index}]`]: product.packingSize || '',
+        [`QNT[${index}]`]: product.quantity || '0',
         
-        // Discount
-        [`DISPER[${index}]`]: product.discountPer || '0',  // Discount percentage
-        [`DISAMT[${index}]`]: product.discountAmt || '0',  // Discount amount
+        // Discount - EXACT FIELD NAMES FROM API
+        [`DISPER[${index}]`]: product.discountPer || '0',
+        [`DISAMT[${index}]`]: product.discountAmt || '0',
         
-        // Taxable amounts
-        [`BEFORETAX[${index}]`]: product.beforeTax || '0',
-        [`AFTERDISCOUNT[${index}]`]: product.afterDiscount || '0',
+        // Taxable amounts - EXACT FIELD NAMES FROM API
+        [`BEFORE[${index}]`]: product.beforeTax || '0',
+        [`AFTER[${index}]`]: product.afterDiscount || '0',
         
-        // Tax percentages - BOTH FIELDS SEND SAME PERCENTAGE VALUE
-        [`CGST[${index}]`]: '%' || '0',      // CGST percentage (e.g., "5")
-        [`CGSTAMT[${index}]`]: product.cgst || '0',   // CGSTAMT also as percentage (e.g., "5")
-        [`SGST[${index}]`]: '%' || '0',      // SGST percentage (e.g., "5")  
-        [`SGSTAMT[${index}]`]: product.sgst || '0',   // SGSTAMT also as percentage (e.g., "5")
-        [`IGST[${index}]`]: '%' || '0',      // IGST percentage (e.g., "12")
-        [`IGSTAMT[${index}]`]: product.igst || '0',   // IGSTAMT also as percentage (e.g., "12")
+        // Tax percentages - EXACT FIELD NAMES FROM API
+        [`CGST[${index}]`]: product.cgst || '0',
+        [`CGSTAMT[${index}]`]: product.cgst || '0',  // Same value as CGST
+        [`SGST[${index}]`]: product.sgst || '0',
+        [`SGSTAMT[${index}]`]: product.sgst || '0',  // Same value as SGST
+        [`IGST[${index}]`]: product.igst || '0',
+        [`IGSTAMT[${index}]`]: product.igst || '0',  // Same value as IGST
         
-        // Totals
-        [`total[${index}]`]: product.total || '0',
+        // Totals - EXACT FIELD NAMES FROM API
+        [`TOTAL[${index}]`]: product.total || '0',
         
         // Split order
-        [`splitqty[${index}]`]: editMode === 'split' ? product.splitQty || '0' : '0',
-        [`productcategory[${index}]`]: product.productCategory || ''
+        [`SplitQTY[${index}]`]: editMode === 'split' ? product.splitQty || '0' : '0'
       })),
       
-      // Totals
-      totals: {
-        mrpTotal: totals.mrpTotal,
-        quantityTotal: totals.qtyTotal,
-        discountTotal: totals.discountTotal,
-        taxBeforeTotal: totals.taxBeforeTotal,
-        taxAfterTotal: totals.taxAfterTotal,
-        totalAmount: totals.totalAmount
-      },
+      // Shipping - EXACT FIELD NAMES FROM API
+      scharge: [shippingCharges || '0'],
+      sremark: [shippingChargesRemark || ''],
+      Stax: [totalShippingCharge || '0'],
+      Staxremark: [totalShippingChargeRemark || ''],
+      staxper: [shippingTaxPercent || '0'],
+      staxperrem: [shippingTaxPercentRemark || ''],
       
-      // Shipping
-      shippingCharge: shippingCharges || '0',
-      shippingRemark: shippingChargesRemark || '',
-      shippingTax: totalShippingCharge || '0',
-      shippingTaxRemark: totalShippingChargeRemark || '',
-      shippingTaxPercent: shippingTaxPercent || '0',
-      shippingTaxPercentRemark: shippingTaxPercentRemark || '',
+      // Final amounts - EXACT FIELD NAMES FROM API
+      Beforeamt: [beforeAmount],
+      Afteramt: [afterAmount],
       
-      // Final amounts
-      beforeAmount: beforeAmount,
-      afterAmount: afterAmount,
-      
-      // Payment
-      paymentTerm: paymentTerms,
-      paymentMode: paymentMode,
-      paymentDates: [
+      // Payment - EXACT FIELD NAMES FROM API
+      paymentterm: [paymentTerms],
+      paymentmode: [paymentMode],
+      paymentdate: [
         paymentDate,
         paymentDate2 || '',
         paymentDate3 || '',
@@ -632,33 +619,33 @@ const [deliveryDateBy, setDeliveryDateBy] = useState('');
         paymentDate5 || ''
       ],
       
-      // Delivery
-      deliveryDate: deliveryDate,
-      deliveryTime: deliveryTime,
-      deliveryDateBy: deliveryDateBy || '',
+      // Delivery - EXACT FIELD NAMES FROM API
+      Deliverydate: [deliveryDate],
+      Deliverytime: [deliveryTime],
+      deliverydatebyname: [deliveryDateBy || ''],
       
-      // Remarks
-      saleTermRemark: saleTermRemark || '',
-      invoiceRemark: invoiceRemark || '',
-      warehouseRemark: warehouseRemark || '',
+      // Remarks - EXACT FIELD NAMES FROM API
+      saletermremark: [saleTermRemark || ''],
+      invoiceremark: [invoiceRemark || ''],
+      warehouseremark: [warehouseRemark || ''],
       
-      // Metadata
-      orderBy: orderBy,
-      mrName: mrName || 'NO MR',
+      // Metadata - EXACT FIELD NAMES FROM API
+      orderby: [orderBy],
+      mrname_name: [mrName || 'NO MR'],
       
-      // Call time
-      callTime1: preferredCallTime1 || '',
-      callTime2: preferredCallTime2 || '',
+      // Call time - EXACT FIELD NAMES FROM API
+      calltime1: [preferredCallTime1 || ''],
+      calltime2: [preferredCallTime2 || ''],
       
-      // OTIF
-      orderInFull: orderInFull || '',
-      orderInFullReason: orderInFullReason || '',
+      // OTIF - EXACT FIELD NAMES FROM API
+      otifyesno: [orderInFull || ''],
+      otifreason: [orderInFullReason || ''],
       
-      // Recurring
-      nextOrderDate: nextOrderDate || '',
-      recurrence: reoccurance || '',
-      endOrderDate: endOrderDate || '',
-      priority: priority || '',
+      // Recurring - EXACT FIELD NAMES FROM API
+      NextOrderDate: [nextOrderDate || ''],
+      reoccurance: [reoccurance || ''],
+      EndOrderDate: [endOrderDate || ''],
+      Priority: [priority || ''],
       
       // File
       file: file || null
