@@ -251,30 +251,33 @@ export default function NewOrders() {
   };
 
   const filterOrders = (ordersList, statusFilter, search) => {
-    let filtered = [...ordersList];
+  // SAFETY: Filter out null/undefined orders first
+  let filtered = ordersList.filter(order => 
+    order != null && order['Oder ID'] != null
+  );
 
-    if (statusFilter !== 'All') {
-      if (statusFilter === 'Pending') {
-        filtered = filtered.filter(order => 
-          !order['Order Status'] || order['Order Status'].trim() === ''
-        );
-      } else {
-        filtered = filtered.filter(order => order['Order Status'] === statusFilter);
-      }
+  if (statusFilter !== 'All') {
+    if (statusFilter === 'Pending') {
+      filtered = filtered.filter(order => 
+        !order['Order Status'] || order['Order Status'].trim() === ''
+      );
+    } else {
+      filtered = filtered.filter(order => order['Order Status'] === statusFilter);
     }
+  }
 
-    if (search) {
-      const term = search.toLowerCase();
-      filtered = filtered.filter(order => {
-        return DISPLAY_FIELDS.some(field => {
-          const value = order[field.name];
-          return value && value.toString().toLowerCase().includes(term);
-        });
+  if (search) {
+    const term = search.toLowerCase();
+    filtered = filtered.filter(order => {
+      return DISPLAY_FIELDS.some(field => {
+        const value = order[field.name];
+        return value && value.toString().toLowerCase().includes(term);
       });
-    }
+    });
+  }
 
-    setFilteredOrders(filtered);
-  };
+  setFilteredOrders(filtered);
+};
 
   useEffect(() => {
     filterOrders(orders, activeFilter, searchTerm);
@@ -354,136 +357,117 @@ export default function NewOrders() {
   setSelectedStatus('');
 };
 
- const handleSaveEditOrder = (result) => {
-  console.log('✅ Order saved successfully:', result);
-   console.log('=== DEBUG ===');
-  console.log('result:', result);
-  console.log('orders:', orders);
-  console.log('orders type:', typeof orders);
-  console.log('orders is array?', Array.isArray(orders));
-  console.log('selectedOrder:', selectedOrder);
-  console.log('=============');
-   
-  // Update local state (NO RELOAD - like Order Confirmation)
-  const updatedOrders = orders
-    .filter(order => order != null && order['Oder ID'])  // Safety: remove nulls
-    .map(order => {
-      if (order['Oder ID'] === selectedOrder['Oder ID']) {
-        return {
-          ...order,                                    // Keep all data
-          'Order Status': result.editStatus,           // Update status
-          'Remarks*': editRemark,                      // Update remarks
-          'Last Edited By': user.username,             // Update user
-          'Last Edited At': new Date().toISOString()   // Update time
-        };
-      }
-      return order;
-    });
+  //edit orders
+const handleSaveEditOrder = async (result) => {
+  console.log('✅ Edit form saved successfully:', result);
   
-  setOrders(updatedOrders);
-  
-  // Close edit view
-  setShowEditView(false);
-  setSelectedOrder(null);
-  setEditRemark('');
-  setEditMode(null);
-  
-  // Show success (like Order Confirmation does)
-  setShowUpdateSummary(true);
-  setUpdateSummaryData({
-    orderId: result.orderId,
-    status: result.editStatus,
-    message: result.splitOrderId 
-      ? `Split created: ${result.splitOrderId}`
-      : 'Order updated!',
-    timestamp: new Date().toISOString()
-  });
-  
-  // Auto-close after 3 seconds
-  setTimeout(() => {
-    setShowUpdateSummary(false);
-  }, 3000);
-  
-  // Return to dashboard
-  handleBackToDashboard();
-};
-
-  // NEW: Handle product quantity change
-  const handleProductQtyChange = (productIndex, newQty) => {
-    const updatedProducts = [...editProducts];
-    const product = updatedProducts[productIndex];
-    const originalQty = parseFloat(product['Quantity'] || product['QNT'] || 0);
+  try {
+    // Determine the correct status for NewOrders sheet
+    const newOrderStatus = editMode === 'split' ? 'Edit and Split' : 'Edit Order';
     
-    updatedProducts[productIndex] = {
-      ...product,
-      'New Quantity': newQty,
-      'Split Quantity': editMode === 'split' ? originalQty - newQty : 0
+    // Prepare updates for NewOrders Google Sheet
+    const updates = {
+      'Order Status': newOrderStatus,
+      'Remarks*': editRemark,
+      'Last Edited By': user.username,
+      'Last Edited At': new Date().toISOString(),
+       'Actual': new Date().toISOString()  // 🔥 Set Actual field on client side
     };
-    
-    setEditProducts(updatedProducts);
-  };
 
-  // NEW: Save edited order
-  const handleSaveEditedOrder = async () => {
-    try {
-      setLoadingEdit(true);
+    const columnUpdates = {
+      45: newOrderStatus,
+      47: editRemark,
+      78: user.username,
+      79: new Date().toISOString()
+    };
 
-      const saveData = {
+    console.log('🔄 Updating NewOrders sheet with:', { updates, columnUpdates });
+
+    const response = await fetch('/api/orders', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
         orderId: selectedOrder['Oder ID'],
         rowIndex: selectedOrder._rowIndex,
-        editStatus: editMode === 'split' ? 'Edit and Split' : 'Edit Order',
-        remarks: editRemark,
-        username: user.username,
-        products: editProducts,
-        editMode: editMode
-      };
+        updates: updates,
+        columnUpdates: columnUpdates
+      }),
+    });
 
-      const response = await fetch('/api/orders/edit', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(saveData),
+    if (response.ok) {
+      console.log('✅ NewOrders sheet updated successfully');
+      
+      // Update local state
+      const updatedOrders = orders.map(order => {
+        if (order['Oder ID'] === selectedOrder['Oder ID']) {
+          return {
+            ...order,
+            ...updates
+          };
+        }
+        return order;
       });
 
-      if (response.ok) {
-        const result = await response.json();
-        
-        alert(`Order ${editMode === 'split' ? 'split' : 'edited'} successfully!\n\nNote: Status and remarks updated in NewOrders sheet. Product changes saved for processing.`);
-        
-        const updatedOrders = orders.map(order => {
-          if (order['Oder ID'] === selectedOrder['Oder ID']) {
-            return {
-              ...order,
-              'Order Status': result.updatedFields['Order Status'],
-              'Remarks*': result.updatedFields['Remarks*'],
-              'Last Edited By': result.updatedFields['Last Edited By'],
-              'Last Edited At': result.updatedFields['Last Edited At']
-            };
-          }
-          return order;
-        });
-        
-        setOrders(updatedOrders);
-        setShowEditView(false);
-        setEditRemark('');
-        handleBackToDashboard();
-        
-        setTimeout(() => {
-          loadOrders(false);
-        }, 500);
-      } else {
-        const error = await response.json();
-        alert('Failed to update order: ' + (error.error || 'Unknown error'));
-      }
-    } catch (error) {
-      console.error('Error saving edited order:', error);
-      alert('Error saving changes');
-    } finally {
-      setLoadingEdit(false);
-    }
-  };
+      setOrders(updatedOrders);
+      
+      // Show success summary
+      const targetFilter = newOrderStatus;
+      
+      setActiveFilter(targetFilter);
+      filterOrders(updatedOrders, targetFilter, searchTerm);
 
+      const summary = {
+        orderId: selectedOrder['Oder ID'],
+        status: newOrderStatus,
+        newFilter: targetFilter,
+        fields: Object.keys(updates),
+        updates: updates,
+        timestamp: new Date().toLocaleString('en-IN', {
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: true
+        })
+      };
+
+      // FIRST: Close the edit view but keep selectedOrder for the summary
+      setShowEditView(false);
+      setEditRemark('');
+      setEditMode('');
+
+      // SECOND: Show the success summary
+      setUpdateSummaryData(summary);
+      setShowUpdateSummary(true);
+
+      // THIRD: After summary is shown and auto-closes, THEN clear selectedOrder and go back
+      setTimeout(() => {
+        setShowUpdateSummary(false);
+        // NOW clear selectedOrder and go back to dashboard
+        setSelectedOrder(null);
+        handleBackToDashboard();
+      }, 5000);
+
+      // Refresh data after delay
+      setTimeout(() => {
+        loadOrders(false);
+      }, 1000);
+
+    } else {
+      const errorData = await response.json();
+      console.error('❌ Failed to update NewOrders sheet:', errorData);
+      alert('Edit form saved but failed to update order status: ' + (errorData.error || 'Unknown error'));
+    }
+  } catch (error) {
+    console.error('❌ Error updating NewOrders sheet:', error);
+    alert('Edit form saved but failed to update order status. Please try again.');
+  }
+};
+
+//other orders
   const handleFormSubmit = async (e) => {
     e.preventDefault();
     
@@ -763,42 +747,42 @@ export default function NewOrders() {
   };
 
   const getTimeAgo = (timestamp) => {
-    if (!timestamp || timestamp === '' || timestamp === 'undefined' || timestamp === ' ') {
-      return '';
-    }
-    
-    const orderTime = parseSheetDate(timestamp);
-    if (!orderTime || isNaN(orderTime.getTime())) {
-      return '';
-    }
-    
-    const now = new Date();
-    const diffMs = now - orderTime;
-    
-    if (diffMs < 0) {
-      const futureDiffMs = Math.abs(diffMs);
-      const futureDays = Math.floor(futureDiffMs / (1000 * 60 * 60 * 24));
-      if (futureDays > 0) return `in ${futureDays} day${futureDays > 1 ? 's' : ''}`;
-      return 'soon';
-    }
-    
-    const diffMins = Math.floor(diffMs / 60000);
-    
-    if (diffMins < 1) return 'just now';
-    if (diffMins < 60) return `${diffMins} min${diffMins > 1 ? 's' : ''} ago`;
-    
-    const diffHours = Math.floor(diffMins / 60);
-    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
-    
-    const diffDays = Math.floor(diffHours / 24);
-    if (diffDays < 30) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
-    
-    const diffMonths = Math.floor(diffDays / 30);
-    if (diffMonths < 12) return `${diffMonths} month${diffMonths > 1 ? 's' : ''} ago`;
-    
-    const diffYears = Math.floor(diffDays / 365);
-    return `${diffYears} year${diffYears > 1 ? 's' : ''} ago`;
-  };
+  if (!timestamp || timestamp === '' || timestamp === 'undefined' || timestamp === ' ' || timestamp === null) {
+    return '';
+  }
+  
+  const orderTime = parseSheetDate(timestamp);
+  if (!orderTime || isNaN(orderTime.getTime())) {
+    return '';
+  }
+  
+  const now = new Date();
+  const diffMs = now - orderTime;
+  
+  if (diffMs < 0) {
+    const futureDiffMs = Math.abs(diffMs);
+    const futureDays = Math.floor(futureDiffMs / (1000 * 60 * 60 * 24));
+    if (futureDays > 0) return `in ${futureDays} day${futureDays > 1 ? 's' : ''}`;
+    return 'soon';
+  }
+  
+  const diffMins = Math.floor(diffMs / 60000);
+  
+  if (diffMins < 1) return 'just now';
+  if (diffMins < 60) return `${diffMins} min${diffMins > 1 ? 's' : ''} ago`;
+  
+  const diffHours = Math.floor(diffMins / 60);
+  if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+  
+  const diffDays = Math.floor(diffHours / 24);
+  if (diffDays < 30) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+  
+  const diffMonths = Math.floor(diffDays / 30);
+  if (diffMonths < 12) return `${diffMonths} month${diffMonths > 1 ? 's' : ''} ago`;
+  
+  const diffYears = Math.floor(diffDays / 365);
+  return `${diffYears} year${diffYears > 1 ? 's' : ''} ago`;
+};
 
   const getLastUpdatedText = () => {
     if (!lastUpdated) return '';
@@ -929,185 +913,7 @@ export default function NewOrders() {
     );
   };
 
-  // NEW: Render Edit Order View
-  const renderEditOrderView = () => {
-    if (!editOrderData) return null;
-
-    return (
-      <div className={styles.editOrderView}>
-        <div className={styles.editHeader}>
-          <button onClick={() => setShowEditView(false)} className={styles.backBtn}>
-            ← Back
-          </button>
-          <h2>
-            {editMode === 'split' ? '✂️ Edit and Split Order' : '✏️ Edit Order'} - {selectedOrder['Oder ID']}
-          </h2>
-        </div>
-
-        <div className={styles.detailCard}>
-          <div className={`${styles.infoBox} ${styles.infoconfirm}`}>
-            <span className={styles.infoIcon}>ℹ️</span>
-            <div className={styles.infoText}>
-              <p><strong>Current Implementation:</strong></p>
-              <ul style={{marginTop: '8px', paddingLeft: '20px'}}>
-                <li>✅ Status and remarks updated in NewOrders sheet</li>
-                <li>✅ Product quantities can be edited here for review</li>
-                <li>⏳ Actual product updates will be saved to separate sheet (implement later)</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-
-        <div className={styles.detailCard}>
-          <h3 className={styles.cardTitle}>📋 Order Summary</h3>
-          <div className={styles.detailGrid}>
-            <div className={styles.detailItem}>
-              <span className={styles.detailLabel}>Order ID</span>
-              <span className={styles.detailValue}>{editOrderData['Oder ID']}</span>
-            </div>
-            <div className={styles.detailItem}>
-              <span className={styles.detailLabel}>Customer Name</span>
-              <span className={styles.detailValue}>{editOrderData['Name of Client']}</span>
-            </div>
-            <div className={styles.detailItem}>
-              <span className={styles.detailLabel}>Mobile</span>
-              <span className={styles.detailValue}>{editOrderData['Mobile']}</span>
-            </div>
-            <div className={styles.detailItem}>
-              <span className={styles.detailLabel}>Current Status</span>
-              <span className={styles.detailValue}>{editOrderData['Order Status'] || 'Pending'}</span>
-            </div>
-          </div>
-        </div>
-
-        <div className={styles.detailCard}>
-          <h3 className={styles.cardTitle}>
-            📦 Products {editMode === 'split' ? '(Adjust quantities to split)' : '(Review and modify)'}
-          </h3>
-          
-          <div className={styles.productsTable}>
-            <table style={{width: '100%', borderCollapse: 'collapse'}}>
-              <thead>
-                <tr style={{background: '#f9faf7', borderBottom: '2px solid #e5e9d8'}}>
-                  <th style={{padding: '12px', textAlign: 'left', width: '35%'}}>Product Name</th>
-                  <th style={{padding: '12px', textAlign: 'center', width: '8%'}}>SKU</th>
-                  <th style={{padding: '12px', textAlign: 'center', width: '10%'}}>Original Qty</th>
-                  <th style={{padding: '12px', textAlign: 'right', width: '10%'}}>Price</th>
-                  <th style={{padding: '12px', textAlign: 'center', width: '12%'}}>New Qty</th>
-                  {editMode === 'split' && <th style={{padding: '12px', textAlign: 'center', width: '12%'}}>Split Qty</th>}
-                  <th style={{padding: '12px', textAlign: 'right', width: '13%'}}>Total</th>
-                </tr>
-              </thead>
-              <tbody>
-                {editProducts.length === 0 ? (
-                  <tr>
-                    <td colSpan={editMode === 'split' ? "7" : "6"} style={{padding: '20px', textAlign: 'center', color: '#7a8450'}}>
-                      No products found. SKUWise-Orders sheet may not be set up yet.
-                    </td>
-                  </tr>
-                ) : (
-                  editProducts.map((product, idx) => {
-                    const originalQty = parseFloat(product['Quantity'] || product['QNT'] || 0);
-                    const price = parseFloat(product['MRP'] || product['Price'] || product['Unit Price'] || 0);
-                    const newQty = product['New Quantity'] !== undefined ? product['New Quantity'] : originalQty;
-                    const splitQty = product['Split Quantity'] || 0;
-                    const sku = product['SKU'] || product['Product Code'] || '-';
-                    
-                    return (
-                      <tr key={idx} style={{borderBottom: '1px solid #e5e9d8'}}>
-                        <td style={{padding: '12px', fontWeight: 500}}>{product['Product Name'] || product['Product'] || 'Unknown'}</td>
-                        <td style={{padding: '12px', textAlign: 'center'}}>{sku}</td>
-                        <td style={{padding: '12px', textAlign: 'center'}}>{originalQty}</td>
-                        <td style={{padding: '12px', textAlign: 'right'}}>₹{price.toFixed(2)}</td>
-                        <td style={{padding: '12px', textAlign: 'center'}}>
-                          <input
-                            type="number"
-                            min="0"
-                            max={originalQty}
-                            step="1"
-                            value={newQty}
-                            onChange={(e) => handleProductQtyChange(idx, parseFloat(e.target.value) || 0)}
-                            style={{
-                              width: '70px',
-                              padding: '6px',
-                              border: '1px solid #e5e9d8',
-                              borderRadius: '4px',
-                              textAlign: 'center'
-                            }}
-                          />
-                        </td>
-                        {editMode === 'split' && (
-                          <td style={{padding: '12px', textAlign: 'center', fontWeight: 600, color: '#f97316'}}>
-                            {splitQty}
-                          </td>
-                        )}
-                        <td style={{padding: '12px', textAlign: 'right', fontWeight: 600}}>₹{(newQty * price).toFixed(2)}</td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-              {editProducts.length > 0 && (
-                <tfoot>
-                  <tr style={{background: '#f9faf7', borderTop: '2px solid #e5e9d8'}}>
-                    <td colSpan={editMode === 'split' ? "6" : "5"} style={{padding: '12px', textAlign: 'right'}}>
-                      <strong>Total Amount:</strong>
-                    </td>
-                    <td style={{padding: '12px', textAlign: 'right'}}>
-                      <strong>
-                        ₹{editProducts.reduce((sum, p) => {
-                          const price = parseFloat(p['MRP'] || p['Price'] || p['Unit Price'] || 0);
-                          const qty = p['New Quantity'] !== undefined ? p['New Quantity'] : parseFloat(p['Quantity'] || p['QNT'] || 0);
-                          return sum + (qty * price);
-                        }, 0).toFixed(2)}
-                      </strong>
-                    </td>
-                  </tr>
-                </tfoot>
-              )}
-            </table>
-          </div>
-
-          {editMode === 'split' && editProducts.length > 0 && (
-            <div style={{marginTop: '16px'}}>
-              <div className={`${styles.infoBox}`} style={{backgroundColor: '#fff3cd', borderColor: '#ffc107'}}>
-                <span className={styles.infoIcon}>ℹ️</span>
-                <span className={styles.infoText}>
-                  Split quantities will be recorded. Adjust "New Qty" to keep in current order.
-                </span>
-              </div>
-            </div>
-          )}
-        </div>
-
-        <div className={styles.detailCard}>
-          <h3 className={styles.cardTitle}>📝 Edit Remarks</h3>
-          <div style={{padding: '12px', background: '#f9faf7', borderRadius: '6px', marginTop: '8px'}}>
-            <p style={{margin: 0}}>{editRemark}</p>
-          </div>
-        </div>
-
-        <div className={styles.formActions}>
-          <button
-            type="button"
-            onClick={() => setShowEditView(false)}
-            className={styles.btnSecondary}
-            disabled={loadingEdit}
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={handleSaveEditedOrder}
-            className={styles.btnSuccess}
-            disabled={loadingEdit}
-          >
-            {loadingEdit ? 'Saving...' : '💾 Save Changes'}
-          </button>
-        </div>
-      </div>
-    );
-  };
+  
 
   if (!user || loading) {
     return (
@@ -1320,16 +1126,17 @@ export default function NewOrders() {
             </>
           ) : showEditView ? 
            (
-  <div className={styles.editOrderView}>
-    <EditOrderForm
-      order={editOrderData}
-      products={editProducts}
-      onSave={handleSaveEditOrder}
-      onCancel={handleCancelEdit}
-      editMode={editMode}
-
-    />
-  </div>
+ 
+<div className={styles.editOrderView}>
+  <EditOrderForm
+    order={editOrderData}
+    products={editProducts}
+    onSave={handleSaveEditOrder}  // This should be the FIXED function above
+    onCancel={handleCancelEdit}
+    editMode={editMode}
+    loading={loadingEdit}
+  />
+</div>
           ) : (
             <div className={styles.detailView}>
               <button onClick={handleBackToDashboard} className={styles.backBtn}>
@@ -1540,14 +1347,14 @@ export default function NewOrders() {
               <div className={styles.summaryDivider}></div>
               
               <div className={styles.summaryFields}>
-                <h4>Updated Fields ({updateSummaryData.fields.length})</h4>
-                {updateSummaryData.fields.map((fieldName, idx) => (
+                <h4>Updated Fields ({updateSummaryData.fields?.length || 0})</h4>
+                {updateSummaryData.fields?.map((fieldName, idx) => (
                   <div key={idx} className={styles.summaryFieldRow}>
                     <span className={styles.fieldName}>{fieldName}:</span>
                     <span className={styles.fieldValue}>
-                      {updateSummaryData.updates[fieldName] === 'TRUE' ? '✓ Yes' : 
-                       updateSummaryData.updates[fieldName] === 'FALSE' ? '✗ No' :
-                       updateSummaryData.updates[fieldName] || '-'}
+                      {updateSummaryData.updates?.[fieldName] === 'TRUE' ? '✓ Yes' : 
+                       updateSummaryData.updates?.[fieldName] === 'FALSE' ? '✗ No' :
+                       updateSummaryData.updates?.[fieldName] || '-'}
                     </span>
                   </div>
                 ))}
