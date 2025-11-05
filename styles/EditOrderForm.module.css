@@ -1,337 +1,924 @@
-.editForm {
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 20px;
-  background: #fff;
+/* ============================================
+   EditOrderForm.module.css - Compact Enhanced Styles (UPDATED)
+   ============================================ */
+
+/* ============================================
+   Form Container
+   ============================================ */
+.form {
+  max-width: 100%;
+  padding: 16px;
+  background: #ffffff;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  
+  /* CSS Variables */
+  --primary: #2563eb;
+  --primary-dark: #1d4ed8;
+  --primary-light: #3b82f6;
+  --secondary: #64748b;
+  --accent: #f59e0b;
+  --success: #10b981;
+  --error: #ef4444;
+  --warning: #f59e0b;
+  --background: #f8fafc;
+  --surface: #ffffff;
+  --text-primary: #1e293b;
+  --text-secondary: #64748b;
+  --border: #e2e8f0;
+  --border-light: #f1f5f9;
 }
 
-/* Toggle Section for Advanced Fields */
+.editForm {
+  composes: form;
+}
+
+/* ============================================
+   NEW: Toggle Section Styling
+   ============================================ */
 .toggleSection {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  padding: 16px 20px;
+  margin-bottom: 20px;
+  padding: 16px;
+  background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+  border: 2px solid var(--primary-light);
   border-radius: 8px;
-  margin-bottom: 24px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-
-.toggleLabel {
-  display: flex;
-  align-items: center;
-  cursor: pointer;
-  color: white;
-  font-weight: 500;
-  user-select: none;
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.1);
 }
 
 .toggleCheckbox {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.toggleCheckbox input[type="checkbox"] {
   width: 20px;
   height: 20px;
   cursor: pointer;
-  margin-right: 12px;
-  accent-color: #48bb78;
+  accent-color: var(--primary);
+  flex-shrink: 0;
 }
 
-.toggleText {
-  font-size: 16px;
+.toggleCheckbox label {
+  font-size: 15px;
   font-weight: 600;
-  margin-right: 8px;
+  color: var(--primary-dark);
+  cursor: pointer;
+  user-select: none;
+  line-height: 1.4;
 }
 
-.toggleHint {
-  font-size: 13px;
-  opacity: 0.9;
-  font-weight: 400;
-  font-style: italic;
+.toggleCheckbox input[type="checkbox"]:hover {
+  transform: scale(1.05);
 }
 
-/* Error Message */
-.errorMessage {
-  background: #fee;
-  border: 1px solid #fcc;
-  color: #c33;
-  padding: 12px 16px;
-  border-radius: 6px;
-  margin-bottom: 20px;
-  font-size: 14px;
+.toggleCheckbox input[type="checkbox"]:checked {
+  background-color: var(--primary);
 }
 
-/* Section Styling */
-.section {
-  margin-bottom: 30px;
-  padding: 20px;
-  background: #f9fafb;
+/* ============================================
+   Loading Overlay
+   ============================================ */
+.loadingOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.95);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
   border-radius: 8px;
-  border: 1px solid #e5e7eb;
+  backdrop-filter: blur(4px);
+}
+
+.loadingSpinner {
+  background: var(--surface);
+  padding: 20px 32px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--primary);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+  border: 1px solid var(--border);
+}
+
+/* ============================================
+   Error Message
+   ============================================ */
+.errorMessage {
+  background: #fef2f2;
+  border: 1px solid var(--error);
+  color: #991b1b;
+  padding: 10px 14px;
+  border-radius: 6px;
+  margin-bottom: 16px;
+  font-weight: 500;
+  font-size: 13px;
+  border-left: 4px solid var(--error);
+}
+
+/* ============================================
+   Section Styling - Ultra Compact
+   ============================================ */
+.section {
+  margin-bottom: 16px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  transition: all 0.2s ease;
+}
+
+.section:hover {
+  border-color: var(--primary-light);
+  box-shadow: 0 1px 4px rgba(37, 99, 235, 0.1);
 }
 
 .sectionTitle {
-  font-size: 18px;
-  font-weight: 600;
-  color: #1f2937;
-  margin-bottom: 16px;
-  padding-bottom: 8px;
-  border-bottom: 2px solid #3b82f6;
+  margin: 0 0 12px 0;
+  color: var(--primary);
+  font-size: 16px;
+  font-weight: 700;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border-light);
+  letter-spacing: -0.025em;
 }
 
-/* Grid Layouts */
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.sectionHeader h3 {
+  margin: 0;
+  border: none;
+  padding: 0;
+}
+
+/* ============================================
+   Grid Layouts - Ultra Compact
+   ============================================ */
 .grid2 {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 16px;
+  gap: 16px 20px;
 }
 
 .grid3 {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
+  gap: 16px 18px;
 }
 
-/* Field Styling */
+.grid4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px 16px;
+}
+
+.grid5 {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px 14px;
+}
+
+@media (max-width: 1024px) {
+  .grid3 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .grid4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .grid5 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .grid2,
+  .grid3,
+  .grid4,
+  .grid5 {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+}
+
+/* ============================================
+   Form Fields - UPDATED VERTICAL LAYOUT
+   ============================================ */
 .field {
   display: flex;
   flex-direction: column;
+  gap: 6px;
+  margin-bottom: 4px;
 }
 
 .field label {
-  font-size: 14px;
-  font-weight: 500;
-  color: #374151;
-  margin-bottom: 6px;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 13px;
+  line-height: 1.3;
+  text-align: left;
+  display: block;
+  margin-bottom: 2px;
+}
+
+.mandatory {
+  color: var(--error);
+  font-weight: 700;
+  font-size: 12px;
+  margin-left: 2px;
 }
 
 .field input,
 .field select,
 .field textarea {
-  padding: 10px 12px;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
+  width: 100%;
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
   font-size: 14px;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition: all 0.15s ease;
+  font-family: inherit;
+  background: var(--surface);
+  min-height: 36px;
+  line-height: 1.4;
 }
 
 .field input:focus,
 .field select:focus,
 .field textarea:focus {
   outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
+  background: var(--surface);
 }
 
 .field textarea {
   resize: vertical;
-  font-family: inherit;
+  min-height: 70px;
+  line-height: 1.4;
+  padding: 10px;
 }
 
-/* Readonly Fields */
+/* ============================================
+   Compact Input Variants
+   ============================================ */
+.numberInput {
+  padding: 4px 6px !important;
+  min-height: 28px !important;
+  text-align: center;
+  font-size: 11px !important;
+}
+
+/* ============================================
+   Readonly Fields
+   ============================================ */
 .readonly {
-  background-color: #f3f4f6;
-  color: #6b7280;
-  cursor: not-allowed;
+  background-color: #f8fafc !important;
+  color: var(--text-secondary) !important;
+  cursor: not-allowed !important;
+  border-color: var(--border) !important;
+  opacity: 0.7;
+  font-size: 11px !important;
 }
 
-/* Mandatory Field Indicator */
-.mandatory {
-  color: #ef4444;
-  font-weight: bold;
-  margin-left: 2px;
+.readonly:hover {
+  background-color: #f8fafc !important;
 }
 
-/* Checkbox Group */
+.readonly:focus {
+  border-color: var(--border) !important;
+  box-shadow: none !important;
+}
+
+/* ============================================
+   Checkbox Group - FIXED
+   ============================================ */
 .checkboxGroup {
   display: flex;
   align-items: center;
+  gap: 8px;
   margin-bottom: 8px;
-  padding: 8px;
-  background: #eff6ff;
-  border-radius: 4px;
+  padding: 4px 0;
 }
 
 .checkboxGroup input[type="checkbox"] {
-  width: 18px;
-  height: 18px;
-  margin-right: 8px;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  flex-shrink: 0;
   cursor: pointer;
 }
 
 .checkboxGroup label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
   margin: 0;
   cursor: pointer;
-  font-size: 13px;
-  color: #1e40af;
-  font-weight: 500;
+  user-select: none;
 }
 
-/* Product Table */
-.productTable {
+/* ============================================
+   Products Table - Compact
+   ============================================ */
+.productsTable {
   overflow-x: auto;
-  margin-top: 12px;
+  margin-top: 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  max-width: 100%;
 }
 
-.productTable table {
+.productsTable table {
   width: 100%;
   border-collapse: collapse;
-  background: white;
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  min-width: 1000px;
+  font-size: 13px;
 }
 
-.productTable thead {
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+.productsTable thead {
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  color: white;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.productsTable thead th {
+  padding: 10px 6px;
+  text-align: center;
+  font-weight: 600;
+  font-size: 12px;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  white-space: nowrap;
+  letter-spacing: 0.025em;
+}
+
+/* Custom Column Widths */
+.productsTable thead th:nth-child(1) {
+  width: 22%;
+  min-width: 200px;
+}
+
+.productsTable thead th:nth-child(2) {
+  width: 6%;
+  min-width: 60px;
+}
+
+.productsTable thead th:nth-child(3) {
+  width: 8%;
+  min-width: 80px;
+}
+
+.productsTable thead th:nth-child(4) {
+  width: 5%;
+  min-width: 50px;
+}
+
+.productsTable thead th:nth-child(5) {
+  width: 7%;
+  min-width: 70px;
+}
+
+.productsTable thead th:nth-child(6) {
+  width: 7%;
+  min-width: 70px;
+}
+
+.productsTable thead th:nth-child(7) {
+  width: 8%;
+  min-width: 80px;
+}
+
+.productsTable thead th:nth-child(8) {
+  width: 8%;
+  min-width: 80px;
+}
+
+.productsTable thead th:nth-child(9) {
+  width: 5%;
+  min-width: 60px;
+}
+
+.productsTable thead th:nth-child(10) {
+  width: 5%;
+  min-width: 60px;
+}
+
+.productsTable thead th:nth-child(11) {
+  width: 5%;
+  min-width: 60px;
+}
+
+.productsTable thead th:nth-child(12) {
+  width: 6%;
+  min-width: 70px;
+}
+
+.productsTable thead th:last-child {
+  border-right: none;
+}
+
+.productsTable tbody tr {
+  border-bottom: 1px solid var(--border-light);
+  transition: background-color 0.15s ease;
+}
+
+.productsTable tbody tr:hover {
+  background-color: #f8fafc;
+}
+
+.productsTable tbody td {
+  padding: 6px;
+  text-align: center;
+  font-size: 13px;
+  vertical-align: middle;
+}
+
+/* Apply custom widths to table body cells */
+.productsTable tbody td:nth-child(1) {
+  width: 22%;
+  min-width: 200px;
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: var(--surface);
+  text-align: left;
+}
+
+.productsTable tbody td:nth-child(2) {
+  width: 6%;
+  min-width: 60px;
+}
+
+.productsTable tbody td:nth-child(3) {
+  width: 8%;
+  min-width: 80px;
+}
+
+.productsTable tbody td:nth-child(4) {
+  width: 5%;
+  min-width: 50px;
+}
+
+.productsTable tbody td:nth-child(5) {
+  width: 7%;
+  min-width: 70px;
+}
+
+.productsTable tbody td:nth-child(6) {
+  width: 7%;
+  min-width: 70px;
+}
+
+.productsTable tbody td:nth-child(7) {
+  width: 8%;
+  min-width: 80px;
+}
+
+.productsTable tbody td:nth-child(8) {
+  width: 8%;
+  min-width: 80px;
+}
+
+.productsTable tbody td:nth-child(9) {
+  width: 5%;
+  min-width: 60px;
+}
+
+.productsTable tbody td:nth-child(10) {
+  width: 5%;
+  min-width: 60px;
+}
+
+.productsTable tbody td:nth-child(11) {
+  width: 5%;
+  min-width: 60px;
+}
+
+.productsTable tbody td:nth-child(12) {
+  width: 6%;
+  min-width: 70px;
+}
+
+.productsTable tbody tr:hover td:nth-child(1) {
+  background-color: #f8fafc;
+}
+
+.productsTable tbody td:nth-child(1) select {
+  text-align: left;
+  width: 100%;
+  min-width: 180px;
+}
+
+.productsTable tbody td input,
+.productsTable tbody td select {
+  min-width: 50px;
+  text-align: center;
+  padding: 5px 6px;
+  min-height: 32px;
+  font-size: 13px;
+  width: 90%;
+}
+
+/* ============================================
+   Product Dropdown Styling
+   ============================================ */
+.productDropdown {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid var(--primary);
+  border-radius: 3px;
+  font-size: 13px;
+  background-color: var(--surface);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  min-height: 32px;
+}
+
+.productDropdown:hover {
+  border-color: var(--primary-dark);
+}
+
+.productDropdown:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
+}
+
+/* ============================================
+   Total Row Styling
+   ============================================ */
+.totalRow {
+  background: linear-gradient(135deg, #f0f9ff, #e0f2fe) !important;
+  font-weight: 600;
+  border-top: 2px solid var(--primary);
+}
+
+.totalLabel {
+  text-align: right;
+  color: var(--primary);
+  font-weight: 700;
+  padding-right: 8px;
+  font-size: 11px;
+}
+
+.finalTotal {
+  background: var(--primary) !important;
+  color: white !important;
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.finalTotal input {
+  color: white !important;
+  font-weight: 700;
+  background: transparent !important;
+  border: none !important;
+  text-align: center;
+  font-size: 11px !important;
+}
+
+/* ============================================
+   Total Amount Section
+   ============================================ */
+.totalAmountSection {
+  margin-top: 12px;
+  padding: 10px 12px;
+  background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+  border: 1px solid #bbf7d0;
+  border-radius: 6px;
+}
+
+.totalAmountRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 2px 0;
+}
+
+.totalAmountRow span {
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 12px;
+}
+
+.beforeAmount {
+  color: var(--secondary);
+  font-size: 13px;
+}
+
+.afterAmount {
+  color: var(--success);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+/* ============================================
+   Button Styling - Compact
+   ============================================ */
+.btnAdd {
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.btnAdd:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.3);
+}
+
+.btnAdd:active {
+  transform: translateY(0);
+}
+
+.toggleButton {
+  background: transparent;
+  color: var(--primary);
+  border: 1px solid var(--primary);
+  border-radius: 4px;
+  padding: 4px 10px;
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.toggleButton:hover {
+  background: var(--primary);
   color: white;
 }
 
-.productTable th {
-  padding: 12px 8px;
-  text-align: left;
-  font-size: 13px;
-  font-weight: 600;
-  white-space: nowrap;
+.btnRemove {
+  background-color: var(--error);
+  color: white;
+  border: none;
+  border-radius: 3px;
+  width: 22px;
+  height: 22px;
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.productTable td {
-  padding: 10px 8px;
-  border-bottom: 1px solid #e5e7eb;
-  font-size: 13px;
-  color: #374151;
+.btnRemove:hover {
+  background-color: #dc2626;
+  transform: scale(1.05);
 }
 
-.productTable tbody tr:hover {
-  background: #f9fafb;
-}
-
-.productTable tfoot td {
-  background: #f3f4f6;
-  font-weight: 600;
-  color: #1f2937;
-  padding: 12px 8px;
-  border-top: 2px solid #3b82f6;
-}
-
-/* Action Buttons */
-.actionButtons {
+/* ============================================
+   Form Actions
+   ============================================ */
+.formActions {
   display: flex;
   justify-content: flex-end;
-  gap: 12px;
-  margin-top: 24px;
-  padding-top: 20px;
-  border-top: 2px solid #e5e7eb;
+  gap: 10px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-light);
+  margin-top: 20px;
 }
 
-.cancelButton {
-  padding: 12px 24px;
-  background: #fff;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  font-size: 14px;
-  font-weight: 500;
-  color: #374151;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.cancelButton:hover:not(:disabled) {
-  background: #f9fafb;
-  border-color: #9ca3af;
-}
-
-.saveButton {
-  padding: 12px 24px;
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-  border: none;
-  border-radius: 6px;
-  font-size: 14px;
-  font-weight: 600;
+.btnSubmit {
+  background: linear-gradient(135deg, var(--success), #059669);
   color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 10px 24px;
+  font-size: 13px;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
-  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
+  transition: all 0.15s ease;
 }
 
-.saveButton:hover:not(:disabled) {
-  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-  box-shadow: 0 4px 8px rgba(59, 130, 246, 0.4);
+.btnSubmit:hover:not(:disabled) {
   transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4);
 }
 
-.cancelButton:disabled,
-.saveButton:disabled {
-  opacity: 0.6;
+.btnSubmit:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.btnSubmit:disabled {
+  background: var(--secondary);
   cursor: not-allowed;
+  opacity: 0.6;
   transform: none;
+  box-shadow: none;
 }
 
-/* Responsive Design */
-@media (max-width: 1024px) {
-  .grid3 {
-    grid-template-columns: repeat(2, 1fr);
-  }
+.btnCancel {
+  background: white;
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 10px 24px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
 }
 
+.btnCancel:hover {
+  border-color: var(--secondary);
+  background-color: #f8fafc;
+  color: var(--text-primary);
+}
+
+/* ============================================
+   Discount Table
+   ============================================ */
+.discountTable {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.discountTable table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.discountTable th,
+.discountTable td {
+  padding: 8px 10px;
+  text-align: left;
+  border: 1px solid var(--border-light);
+  font-size: 11px;
+}
+
+.discountTable thead {
+  background: linear-gradient(135deg, #64748b, #475569);
+  color: white;
+}
+
+.discountTable tbody tr:nth-child(even) {
+  background-color: #f8fafc;
+}
+
+.discountTable input {
+  width: 100%;
+  padding: 4px 6px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  font-size: 11px;
+}
+
+/* ============================================
+   Responsive Design
+   ============================================ */
 @media (max-width: 768px) {
-  .editForm {
-    padding: 16px;
-  }
-
-  .grid2,
-  .grid3 {
-    grid-template-columns: 1fr;
+  .form {
+    padding: 12px;
   }
 
   .toggleSection {
-    padding: 12px 16px;
+    padding: 12px;
+    margin-bottom: 16px;
   }
 
-  .toggleText {
+  .toggleCheckbox label {
     font-size: 14px;
   }
 
-  .toggleHint {
-    display: block;
-    margin-top: 4px;
-    margin-left: 32px;
-  }
-
   .section {
-    padding: 16px;
+    padding: 10px;
+    margin-bottom: 14px;
   }
 
   .sectionTitle {
-    font-size: 16px;
+    font-size: 14px;
+    margin-bottom: 10px;
   }
 
-  .productTable {
+  .sectionHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  
+  .btnAdd {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .formActions {
+    flex-direction: column-reverse;
+    gap: 8px;
+  }
+
+  .btnSubmit,
+  .btnCancel {
+    width: 100%;
+    padding: 12px;
+  }
+
+  .productsTable {
+    font-size: 10px;
+  }
+  
+  .productsTable tbody td:nth-child(1) {
+    position: static;
+    min-width: 150px;
+  }
+
+  .field label {
     font-size: 12px;
   }
 
-  .productTable th,
-  .productTable td {
-    padding: 8px 6px;
-  }
-
-  .actionButtons {
-    flex-direction: column-reverse;
-  }
-
-  .cancelButton,
-  .saveButton {
-    width: 100%;
+  .field input,
+  .field select,
+  .field textarea {
+    font-size: 13px;
+    padding: 8px;
   }
 }
 
-@media (max-width: 480px) {
-  .toggleLabel {
-    flex-direction: column;
-    align-items: flex-start;
-  }
+/* ============================================
+   Focus Accessibility
+   ============================================ */
+.form button:focus-visible,
+.field input:focus-visible,
+.field select:focus-visible,
+.field textarea:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
 
-  .toggleCheckbox {
-    margin-bottom: 8px;
+/* ============================================
+   Animations
+   ============================================ */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
   }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 
-  .toggleHint {
-    margin-left: 0;
+.section {
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
   }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.loadingSpinner {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+/* ============================================
+   Utility Classes
+   ============================================ */
+.textCenter {
+  text-align: center;
+}
+
+.textRight {
+  text-align: right;
+}
+
+.fullWidth {
+  width: 100%;
+}
+
+.noWrap {
+  white-space: nowrap;
 }
