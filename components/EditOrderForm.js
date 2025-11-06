@@ -1,7 +1,20 @@
+'use client';
+import dynamic from 'next/dynamic';
 import { useState, useEffect } from 'react';
 import styles from '../styles/EditOrderForm.module.css';
-import SetupDataService from '../services/SetupDataService';
-import EditOrderAPI from '../services/editOrderAPI';
+//import SetupDataService from '../services/SetupDataService';
+//import EditOrderAPI from '../services/editOrderAPI';
+import SetupDataService from '../lib/services/SetupDataService';
+import EditOrderAPI from '../lib/services/editOrderAPI';
+import Select from 'react-select';
+
+
+// Dynamically import Select2Dropdown (client-side only)
+const Select2Dropdown = dynamic(() => import('./Select2Dropdown'), {
+  ssr: false,
+  loading: () => <select><option>Loading...</option></select>
+});
+
 
 export default function EditOrderForm({ order, products, onSave, onCancel, editMode }) {
   // Client Information
@@ -110,6 +123,15 @@ export default function EditOrderForm({ order, products, onSave, onCancel, editM
 
   // NEW: State for showing/hiding additional fields
   const [showAdditionalFields, setShowAdditionalFields] = useState(false);
+
+  // Format products for Select2
+  const getProductOptions = () => {
+    return productListOptions.map(product => ({
+      value: product.combinedName,
+      label: `${product.product} | Pack: ${product.pack} | Price: ₹${product.price}`,
+      raw: product
+    }));
+  };
 
   // Calculate totals whenever productList changes
   useEffect(() => {
@@ -391,6 +413,7 @@ export default function EditOrderForm({ order, products, onSave, onCancel, editM
       .filter(row => row['As Per Factory- Status'] !== 'Discontinue')
       .map(row => ({
         combinedName: row['Combined Name'] || '',
+         product: row['Product'] || '', // Use this for display
         productSKU: row['SKU'] || '',
         pack: row['Pack'] || '',
         price: row['Price'] || '0',
@@ -899,14 +922,16 @@ export default function EditOrderForm({ order, products, onSave, onCancel, editM
         )}
       </div>
 
-      {/* Products */}
+      {/* Products Table */}
       <div className={styles.section}>
         <div className={styles.sectionHeader}>
           <h3 className={styles.sectionTitle}>Add Product Details</h3>
-          <button type="button" onClick={addProduct} className={styles.btnAdd}>+ Add More</button>
+          <button type="button" onClick={addProduct} className={styles.btnAdd}>
+            + Add More
+          </button>
         </div>
         
-        <div className={styles.productsTable}>
+        <div className={styles.productsTableContainer}>
           <table className={styles.productsTable}>
             <thead>
               <tr>
@@ -927,23 +952,33 @@ export default function EditOrderForm({ order, products, onSave, onCancel, editM
             <tbody>
               {productList.map((product, index) => (
                 <tr key={index}>
-                  <td>
-                    <select 
+                  <td style={{ width: '22%', minWidth: '200px' }}>
+                    <Select2Dropdown
+                      options={getProductOptions()}
                       value={product.productName}
-                      onChange={(e) => updateProduct(index, 'productName', e.target.value)}
-                      className={styles.productDropdown}
-                    >
-                      <option value="">-- Select Product --</option>
-                      {productListOptions.map((p, i) => (
-                        <option key={i} value={p.combinedName}>
-                          {p.combinedName}
-                        </option>
-                      ))}
-                    </select>
+                      onChange={(value) => updateProduct(index, 'productName', value)}
+                      placeholder="Select Product..."
+                      width="100%"
+                      dropdownWidth="500px"
+                    />
                   </td>
-                  <td><input type="text" value={product.mrp} readOnly className={styles.readonly} /></td>
-                  <td><input type="text" value={product.packingSize} readOnly className={styles.readonly} /></td>
-                  <td>
+                  <td style={{ width: '6%', minWidth: '60px' }}>
+                    <input 
+                      type="text" 
+                      value={product.mrp} 
+                      readOnly 
+                      className={styles.readonly} 
+                    />
+                  </td>
+                  <td style={{ width: '8%', minWidth: '80px' }}>
+                    <input 
+                      type="text" 
+                      value={product.packingSize} 
+                      readOnly 
+                      className={styles.readonly} 
+                    />
+                  </td>
+                  <td style={{ width: '5%', minWidth: '50px' }}>
                     <input 
                       type="number" 
                       value={product.quantity}
@@ -951,22 +986,70 @@ export default function EditOrderForm({ order, products, onSave, onCancel, editM
                       className={styles.numberInput}
                     />
                   </td>
-                  <td colSpan="2">
+                  <td colSpan="2" style={{ width: '7%', minWidth: '70px' }}>
                     <input 
                       type="number" 
                       value={product.discountPer}
                       onChange={(e) => updateProduct(index, 'discountPer', e.target.value)}
-                      title={`Max: ${getMaxDiscount(product.productCategory)}%`}
                       className={styles.numberInput}
                     />
                   </td>
-                  <td><input type="text" value={product.discountAmt} readOnly className={styles.readonly} /></td>
-                  <td><input type="text" value={product.beforeTax} readOnly className={styles.readonly} /></td>
-                  <td><input type="text" value={product.afterDiscount} readOnly className={styles.readonly} /></td>
-                  <td colSpan="2"><input type="text" value={product.cgst} readOnly className={styles.readonly} /></td>
-                  <td colSpan="2"><input type="text" value={product.sgst} readOnly className={styles.readonly} /></td>
-                  <td colSpan="2"><input type="text" value={product.igst} readOnly className={styles.readonly} /></td>
-                  <td><input type="text" value={product.total} readOnly className={styles.readonly} /></td>
+                  <td style={{ width: '7%', minWidth: '70px' }}>
+                    <input 
+                      type="text" 
+                      value={product.discountAmt} 
+                      readOnly 
+                      className={styles.readonly} 
+                    />
+                  </td>
+                  <td style={{ width: '8%', minWidth: '80px' }}>
+                    <input 
+                      type="text" 
+                      value={product.beforeTax} 
+                      readOnly 
+                      className={styles.readonly} 
+                    />
+                  </td>
+                  <td style={{ width: '8%', minWidth: '80px' }}>
+                    <input 
+                      type="text" 
+                      value={product.afterDiscount} 
+                      readOnly 
+                      className={styles.readonly} 
+                    />
+                  </td>
+                  <td colSpan="2" style={{ width: '5%', minWidth: '60px' }}>
+                    <input 
+                      type="text" 
+                      value={product.cgst} 
+                      readOnly 
+                      className={styles.readonly} 
+                    />
+                  </td>
+                  <td colSpan="2" style={{ width: '5%', minWidth: '60px' }}>
+                    <input 
+                      type="text" 
+                      value={product.sgst} 
+                      readOnly 
+                      className={styles.readonly} 
+                    />
+                  </td>
+                  <td colSpan="2" style={{ width: '5%', minWidth: '60px' }}>
+                    <input 
+                      type="text" 
+                      value={product.igst} 
+                      readOnly 
+                      className={styles.readonly} 
+                    />
+                  </td>
+                  <td style={{ width: '6%', minWidth: '70px' }}>
+                    <input 
+                      type="text" 
+                      value={product.total} 
+                      readOnly 
+                      className={styles.readonly} 
+                    />
+                  </td>
                 </tr>
               ))}
               {/* Total Row */}
@@ -980,12 +1063,14 @@ export default function EditOrderForm({ order, products, onSave, onCancel, editM
                 <td><input type="text" value={totals.taxBeforeTotal} readOnly className={styles.readonly} /></td>
                 <td><input type="text" value={totals.taxAfterTotal} readOnly className={styles.readonly} /></td>
                 <td colSpan="6"></td>
-                <td className={styles.finalTotal}><input type="text" value={totals.totalAmount} readOnly className={styles.readonly} /></td>
+                <td className={styles.finalTotal}>
+                  <input type="text" value={totals.totalAmount} readOnly className={styles.readonly} />
+                </td>
               </tr>
             </tbody>
           </table>
         </div>
-
+        
         {/* Total Amount Display */}
         <div className={styles.totalAmountSection}>
           <div className={styles.totalAmountRow}>
