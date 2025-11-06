@@ -16,7 +16,8 @@ export default function PartnershipTerms() {
     discountStructure: { headers: [], rows: [] },
     distributorList: { headers: [], rows: [] },
     employeeList: { headers: [], rows: [] },
-    clientList: { headers: [], rows: [] }
+    clientList: { headers: [], rows: [] },
+    orderArchive: { headers: [], rows: [] }
   });
 
   useEffect(() => {
@@ -37,7 +38,8 @@ export default function PartnershipTerms() {
           discountStructure: SetupDataService.getDiscountStructure(),
           distributorList: SetupDataService.getDistributorList(),
           employeeList: SetupDataService.getEmployeeList(),
-          clientList: SetupDataService.getClientList()
+          clientList: SetupDataService.getClientList(),
+          orderArchive: SetupDataService.getOrderArchive()
         });
       }
     } catch (error) {
@@ -71,8 +73,8 @@ export default function PartnershipTerms() {
   const getPaginatedData = () => {
     const filteredRows = getFilteredData();
     
-    // Only apply pagination for clientList
-    if (activeView === 'clientList') {
+    // Only apply pagination for clientList and orderArchive
+    if (activeView === 'clientList' || activeView === 'orderArchive') {
       const startIndex = (currentPage - 1) * itemsPerPage;
       const endIndex = startIndex + itemsPerPage;
       return filteredRows.slice(startIndex, endIndex);
@@ -82,7 +84,7 @@ export default function PartnershipTerms() {
   };
 
   const getTotalPages = () => {
-    if (activeView !== 'clientList') return 1;
+    if (activeView !== 'clientList' && activeView !== 'orderArchive') return 1;
     const filteredRows = getFilteredData();
     return Math.ceil(filteredRows.length / itemsPerPage);
   };
@@ -101,7 +103,7 @@ export default function PartnershipTerms() {
   };
 
   const renderPagination = () => {
-    if (activeView !== 'clientList') return null;
+    if (activeView !== 'clientList' && activeView !== 'orderArchive') return null;
     
     const totalPages = getTotalPages();
     const filteredRows = getFilteredData();
@@ -194,7 +196,11 @@ export default function PartnershipTerms() {
 
       <aside className={`${styles.sidebar} ${sidebarOpen ? styles.open : ''}`}>
         <div className={styles.logoSection}>
-          <img src="/kairali-logo.png" alt="Kairali Products" className={styles.logoImage} />
+          <img 
+            src="/kairali-logo.png" 
+            alt="Kairali Products" 
+            className={styles.logoImage}
+          />
         </div>
 
         <div className={styles.appName}>
@@ -203,11 +209,13 @@ export default function PartnershipTerms() {
         </div>
 
         <nav className={styles.navMenu}>
-          <div className={styles.navItem} onClick={() => { router.push('/dashboard'); closeSidebar(); }}>
-            <span className={styles.navIcon}>📊</span>
-            <span className={styles.navText}>Dashboard</span>
-          </div>
-          
+          {user.moduleAccess?.dashboard && (
+            <div className={styles.navItem} onClick={() => { router.push('/dashboard'); closeSidebar(); }}>
+              <span className={styles.navIcon}>📊</span>
+              <span className={styles.navText}>Dashboard</span>
+            </div>
+          )}
+
           {user.moduleAccess?.newOrders && (
             <div className={styles.navItem} onClick={() => { router.push('/neworders'); closeSidebar(); }}>
               <span className={styles.navIcon}>📋</span>
@@ -259,6 +267,7 @@ export default function PartnershipTerms() {
             {activeView === 'distributorList' && '🤝 Distributor List'}
             {activeView === 'employeeList' && '👥 Employee List'}
             {activeView === 'clientList' && '👤 Client List'}
+            {activeView === 'orderArchive' && '📋 Order Archive'}
           </h1>
           <div className={styles.headerActions}>
             {activeView && (
@@ -349,6 +358,18 @@ export default function PartnershipTerms() {
                   <div className={styles.bulletContent}>
                     <h3>Client List</h3>
                     <p>View all clients with pagination</p>
+                  </div>
+                  <span className={styles.arrow}>→</span>
+                </li>
+
+                <li 
+                  className={styles.bulletItem}
+                  onClick={() => setActiveView('orderArchive')}
+                >
+                  <span className={styles.bulletIcon}>📋</span>
+                  <div className={styles.bulletContent}>
+                    <h3>Order Archive</h3>
+                    <p>View historical confirmed orders with full details</p>
                   </div>
                   <span className={styles.arrow}>→</span>
                 </li>
