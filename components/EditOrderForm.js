@@ -1,11 +1,10 @@
-'use client';
 import dynamic from 'next/dynamic';
 import { useState, useEffect } from 'react';
 import styles from '../styles/EditOrderForm.module.css';
-//import SetupDataService from '../services/SetupDataService';
-//import EditOrderAPI from '../services/editOrderAPI';
-import SetupDataService from '../lib/services/SetupDataService';
-import EditOrderAPI from '../lib/services/editOrderAPI';
+import SetupDataService from '../services/SetupDataService';
+import EditOrderAPI from '../services/editOrderAPI';
+//import SetupDataService from '../lib/services/SetupDataService';
+//import EditOrderAPI from '../lib/services/editOrderAPI';
 import Select from 'react-select';
 
 
