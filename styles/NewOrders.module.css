@@ -1789,3 +1789,9 @@
   font-size: 14px;
   font-style: italic;
 }
+
+/* Add to your CSS module */
+.dispatchPending {
+  color: #dc2626 !important; /* Red color */
+  font-weight: 600;
+}
