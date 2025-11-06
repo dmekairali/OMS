@@ -1,17 +1,17 @@
 /* ============================================
-   EditOrderForm.module.css - Compact Enhanced Styles (UPDATED)
+   EditOrderForm.module.css - Hybrid Enhanced Styles
    ============================================ */
 
-/* ============================================
-   Form Container
-   ============================================ */
+/* ==========================================================================
+   WORLD-CLASS FORM CONTAINER
+   ========================================================================== */
 .form {
-  max-width: 100%;
-  padding: 16px;
-  background: #ffffff;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 32px;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  min-height: 100vh;
   
   /* CSS Variables */
   --primary: #2563eb;
@@ -34,261 +34,279 @@
   composes: form;
 }
 
-/* ============================================
-   Loading Overlay
-   ============================================ */
-.loadingOverlay {
+/* ==========================================================================
+   WORLD-CLASS SECTION STYLING
+   ========================================================================== */
+.section {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 32px;
+  margin-bottom: 24px;
+  box-shadow: 
+    0 4px 6px -1px rgba(0, 0, 0, 0.05),
+    0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.section::before {
+  content: '';
   position: absolute;
   top: 0;
   left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(255, 255, 255, 0.95);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 100;
-  border-radius: 8px;
-  backdrop-filter: blur(4px);
-}
-
-.loadingSpinner {
-  background: var(--surface);
-  padding: 20px 32px;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--primary);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
-  border: 1px solid var(--border);
-}
-
-/* ============================================
-   Error Message
-   ============================================ */
-.errorMessage {
-  background: #fef2f2;
-  border: 1px solid var(--error);
-  color: #991b1b;
-  padding: 10px 14px;
-  border-radius: 6px;
-  margin-bottom: 16px;
-  font-weight: 500;
-  font-size: 13px;
-  border-left: 4px solid var(--error);
-}
-
-/* ============================================
-   Section Styling - Ultra Compact
-   ============================================ */
-.section {
-  margin-bottom: 16px;
-  padding: 12px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--surface);
-  transition: all 0.2s ease;
+  width: 4px;
+  height: 100%;
+  background: linear-gradient(180deg, #3b82f6, #8b5cf6);
 }
 
 .section:hover {
-  border-color: var(--primary-light);
-  box-shadow: 0 1px 4px rgba(37, 99, 235, 0.1);
+  box-shadow: 
+    0 20px 25px -5px rgba(0, 0, 0, 0.08),
+    0 10px 10px -5px rgba(0, 0, 0, 0.02);
+  transform: translateY(-2px);
 }
 
 .sectionTitle {
-  margin: 0 0 12px 0;
-  color: var(--primary);
-  font-size: 16px; /* Increased from 15px */
+  font-size: 1.5rem;
   font-weight: 700;
-  padding-bottom: 6px;
-  border-bottom: 1px solid var(--border-light);
-  letter-spacing: -0.025em;
+  color: #1e293b;
+  margin: 0 0 24px 0;
+  padding-bottom: 12px;
+  border-bottom: 3px solid #3b82f6;
+  position: relative;
+}
+
+.sectionTitle::after {
+  content: '';
+  position: absolute;
+  bottom: -3px;
+  left: 0;
+  width: 80px;
+  height: 3px;
+  background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+  border-radius: 3px;
 }
 
 .sectionHeader {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
+  margin-bottom: 20px;
 }
 
-.sectionHeader h3 {
-  margin: 0;
-  border: none;
-  padding: 0;
-}
-
-/* ============================================
-   Grid Layouts - Ultra Compact
-   ============================================ */
-.grid2 {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 16px 20px; /* row gap, column gap */
-}
-
-.grid3 {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px 18px; /* row gap, column gap */
-}
-
-.grid4 {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 14px 16px; /* row gap, column gap */
-}
-
-.grid5 {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 12px 14px; /* row gap, column gap */
-}
-
-@media (max-width: 1024px) {
-  .grid3 {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  
-  .grid4 {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  
-  .grid5 {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-
-@media (max-width: 768px) {
-  .grid2,
-  .grid3,
-  .grid4,
-  .grid5 {
-    grid-template-columns: 1fr;
-    gap: 10px;
-  }
-}
-
-/* ============================================
-   Form Fields - UPDATED VERTICAL LAYOUT
-   ============================================ */
+/* ==========================================================================
+   WORLD-CLASS FORM FIELDS
+   ========================================================================== */
 .field {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  margin-bottom: 4px; /* Added extra margin */
+  position: relative;
 }
 
 .field label {
   font-weight: 600;
-  color: var(--text-primary);
-  font-size: 13px; /* Increased from 11px */
-  line-height: 1.3;
-  text-align: left;
-  display: block;
-  margin-bottom: 2px; /* Added margin */
+  font-size: 0.875rem;
+  color: #374151;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .mandatory {
-  color: var(--error);
-  font-weight: 700;
-  font-size: 12px; /* Increased from 10px */
-  margin-left: 2px;
+  color: #ef4444;
+  font-weight: 600;
 }
 
 .field input,
 .field select,
 .field textarea {
-  width: 100%;
-  padding: 7px 10px; /* Increased from 6px 8px */
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  font-size: 14px; /* Increased from 12px */
-  transition: all 0.15s ease;
+  padding: 12px 16px;
+  border: 2px solid #e5e7eb;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background: white;
+  color: #1f2937;
   font-family: inherit;
-  background: var(--surface);
-  min-height: 36px; /* Increased from 32px */
-  line-height: 1.4;
+  min-height: 48px;
 }
 
 .field input:focus,
 .field select:focus,
 .field textarea:focus {
   outline: none;
-  border-color: var(--primary);
-  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
-  background: var(--surface);
+  border-color: #3b82f6;
+  box-shadow: 
+    0 0 0 3px rgba(59, 130, 246, 0.1),
+    0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  transform: translateY(-1px);
+}
+
+.field input:hover,
+.field select:hover,
+.field textarea:hover {
+  border-color: #9ca3af;
 }
 
 .field textarea {
   resize: vertical;
-  min-height: 70px; /* Increased from 60px */
-  line-height: 1.4;
-  padding: 10px; /* Increased from 8px */
+  min-height: 100px;
+  line-height: 1.5;
 }
 
-/* ============================================
-   Compact Input Variants
-   ============================================ */
-.numberInput {
-  padding: 4px 6px !important;
-  min-height: 28px !important;
-  text-align: center;
-  font-size: 11px !important;
-}
-
-/* ============================================
-   Readonly Fields
-   ============================================ */
 .readonly {
-  background-color: #f8fafc !important;
-  color: var(--text-secondary) !important;
-  cursor: not-allowed !important;
-  border-color: var(--border) !important;
-  opacity: 0.7;
-  font-size: 11px !important;
+  background: linear-gradient(135deg, #f8fafc, #f1f5f9) !important;
+  color: #6b7280 !important;
+  border-color: #d1d5db !important;
+  cursor: not-allowed;
 }
 
-.readonly:hover {
-  background-color: #f8fafc !important;
+/* ==========================================================================
+   WORLD-CLASS GRID LAYOUTS
+   ========================================================================== */
+.grid2, .grid3 {
+  display: grid;
+  gap: 20px;
+  margin-bottom: 20px;
 }
 
-.readonly:focus {
-  border-color: var(--border) !important;
-  box-shadow: none !important;
+.grid2 {
+  grid-template-columns: repeat(2, 1fr);
 }
 
-/* ============================================
-   Checkbox Group - FIXED
-   ============================================ */
+.grid3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+/* ==========================================================================
+   ADDRESS SECTION - ENHANCED
+   ========================================================================== */
+.addressSection {
+  margin-bottom: 24px;
+}
+
+.addressHeader {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 12px;
+}
+
+.addressContent {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.addressField {
+  display: flex;
+  flex-direction: column;
+}
+
+.shippingHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+/* ==========================================================================
+   CHECKBOX GROUP - ENHANCED
+   ========================================================================== */
 .checkboxGroup {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 8px;
-  padding: 4px 0;
+  padding: 4px 12px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  transition: all 0.2s ease;
+}
+
+.checkboxGroup:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
 }
 
 .checkboxGroup input[type="checkbox"] {
-  width: 16px;
-  height: 16px;
-  margin: 0;
-  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  border: 2px solid #d1d5db;
   cursor: pointer;
+  transition: all 0.2s ease;
+  accent-color: #3b82f6;
+}
+
+.checkboxGroup input[type="checkbox"]:checked {
+  background-color: #3b82f6;
+  border-color: #3b82f6;
 }
 
 .checkboxGroup label {
-  font-size: 13px; /* Increased from 11px */
+  font-size: 0.8rem;
   font-weight: 500;
-  color: var(--text-primary);
+  color: #4b5563;
   margin: 0;
   cursor: pointer;
-  user-select: none;
+  white-space: nowrap;
 }
 
-/* ============================================
-   Products Table - Compact
-   ============================================ */
+/* ==========================================================================
+   TOGGLE SECTION - ENHANCED
+   ========================================================================== */
+.toggleSection {
+  background: linear-gradient(135deg, #e0f2fe, #f0f9ff);
+  padding: 20px;
+  border-radius: 12px;
+  border: 1px solid #bae6fd;
+  margin-bottom: 24px;
+}
+
+.toggleCheckbox {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.toggleCheckbox input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+}
+
+.toggleCheckbox label {
+  font-weight: 600;
+  color: #0369a1;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.toggleButton {
+  background: linear-gradient(135deg, #6b7280, #9ca3af);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.toggleButton:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(107, 114, 128, 0.3);
+}
+
+/* ==========================================================================
+   YOUR ORIGINAL PRODUCTS TABLE STYLING - PRESERVED
+   ========================================================================== */
 .productsTable {
   overflow-x: auto;
   margin-top: 10px;
@@ -302,7 +320,7 @@
   width: 100%;
   border-collapse: collapse;
   min-width: 1000px;
-  font-size: 13px; /* Increased from 11px */
+  font-size: 13px;
 }
 
 .productsTable thead {
@@ -314,72 +332,72 @@
 }
 
 .productsTable thead th {
-  padding: 10px 6px; /* Increased from 8px 4px */
+  padding: 10px 6px;
   text-align: center;
   font-weight: 600;
-  font-size: 12px; /* Increased from 10px */
+  font-size: 12px;
   border-right: 1px solid rgba(255, 255, 255, 0.1);
   white-space: nowrap;
   letter-spacing: 0.025em;
 }
 
 /* Custom Column Widths */
-.productsTable thead th:nth-child(1) { /* Product Name */
+.productsTable thead th:nth-child(1) {
   width: 22%;
   min-width: 200px;
 }
 
-.productsTable thead th:nth-child(2) { /* MRP */
+.productsTable thead th:nth-child(2) {
   width: 6%;
   min-width: 60px;
 }
 
-.productsTable thead th:nth-child(3) { /* Packing Size */
+.productsTable thead th:nth-child(3) {
   width: 8%;
   min-width: 80px;
 }
 
-.productsTable thead th:nth-child(4) { /* Qty */
+.productsTable thead th:nth-child(4) {
   width: 5%;
   min-width: 50px;
 }
 
-.productsTable thead th:nth-child(5) { /* Discount % */
+.productsTable thead th:nth-child(5) {
   width: 7%;
   min-width: 70px;
 }
 
-.productsTable thead th:nth-child(6) { /* Dis. Amt */
+.productsTable thead th:nth-child(6) {
   width: 7%;
   min-width: 70px;
 }
 
-.productsTable thead th:nth-child(7) { /* Taxable Before Dis. */
+.productsTable thead th:nth-child(7) {
   width: 8%;
   min-width: 80px;
 }
 
-.productsTable thead th:nth-child(8) { /* Taxable After Dis. */
+.productsTable thead th:nth-child(8) {
   width: 8%;
   min-width: 80px;
 }
 
-.productsTable thead th:nth-child(9) { /* CGST */
+.productsTable thead th:nth-child(9) {
   width: 5%;
   min-width: 60px;
 }
 
-.productsTable thead th:nth-child(10) { /* SGST */
+.productsTable thead th:nth-child(10) {
   width: 5%;
   min-width: 60px;
 }
 
-.productsTable thead th:nth-child(11) { /* IGST */
+.productsTable thead th:nth-child(11) {
   width: 5%;
   min-width: 60px;
 }
 
-.productsTable thead th:nth-child(12) { /* Total */
+.productsTable thead th:nth-child(12) {
   width: 6%;
   min-width: 70px;
 }
@@ -398,14 +416,14 @@
 }
 
 .productsTable tbody td {
-  padding: 6px; /* Increased from 4px */
+  padding: 6px;
   text-align: center;
-  font-size: 13px; /* Increased from 11px */
+  font-size: 13px;
   vertical-align: middle;
 }
 
 /* Apply custom widths to table body cells */
-.productsTable tbody td:nth-child(1) { /* Product Name */
+.productsTable tbody td:nth-child(1) {
   width: 22%;
   min-width: 200px;
   position: sticky;
@@ -415,57 +433,57 @@
   text-align: left;
 }
 
-.productsTable tbody td:nth-child(2) { /* MRP */
+.productsTable tbody td:nth-child(2) {
   width: 6%;
   min-width: 60px;
 }
 
-.productsTable tbody td:nth-child(3) { /* Packing Size */
+.productsTable tbody td:nth-child(3) {
   width: 8%;
   min-width: 80px;
 }
 
-.productsTable tbody td:nth-child(4) { /* Qty */
+.productsTable tbody td:nth-child(4) {
   width: 5%;
   min-width: 50px;
 }
 
-.productsTable tbody td:nth-child(5) { /* Discount % */
+.productsTable tbody td:nth-child(5) {
   width: 7%;
   min-width: 70px;
 }
 
-.productsTable tbody td:nth-child(6) { /* Dis. Amt */
+.productsTable tbody td:nth-child(6) {
   width: 7%;
   min-width: 70px;
 }
 
-.productsTable tbody td:nth-child(7) { /* Taxable Before Dis. */
+.productsTable tbody td:nth-child(7) {
   width: 8%;
   min-width: 80px;
 }
 
-.productsTable tbody td:nth-child(8) { /* Taxable After Dis. */
+.productsTable tbody td:nth-child(8) {
   width: 8%;
   min-width: 80px;
 }
 
-.productsTable tbody td:nth-child(9) { /* CGST */
+.productsTable tbody td:nth-child(9) {
   width: 5%;
   min-width: 60px;
 }
 
-.productsTable tbody td:nth-child(10) { /* SGST */
+.productsTable tbody td:nth-child(10) {
   width: 5%;
   min-width: 60px;
 }
 
-.productsTable tbody td:nth-child(11) { /* IGST */
+.productsTable tbody td:nth-child(11) {
   width: 5%;
   min-width: 60px;
 }
 
-.productsTable tbody td:nth-child(12) { /* Total */
+.productsTable tbody td:nth-child(12) {
   width: 6%;
   min-width: 70px;
 }
@@ -484,25 +502,25 @@
 .productsTable tbody td select {
   min-width: 50px;
   text-align: center;
-  padding: 5px 6px; /* Increased from 3px 4px */
-  min-height: 32px; /* Increased from 24px */
-  font-size: 13px; /* Increased from 11px */
+  padding: 5px 6px;
+  min-height: 32px;
+  font-size: 13px;
   width: 90%;
 }
 
-/* ============================================
-   Product Dropdown Styling
-   ============================================ */
+/* ==========================================================================
+   PRODUCT DROPDOWN STYLING - PRESERVED
+   ========================================================================== */
 .productDropdown {
   width: 100%;
-  padding: 6px 8px; /* Increased from 4px 6px */
+  padding: 6px 8px;
   border: 1px solid var(--primary);
   border-radius: 3px;
-  font-size: 13px; /* Increased from 11px */
+  font-size: 13px;
   background-color: var(--surface);
   cursor: pointer;
   transition: all 0.15s ease;
-  min-height: 32px; /* Increased from 26px */
+  min-height: 32px;
 }
 
 .productDropdown:hover {
@@ -515,9 +533,9 @@
   box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
 }
 
-/* ============================================
-   Total Row Styling
-   ============================================ */
+/* ==========================================================================
+   TOTAL ROW STYLING - PRESERVED
+   ========================================================================== */
 .totalRow {
   background: linear-gradient(135deg, #f0f9ff, #e0f2fe) !important;
   font-weight: 600;
@@ -548,9 +566,9 @@
   font-size: 11px !important;
 }
 
-/* ============================================
-   Total Amount Section
-   ============================================ */
+/* ==========================================================================
+   TOTAL AMOUNT SECTION - PRESERVED
+   ========================================================================== */
 .totalAmountSection {
   margin-top: 12px;
   padding: 10px 12px;
@@ -583,133 +601,98 @@
   font-weight: 700;
 }
 
-/* ============================================
-   Button Styling - Compact
-   ============================================ */
-.btnAdd {
-  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-  color: white;
-  border: none;
-  border-radius: 4px;
-  padding: 6px 12px;
-  font-size: 11px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.btnAdd:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.3);
-}
-
-.btnAdd:active {
-  transform: translateY(0);
-}
-
-.toggleButton {
-  background: transparent;
-  color: var(--primary);
-  border: 1px solid var(--primary);
-  border-radius: 4px;
-  padding: 4px 10px;
-  font-size: 10px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.toggleButton:hover {
-  background: var(--primary);
-  color: white;
-}
-
-.btnRemove {
-  background-color: var(--error);
-  color: white;
-  border: none;
-  border-radius: 3px;
-  width: 22px;
-  height: 22px;
-  font-size: 12px;
-  line-height: 1;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.btnRemove:hover {
-  background-color: #dc2626;
-  transform: scale(1.05);
-}
-
-/* ============================================
-   Form Actions
-   ============================================ */
+/* ==========================================================================
+   WORLD-CLASS BUTTONS & ACTIONS
+   ========================================================================== */
 .formActions {
   display: flex;
   justify-content: flex-end;
-  gap: 10px;
-  padding-top: 16px;
-  border-top: 1px solid var(--border-light);
-  margin-top: 20px;
+  gap: 16px;
+  margin-top: 40px;
+  padding-top: 24px;
+  border-top: 2px solid #e2e8f0;
+}
+
+.btnSubmit,
+.btnCancel,
+.btnAdd {
+  padding: 14px 28px;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 600;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  position: relative;
+  overflow: hidden;
+}
+
+.btnSubmit::before,
+.btnCancel::before,
+.btnAdd::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  transition: left 0.5s;
+}
+
+.btnSubmit:hover::before,
+.btnCancel:hover::before,
+.btnAdd:hover::before {
+  left: 100%;
 }
 
 .btnSubmit {
-  background: linear-gradient(135deg, var(--success), #059669);
+  background: linear-gradient(135deg, #059669, #10b981);
   color: white;
-  border: none;
-  border-radius: 4px;
-  padding: 10px 24px;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.15s ease;
+  box-shadow: 0 4px 15px rgba(5, 150, 105, 0.3);
 }
 
 .btnSubmit:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4);
-}
-
-.btnSubmit:active:not(:disabled) {
-  transform: translateY(0);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(5, 150, 105, 0.4);
 }
 
 .btnSubmit:disabled {
-  background: var(--secondary);
+  background: #9ca3af;
   cursor: not-allowed;
-  opacity: 0.6;
   transform: none;
   box-shadow: none;
 }
 
 .btnCancel {
-  background: white;
-  color: var(--text-secondary);
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  padding: 10px 24px;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.15s ease;
+  background: linear-gradient(135deg, #6b7280, #9ca3af);
+  color: white;
+  box-shadow: 0 4px 15px rgba(107, 114, 128, 0.3);
 }
 
 .btnCancel:hover {
-  border-color: var(--secondary);
-  background-color: #f8fafc;
-  color: var(--text-primary);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(107, 114, 128, 0.4);
 }
 
-/* ============================================
-   Discount Table
-   ============================================ */
+.btnAdd {
+  background: linear-gradient(135deg, #3b82f6, #6366f1);
+  color: white;
+  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+  padding: 12px 24px;
+  font-size: 0.9rem;
+}
+
+.btnAdd:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
+}
+
+/* ==========================================================================
+   DISCOUNT TABLE - PRESERVED
+   ========================================================================== */
 .discountTable {
   width: 100%;
   border-collapse: collapse;
@@ -749,46 +732,105 @@
   font-size: 11px;
 }
 
-/* ============================================
-   Responsive Design
-   ============================================ */
-@media (max-width: 768px) {
-  .form {
-    padding: 12px;
-  }
+/* ==========================================================================
+   ERROR & LOADING STATES
+   ========================================================================== */
+.errorMessage {
+  background: linear-gradient(135deg, #fef2f2, #fee2e2);
+  color: #dc2626;
+  padding: 20px;
+  border: 1px solid #fecaca;
+  border-radius: 12px;
+  margin-bottom: 24px;
+  font-weight: 500;
+  box-shadow: 0 4px 6px -1px rgba(220, 38, 38, 0.1);
+  border-left: 4px solid #dc2626;
+}
 
+.loadingOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.95);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  border-radius: 8px;
+  backdrop-filter: blur(4px);
+}
+
+.loadingSpinner {
+  background: var(--surface);
+  padding: 20px 32px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--primary);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+  border: 1px solid var(--border);
+}
+
+/* ==========================================================================
+   RESPONSIVE DESIGN
+   ========================================================================== */
+@media (max-width: 1200px) {
+  .editForm {
+    padding: 24px;
+  }
+  
   .section {
-    padding: 10px;
-    margin-bottom: 14px;
+    padding: 24px;
   }
-
-  .sectionTitle {
-    font-size: 14px;
-    margin-bottom: 10px;
+  
+  .grid3 {
+    grid-template-columns: repeat(2, 1fr);
   }
+}
 
-  .sectionHeader {
+@media (max-width: 768px) {
+  .editForm {
+    padding: 16px;
+  }
+  
+  .section {
+    padding: 20px;
+  }
+  
+  .grid2,
+  .grid3 {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  
+  .addressHeader,
+  .addressContent {
+    grid-template-columns: 1fr;
+  }
+  
+  .shippingHeader {
     flex-direction: column;
     align-items: flex-start;
     gap: 8px;
   }
   
-  .btnAdd {
-    width: 100%;
-    justify-content: center;
+  .sectionHeader {
+    flex-direction: column;
+    align-items: flex-start;
   }
-
+  
   .formActions {
-    flex-direction: column-reverse;
-    gap: 8px;
+    flex-direction: column;
   }
-
+  
   .btnSubmit,
   .btnCancel {
     width: 100%;
-    padding: 12px;
+    text-align: center;
   }
-
+  
   .productsTable {
     font-size: 10px;
   }
@@ -797,33 +839,46 @@
     position: static;
     min-width: 150px;
   }
+}
 
-  .field label {
-    font-size: 12px;
+@media (max-width: 480px) {
+  .editForm {
+    padding: 12px;
   }
-
-  .field input,
-  .field select,
-  .field textarea {
-    font-size: 13px;
-    padding: 8px;
+  
+  .section {
+    padding: 16px;
+  }
+  
+  .sectionTitle {
+    font-size: 1.3rem;
+  }
+  
+  .totalAmountRow {
+    flex-direction: column;
+    gap: 8px;
+    text-align: center;
   }
 }
 
-/* ============================================
-   Focus Accessibility
-   ============================================ */
-.form button:focus-visible,
+/* ==========================================================================
+   ACCESSIBILITY & ANIMATIONS
+   ========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  .editForm * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
 .field input:focus-visible,
 .field select:focus-visible,
 .field textarea:focus-visible {
-  outline: 2px solid var(--primary);
+  outline: 2px solid #3b82f6;
   outline-offset: 2px;
 }
 
-/* ============================================
-   Animations
-   ============================================ */
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -852,21 +907,87 @@
   animation: pulse 1.5s ease-in-out infinite;
 }
 
-/* ============================================
-   Utility Classes
-   ============================================ */
-.textCenter {
-  text-align: center;
+/* React Select Custom Styles */
+.react-select-container {
+  min-width: 400px !important;
+  width: 500px !important;
 }
 
-.textRight {
-  text-align: right;
+.react-select__control {
+  min-height: 32px !important;
+  border: 1px solid #2563eb !important;
+  border-radius: 3px !important;
+  font-size: 13px !important;
 }
 
-.fullWidth {
-  width: 100%;
+.react-select__menu {
+  width: 500px !important;
+  min-width: 400px !important;
+  z-index: 1001 !important;
 }
 
-.noWrap {
-  white-space: nowrap;
+.react-select__option {
+  font-size: 14px !important;
+  padding: 12px 16px !important;
 }
+
+.react-select__option--is-focused {
+  background-color: #f8fafc !important;
+}
+
+.react-select__option--is-selected {
+  background-color: #3b82f6 !important;
+  color: white !important;
+}
+
+
+/* ==========================================================================
+   FIXED COLUMN WIDTHS - PREVENT EXPANSION
+   ========================================================================== */
+.productsTable {
+  table-layout: fixed !important;
+  width: 100% !important;
+}
+
+.productsTable th,
+.productsTable td {
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+/* Specific column width fixes */
+.productsTable td:nth-child(1) {
+  width: 22% !important;
+  min-width: 200px !important;
+  max-width: 200px !important;
+  position: relative;
+}
+
+/* Select2 container in first column */
+.productsTable td:nth-child(1) .select2-container {
+  width: 100% !important;
+  min-width: 180px !important;
+  max-width: 180px !important;
+}
+
+.productsTable td:nth-child(1) .select2-selection__rendered {
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  display: block !important;
+  width: 100% !important;
+}
+
+/* Force all columns to stay fixed */
+.productsTable td:nth-child(2) { width: 6% !important; min-width: 60px !important; max-width: 60px !important; }
+.productsTable td:nth-child(3) { width: 8% !important; min-width: 80px !important; max-width: 80px !important; }
+.productsTable td:nth-child(4) { width: 5% !important; min-width: 50px !important; max-width: 50px !important; }
+.productsTable td:nth-child(5) { width: 7% !important; min-width: 70px !important; max-width: 70px !important; }
+.productsTable td:nth-child(6) { width: 7% !important; min-width: 70px !important; max-width: 70px !important; }
+.productsTable td:nth-child(7) { width: 8% !important; min-width: 80px !important; max-width: 80px !important; }
+.productsTable td:nth-child(8) { width: 8% !important; min-width: 80px !important; max-width: 80px !important; }
+.productsTable td:nth-child(9) { width: 5% !important; min-width: 60px !important; max-width: 60px !important; }
+.productsTable td:nth-child(10) { width: 5% !important; min-width: 60px !important; max-width: 60px !important; }
+.productsTable td:nth-child(11) { width: 5% !important; min-width: 60px !important; max-width: 60px !important; }
+.productsTable td:nth-child(12) { width: 6% !important; min-width: 70px !important; max-width: 70px !important; }
