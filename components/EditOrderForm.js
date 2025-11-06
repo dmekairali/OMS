@@ -936,10 +936,10 @@ export default function EditOrderForm({ order, products, onSave, onCancel, editM
               <tr>
                 <th>Select Products</th>
                 <th>MRP</th>
-                <th>Packing Size</th>
-                <th>Qty.</th>
-                <th colSpan="2">Discount %</th>
-                <th>Dis. Amt</th>
+                <th>Pack</th>
+                <th>Qty</th>
+                <th colSpan="2">Dis %</th>
+                <th>Dis Amt</th>
                 <th>Taxable Before Dis.</th>
                 <th>Taxable After Dis.</th>
                 <th colSpan="2">Tax(CGST)</th>
