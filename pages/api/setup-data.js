@@ -15,9 +15,9 @@ export default async function handler(req, res) {
   try {
     const setupSheetId = process.env.GOOGLE_SHEETS_SPREADSHEET_ID_SETUPSHEET;
     const clientListSheetId = '1h-isMnQYpfEAfX_W-TvuP7pN50dBLMbltVFYh5_qFMc';
-    const orderSheetId = process.env.GOOGLE_SHEETS_SPREADSHEET_ID_ORDERSHEET;
+    const archiveSheetId = '1l54Xee6M_gLRwQQYhwU34qxLIM6PQLOX6F58cr6VUjU';
     
-    if (!setupSheetId || !orderSheetId) {
+    if (!setupSheetId) {
       return res.status(500).json({ error: 'Setup spreadsheet configuration missing' });
     }
 
@@ -63,8 +63,8 @@ export default async function handler(req, res) {
         range: 'Sheet1!A1:AK',
       }),
       sheets.spreadsheets.values.get({
-        spreadsheetId: orderSheetId,
-        range: 'Archive!A1:CZ',
+        spreadsheetId: archiveSheetId,
+        range: 'Sheet1!A1:CZ',
       })
     ]);
 
