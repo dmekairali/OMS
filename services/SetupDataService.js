@@ -126,7 +126,7 @@ class SetupDataService {
       .map(order => ({
         // Core fields
         orderId: order['Oder ID'],
-        timestamp: order['Timestamp'],
+        orderDate: order['Timestamp'],
         invoiceAmount: order['Invoice Amount'],
         orderTakenBy: order['Order Taken By'],
         dispatchPartyFrom: order['Dispatch Party From*'],
