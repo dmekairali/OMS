@@ -337,67 +337,78 @@ export default function NewOrders() {
   };
 
   // Render order history section in order detail view
-  const renderOrderHistory = () => {
-    if (!selectedOrder) return null;
+ 
+const renderOrderHistory = () => {
+  if (!selectedOrder) return null;
 
-    return (
-      <div className={styles.detailCard}>
-        <div className={styles.cardHeader}>
-          <h3>📋 Recent Order History</h3>
-          <span className={styles.badge}>
-            {clientOrderHistory.length} confirmed order{clientOrderHistory.length !== 1 ? 's' : ''}
-          </span>
-        </div>
-        
-        {clientOrderHistory.length > 0 ? (
-          <div className={styles.historyList}>
-            {clientOrderHistory.map((histOrder, index) => (
-              <div key={index} className={styles.historyItem}>
-                <div className={styles.historyHeader}>
-                  <span className={styles.historyNumber}>#{index + 1}</span>
-                  <span className={styles.historyOrderId}>{histOrder.orderId}</span>
+  return (
+    <div className={styles.detailCard}>
+      <div className={styles.cardHeader}>
+        <h3>📋 Recent Order History</h3>
+        <span className={styles.badge}>
+          {clientOrderHistory.length} confirmed order{clientOrderHistory.length !== 1 ? 's' : ''}
+        </span>
+      </div>
+      
+      {clientOrderHistory.length > 0 ? (
+        <div className={styles.historyList}>
+          {clientOrderHistory.map((histOrder, index) => (
+            <div key={index} className={styles.historyItem}>
+              <div className={styles.historyHeader}>
+                <span className={styles.historyNumber}>#{index + 1}</span>
+                <span className={styles.historyOrderId}>{histOrder.orderId}</span>
+              </div>
+              <div className={styles.historyGrid}>
+                <div className={styles.historyField}>
+                  <span className={styles.historyLabel}>Order Date</span>
+                  <span className={styles.historyValue}>
+                    {formatDate(histOrder.orderDate)}
+                  </span>
                 </div>
-                <div className={styles.historyGrid}>
-                  <div className={styles.historyField}>
-                    <span className={styles.historyLabel}>Order Date</span>
-                    <span className={styles.historyValue}>
-                      {formatDate(histOrder.orderDate)}
-                    </span>
-                  </div>
-                  <div className={styles.historyField}>
-                    <span className={styles.historyLabel}>Invoice Amount</span>
-                    <span className={`${styles.historyValue} ${styles.amount}`}>
-                      ₹{parseFloat(histOrder.invoiceAmount || 0).toLocaleString('en-IN', {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2
-                      })}
-                    </span>
-                  </div>
-                  <div className={styles.historyField}>
-                    <span className={styles.historyLabel}>Order Taken By</span>
-                    <span className={styles.historyValue}>
-                      {histOrder.orderTakenBy || 'N/A'}
-                    </span>
-                  </div>
-                  <div className={styles.historyField}>
-                    <span className={styles.historyLabel}>Dispatch Party</span>
-                    <span className={styles.historyValue}>
-                      {histOrder.dispatchPartyFrom || 'N/A'}
-                    </span>
-                  </div>
+                <div className={styles.historyField}>
+                  <span className={styles.historyLabel}>Invoice Amount</span>
+                  <span className={`${styles.historyValue} ${styles.amount}`}>
+                    ₹{parseFloat(histOrder.invoiceAmount || 0).toLocaleString('en-IN', {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2
+                    })}
+                  </span>
+                </div>
+                <div className={styles.historyField}>
+                  <span className={styles.historyLabel}>Order Taken By</span>
+                  <span className={styles.historyValue}>
+                    {histOrder.orderTakenBy || 'N/A'}
+                  </span>
+                </div>
+                <div className={styles.historyField}>
+                  <span className={styles.historyLabel}>Dispatch Party</span>
+                  <span className={styles.historyValue}>
+                    {histOrder.dispatchPartyFrom || 'N/A'}
+                  </span>
+                </div>
+                {/* ADDED: Dispatch Status Field */}
+                <div className={styles.historyField}>
+                  <span className={styles.historyLabel}>Dispatch Status</span>
+                  <span className={styles.historyValue}>
+                    {histOrder.dispatchStatus && histOrder.dispatchStatus.trim() !== '' 
+                      ? histOrder.dispatchStatus 
+                      : 'Dispatch Pending'
+                    }
+                  </span>
                 </div>
               </div>
-            ))}
-          </div>
-        ) : (
-          <div className={styles.noHistory}>
-            <div className={styles.noHistoryIcon}>📭</div>
-            <p>No previous confirmed orders found for this client</p>
-          </div>
-        )}
-      </div>
-    );
-  };
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className={styles.noHistory}>
+          <div className={styles.noHistoryIcon}>📭</div>
+          <p>No previous confirmed orders found for this client</p>
+        </div>
+      )}
+    </div>
+  );
+};
 
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
