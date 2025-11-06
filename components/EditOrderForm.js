@@ -942,9 +942,9 @@ export default function EditOrderForm({ order, products, onSave, onCancel, editM
                 <th>Dis Amt</th>
                 <th>Taxable Before Dis.</th>
                 <th>Taxable After Dis.</th>
-                <th colSpan="2">Tax(CGST)</th>
-                <th colSpan="2">Tax(SGST)</th>
-                <th colSpan="2">Tax(IGST)</th>
+                <th colSpan="2">CGST - TAX</th>
+                <th colSpan="2">SGST - TAX</th>
+                <th colSpan="2">IGST - TAX</th>
                 <th>Total</th>
               </tr>
             </thead>
@@ -969,7 +969,7 @@ export default function EditOrderForm({ order, products, onSave, onCancel, editM
                       className={styles.readonly} 
                     />
                   </td>
-                  <td style={{ width: '8%', minWidth: '80px' }}>
+                  <td style={{ width: '6%', minWidth: '60px' }}>
                     <input 
                       type="text" 
                       value={product.packingSize} 
