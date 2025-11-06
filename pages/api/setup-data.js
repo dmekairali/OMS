@@ -14,7 +14,16 @@ export default async function handler(req, res) {
 
   try {
     const setupSheetId = process.env.GOOGLE_SHEETS_SPREADSHEET_ID_SETUPSHEET;
-    const clientListSheetId = '1h-isMnQYpfEAfX_W-TvuP7pN50dBLMbltVFYh5_qFMc';
+    
+    // New client list sheets to merge
+    const newClientListSheets = [
+      '1L9TyneFeicERASbgyzZVCNNjPqi93hNYD4VJUG_dMK4',
+      '1KjAiqLGKEMh9FNvrHKTJAvzjxpBh3xKhv36OgcHsZNc',
+      '1lVpuJJp9XxYlR545zUYyLNjzHbsVrxtnypOg-a8NtsA',
+      '1n9eumh7u3At4FPR7vjCLUUfgNSujClKQheYyst0tqDE',
+      '15wsT3TugkTjLrIqVg9Kq26kb96HdNawX5ikPSz0hHgU'
+    ];
+    
     const archiveSheetId = '1l54Xee6M_gLRwQQYhwU34qxLIM6PQLOX6F58cr6VUjU';
     
     if (!setupSheetId) {
@@ -33,15 +42,85 @@ export default async function handler(req, res) {
 
     const sheets = google.sheets({ version: 'v4', auth });
     
-    // Fetch all six datasets in parallel
-    const [
-      productListResponse, 
-      discountResponse, 
-      distributorResponse, 
-      employeeResponse,
-      clientListResponse,
-      orderArchiveResponse
-    ] = await Promise.all([
+    // Function to fetch all client lists in parallel and merge
+    const fetchAndMergeClientLists = async (sheetIds) => {
+      // Create all fetch promises
+      const fetchPromises = sheetIds.map(sheetId => 
+        sheets.spreadsheets.values.get({
+          spreadsheetId: sheetId,
+          range: 'Sheet1!A1:AK',
+        }).catch(error => {
+          console.warn(`Failed to fetch from sheet ${sheetId}:`, error.message);
+          return { data: { values: [] } }; // Return empty data if sheet fails
+        })
+      );
+
+      // Execute all fetches in parallel
+      const responses = await Promise.all(fetchPromises);
+      
+      // Process all responses
+      const allData = responses.map((response, index) => ({
+        sheetId: sheetIds[index],
+        values: response.data.values || []
+      }));
+
+      return mergeClientData(allData);
+    };
+
+    // Function to merge client data from multiple sheets
+    const mergeClientData = (allData) => {
+      let allHeaders = new Set();
+      let allRows = [];
+
+      allData.forEach((sheetData, sheetIndex) => {
+        const { values, sheetId } = sheetData;
+        
+        if (!values || values.length === 0) {
+          console.log(`Sheet ${sheetId} has no data`);
+          return;
+        }
+
+        const headers = values[0];
+        const rows = values.slice(1);
+
+        // Add all headers to the set
+        headers.forEach(header => allHeaders.add(header));
+
+        // Process each row
+        rows.forEach((row, rowIndex) => {
+          const rowObj = {
+            __source: `sheet_${sheetIndex + 1}`,
+            __sheetId: sheetId
+          };
+          
+          headers.forEach((header, colIndex) => {
+            if (row[colIndex] !== undefined && row[colIndex] !== '') {
+              rowObj[header] = row[colIndex];
+            }
+          });
+          
+          allRows.push(rowObj);
+        });
+      });
+
+      // Convert Set to array for headers (excluding metadata)
+      const mergedHeaders = Array.from(allHeaders).filter(header => !header.startsWith('__'));
+
+      return {
+        headers: mergedHeaders,
+        rows: allRows,
+        mergeStats: {
+          totalSheets: allData.length,
+          sheetsWithData: allData.filter(d => d.values.length > 0).length,
+          totalClients: allRows.length,
+          uniqueHeaders: mergedHeaders.length
+        }
+      };
+    };
+
+    // Create all API calls for parallel execution
+    const apiCalls = [
+      // Setup data calls
       sheets.spreadsheets.values.get({
         spreadsheetId: setupSheetId,
         range: 'Product List!A1:H',
@@ -58,16 +137,26 @@ export default async function handler(req, res) {
         spreadsheetId: setupSheetId,
         range: 'Employee List!A1:C',
       }),
-      sheets.spreadsheets.values.get({
-        spreadsheetId: clientListSheetId,
-        range: 'Sheet1!A1:AK',
-      }),
+      // Client list merge (this handles its own parallel fetching)
+      fetchAndMergeClientLists(newClientListSheets),
+      // Archive data
       sheets.spreadsheets.values.get({
         spreadsheetId: archiveSheetId,
         range: 'Sheet1!A1:CZ',
       })
-    ]);
+    ];
 
+    // Execute ALL API calls in parallel
+    const [
+      productListResponse, 
+      discountResponse, 
+      distributorResponse, 
+      employeeResponse,
+      mergedClientList,
+      orderArchiveResponse
+    ] = await Promise.all(apiCalls);
+
+    // Data parsing functions
     const parseData = (values) => {
       if (!values || values.length === 0) return { headers: [], rows: [] };
       
@@ -83,11 +172,10 @@ export default async function handler(req, res) {
       return { headers, rows };
     };
 
-    // Special parser for Order Archive with specific columns
+    // Special parser for Order Archive
     const parseOrderArchiveData = (values) => {
       if (!values || values.length === 0) return { headers: [], rows: [] };
       
-      // Column mapping: New Name -> Column Number (0-based index)
       const columnMapping = {
         'Timestamp': 0,
         'Buyer ID': 1,
@@ -143,9 +231,10 @@ export default async function handler(req, res) {
         discountStructure: parseData(discountResponse.data.values),
         distributorList: parseData(distributorResponse.data.values),
         employeeList: parseData(employeeResponse.data.values),
-        clientList: parseData(clientListResponse.data.values),
+        clientList: mergedClientList,
         orderArchive: parseOrderArchiveData(orderArchiveResponse.data.values)
-      }
+      },
+      mergeInfo: mergedClientList.mergeStats
     });
 
   } catch (error) {
