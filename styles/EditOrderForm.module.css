@@ -184,34 +184,34 @@
 }
 
 /* ============================================
-   Grid Layouts - OPTIMAL SPACING
+   Grid Layouts - INCREASED HORIZONTAL SPACING
    ============================================ */
 .grid2 {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 14px 24px;
+  gap: 14px 28px; /* Increased from 24px to 28px */
 }
 
 .grid3 {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 12px 20px;
+  gap: 12px 24px; /* Increased from 20px to 24px */
 }
 
 .grid4 {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 12px 20px;
+  gap: 12px 22px; /* Increased from 20px to 22px */
 }
 
 .grid5 {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  gap: 12px 18px;
+  gap: 12px 20px; /* Increased from 18px to 20px */
 }
 
 /* ============================================
-   Form Fields - OPTIMIZED
+   Form Fields - PROPER ISOLATION
    ============================================ */
 .field {
   display: flex;
@@ -219,6 +219,8 @@
   gap: 5px;
   margin-bottom: 10px;
   position: relative;
+  /* Add padding to create buffer zone */
+  padding: 0 2px;
 }
 
 .field label {
@@ -248,13 +250,13 @@
   border-radius: 6px;
   font-size: 14px;
   font-weight: 500;
-  transition: all 0.2s ease;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
   font-family: inherit;
   background: var(--surface);
   min-height: 36px;
   line-height: 1.4;
   color: var(--text-primary);
-  position: relative;
+  box-sizing: border-box;
 }
 
 /* Date and Time inputs - compact */
@@ -273,30 +275,40 @@
   text-align: left;
 }
 
-.field input:hover,
-.field select:hover,
-.field textarea:hover {
+.field input:hover:not(:focus),
+.field select:hover:not(:focus),
+.field textarea:hover:not(:focus) {
   border-color: var(--primary-light);
   background: #fafbfc;
 }
 
-/* Reduced shadow spread to prevent overlap */
+/* CRITICAL FIX: Minimal shadow that doesn't extend beyond field */
 .field input:focus,
 .field select:focus,
 .field textarea:focus {
   outline: none;
   border-color: var(--primary);
-  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.08);
+  border-width: 2px; /* Slightly thicker border instead of large shadow */
+  box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.1); /* Inset shadow */
   background: var(--surface);
   z-index: 5;
-  position: relative;
+  padding: 7px 11px; /* Adjust padding to compensate for thicker border */
 }
 
-/* Even more subtle for date/time */
+/* Date/time focus - same treatment */
 .field input[type="date"]:focus,
 .field input[type="time"]:focus,
 .field input[type="datetime-local"]:focus {
-  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
+  border-width: 2px;
+  box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.1);
+  padding: 6px 9px; /* Adjust padding */
+}
+
+/* Number input focus */
+.field input[type="number"]:focus {
+  border-width: 2px;
+  box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.1);
+  padding: 6px 9px;
 }
 
 .field textarea {
@@ -311,11 +323,54 @@
 
 .field textarea:focus {
   background: var(--surface);
+  border-width: 2px;
+  padding: 9px 11px; /* Adjust padding */
+  box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.1);
 }
 
 /* Small remarks variant */
 .field textarea.remarkSmall {
   min-height: 60px;
+}
+
+/* ============================================
+   Input Variants
+   ============================================ */
+.numberInput {
+  padding: 7px 10px !important;
+  min-height: 36px !important;
+  text-align: center;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+}
+
+.numberInput:focus {
+  padding: 6px 9px !important;
+  border-width: 2px;
+}
+
+/* ============================================
+   Readonly Fields - COMPACT
+   ============================================ */
+.readonly {
+  background-color: #f1f5f9 !important;
+  color: var(--text-secondary) !important;
+  cursor: not-allowed !important;
+  border-color: #cbd5e1 !important;
+  opacity: 0.85;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  min-height: 36px !important;
+}
+
+.readonly:hover,
+.readonly:focus {
+  background-color: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
+  border-width: 1.5px !important;
+  transform: none !important;
+  box-shadow: none !important;
+  padding: 8px 12px !important; /* Keep original padding */
 }
 
 /* ============================================
