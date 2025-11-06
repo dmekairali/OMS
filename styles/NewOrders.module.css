@@ -1691,3 +1691,101 @@
     padding: 12px 24px;
   }
 }
+
+/* Add to NewOrders.module.css order history view*/
+
+.historyList {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.historyItem {
+  background: #f8fafc;
+  border-radius: 8px;
+  padding: 16px;
+  border-left: 4px solid #3b82f6;
+  transition: all 0.2s;
+}
+
+.historyItem:hover {
+  background: #f1f5f9;
+  border-left-color: #2563eb;
+}
+
+.historyHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.historyNumber {
+  background: #3b82f6;
+  color: white;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.historyOrderId {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+  font-family: 'Courier New', monospace;
+}
+
+.historyGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.historyField {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.historyLabel {
+  font-size: 11px;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+
+.historyValue {
+  font-size: 13px;
+  color: #1e293b;
+  font-weight: 500;
+}
+
+.historyValue.amount {
+  color: #10b981;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.noHistory {
+  text-align: center;
+  padding: 40px 20px;
+  color: #64748b;
+}
+
+.noHistoryIcon {
+  font-size: 48px;
+  margin-bottom: 12px;
+  opacity: 0.5;
+}
+
+.noHistory p {
+  margin: 0;
+  font-size: 14px;
+  font-style: italic;
+}
