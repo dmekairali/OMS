@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
 import styles from '../styles/NewOrders.module.css';
 import EditOrderForm from '../components/EditOrderForm';
+import SetupDataService from '../services/SetupDataService';
+
 
 // Non-editable display fields for order cards
 const DISPLAY_FIELDS = [
@@ -334,7 +336,7 @@ export default function NewOrders() {
     loadOrders(false);
   };
 
-  // ======== PLACE renderOrderHistory RIGHT HERE ========
+  // Render order history section in order detail view
   const renderOrderHistory = () => {
     if (!selectedOrder) return null;
 
@@ -342,17 +344,12 @@ export default function NewOrders() {
       <div className={styles.detailCard}>
         <div className={styles.cardHeader}>
           <h3>📋 Recent Order History</h3>
-          <span className={styles.historyBadge}>
+          <span className={styles.badge}>
             {clientOrderHistory.length} confirmed order{clientOrderHistory.length !== 1 ? 's' : ''}
           </span>
         </div>
         
-        {loadingHistory ? (
-          <div className={styles.historyLoading}>
-            <div className="spinner"></div>
-            <p>Loading order history...</p>
-          </div>
-        ) : clientOrderHistory.length > 0 ? (
+        {clientOrderHistory.length > 0 ? (
           <div className={styles.historyList}>
             {clientOrderHistory.map((histOrder, index) => (
               <div key={index} className={styles.historyItem}>
@@ -364,16 +361,16 @@ export default function NewOrders() {
                   <div className={styles.historyField}>
                     <span className={styles.historyLabel}>Order Date</span>
                     <span className={styles.historyValue}>
-                      {formatHistoryDate(histOrder.orderDate)}
+                      {formatDate(histOrder.orderDate)}
                     </span>
                   </div>
                   <div className={styles.historyField}>
                     <span className={styles.historyLabel}>Invoice Amount</span>
                     <span className={`${styles.historyValue} ${styles.amount}`}>
-                      {histOrder.invoiceAmount ? `₹${parseFloat(histOrder.invoiceAmount).toLocaleString('en-IN', {
+                      ₹{parseFloat(histOrder.invoiceAmount || 0).toLocaleString('en-IN', {
                         minimumFractionDigits: 2,
                         maximumFractionDigits: 2
-                      })}` : 'N/A'}
+                      })}
                     </span>
                   </div>
                   <div className={styles.historyField}>
@@ -396,23 +393,16 @@ export default function NewOrders() {
           <div className={styles.noHistory}>
             <div className={styles.noHistoryIcon}>📭</div>
             <p>No previous confirmed orders found for this client</p>
-            <p className={styles.noHistorySubtext}>
-              Mobile: {selectedOrder['Mobile']}
-            </p>
           </div>
         )}
       </div>
     );
   };
-  // ======== END OF renderOrderHistory FUNCTION ========
 
-  // ... your other helper functions like:
-  const formatHistoryDate = (dateString) => {
+  const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
     try {
-      const date = parseSheetDate(dateString);
-      if (!date || isNaN(date.getTime())) return dateString;
-      
+      const date = new Date(dateString);
       return date.toLocaleDateString('en-IN', {
         day: '2-digit',
         month: 'short',
