@@ -1,5 +1,5 @@
 /* ============================================
-   EditOrderForm.module.css - Compact Enhanced Styles (UPDATED)
+   EditOrderForm.module.css - Professional Enhanced Styles
    ============================================ */
 
 /* ============================================
@@ -7,10 +7,10 @@
    ============================================ */
 .form {
   max-width: 100%;
-  padding: 16px;
+  padding: 20px;
   background: #ffffff;
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   
   /* CSS Variables */
@@ -28,6 +28,7 @@
   --text-secondary: #64748b;
   --border: #e2e8f0;
   --border-light: #f1f5f9;
+  --border-focus: #93c5fd;
 }
 
 .editForm {
@@ -38,12 +39,12 @@
    NEW: Toggle Section Styling
    ============================================ */
 .toggleSection {
-  margin-bottom: 20px;
-  padding: 16px;
+  margin-bottom: 24px;
+  padding: 18px;
   background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
   border: 2px solid var(--primary-light);
   border-radius: 8px;
-  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.1);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.1);
 }
 
 .toggleCheckbox {
@@ -113,37 +114,37 @@
   background: #fef2f2;
   border: 1px solid var(--error);
   color: #991b1b;
-  padding: 10px 14px;
+  padding: 12px 16px;
   border-radius: 6px;
-  margin-bottom: 16px;
+  margin-bottom: 20px;
   font-weight: 500;
-  font-size: 13px;
+  font-size: 14px;
   border-left: 4px solid var(--error);
 }
 
 /* ============================================
-   Section Styling - Ultra Compact
+   Section Styling - Professional Spacing
    ============================================ */
 .section {
-  margin-bottom: 16px;
-  padding: 12px;
+  margin-bottom: 20px;
+  padding: 16px;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 8px;
   background: var(--surface);
   transition: all 0.2s ease;
 }
 
 .section:hover {
   border-color: var(--primary-light);
-  box-shadow: 0 1px 4px rgba(37, 99, 235, 0.1);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.1);
 }
 
 .sectionTitle {
-  margin: 0 0 12px 0;
+  margin: 0 0 16px 0;
   color: var(--primary);
-  font-size: 16px;
+  font-size: 17px;
   font-weight: 700;
-  padding-bottom: 6px;
+  padding-bottom: 8px;
   border-bottom: 1px solid var(--border-light);
   letter-spacing: -0.025em;
 }
@@ -152,7 +153,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
 }
 
 .sectionHeader h3 {
@@ -162,43 +163,58 @@
 }
 
 /* ============================================
-   Grid Layouts - Ultra Compact
+   Grid Layouts - Enhanced Spacing
    ============================================ */
 .grid2 {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 16px 20px;
+  gap: 20px 24px;
 }
 
 .grid3 {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 16px 18px;
+  gap: 18px 22px;
 }
 
 .grid4 {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 14px 16px;
+  gap: 16px 20px;
 }
 
 .grid5 {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  gap: 12px 14px;
+  gap: 14px 18px;
+}
+
+@media (max-width: 1200px) {
+  .grid4 {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 18px 22px;
+  }
+  
+  .grid5 {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px 20px;
+  }
 }
 
 @media (max-width: 1024px) {
   .grid3 {
     grid-template-columns: repeat(2, 1fr);
+    gap: 18px 22px;
   }
   
   .grid4 {
     grid-template-columns: repeat(2, 1fr);
+    gap: 16px 20px;
   }
   
   .grid5 {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px 20px;
   }
 }
 
@@ -208,34 +224,36 @@
   .grid4,
   .grid5 {
     grid-template-columns: 1fr;
-    gap: 10px;
+    gap: 16px;
   }
 }
 
 /* ============================================
-   Form Fields - UPDATED VERTICAL LAYOUT
+   Form Fields - PROFESSIONAL ENHANCED STYLING
    ============================================ */
 .field {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  margin-bottom: 4px;
+  margin-bottom: 8px;
 }
 
 .field label {
-  font-weight: 600;
-  color: var(--text-primary);
-  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  font-size: 12px;
   line-height: 1.3;
   text-align: left;
   display: block;
-  margin-bottom: 2px;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
 }
 
 .mandatory {
   color: var(--error);
   font-weight: 700;
-  font-size: 12px;
+  font-size: 11px;
   margin-left: 2px;
 }
 
@@ -243,15 +261,17 @@
 .field select,
 .field textarea {
   width: 100%;
-  padding: 7px 10px;
+  padding: 10px 12px;
   border: 1px solid var(--border);
-  border-radius: 4px;
-  font-size: 14px;
-  transition: all 0.15s ease;
+  border-radius: 6px;
+  font-size: 15px;
+  font-weight: 500;
+  transition: all 0.2s ease;
   font-family: inherit;
   background: var(--surface);
-  min-height: 36px;
-  line-height: 1.4;
+  min-height: 44px;
+  line-height: 1.5;
+  color: var(--text-primary);
 }
 
 .field input:focus,
@@ -259,93 +279,110 @@
 .field textarea:focus {
   outline: none;
   border-color: var(--primary);
-  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
   background: var(--surface);
+  transform: translateY(-1px);
+}
+
+.field input:hover,
+.field select:hover,
+.field textarea:hover {
+  border-color: var(--primary-light);
 }
 
 .field textarea {
   resize: vertical;
-  min-height: 70px;
-  line-height: 1.4;
-  padding: 10px;
+  min-height: 80px;
+  line-height: 1.5;
+  padding: 12px;
+  font-family: inherit;
 }
 
 /* ============================================
-   Compact Input Variants
+   Enhanced Input Variants
    ============================================ */
 .numberInput {
-  padding: 4px 6px !important;
-  min-height: 28px !important;
+  padding: 8px 10px !important;
+  min-height: 40px !important;
   text-align: center;
-  font-size: 11px !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
 }
 
 /* ============================================
-   Readonly Fields
+   Readonly Fields - Enhanced
    ============================================ */
 .readonly {
   background-color: #f8fafc !important;
   color: var(--text-secondary) !important;
   cursor: not-allowed !important;
   border-color: var(--border) !important;
-  opacity: 0.7;
-  font-size: 11px !important;
+  opacity: 0.8;
+  font-size: 14px !important;
+  font-weight: 500 !important;
 }
 
 .readonly:hover {
   background-color: #f8fafc !important;
+  border-color: var(--border) !important;
+  transform: none !important;
 }
 
 .readonly:focus {
   border-color: var(--border) !important;
   box-shadow: none !important;
+  transform: none !important;
 }
 
 /* ============================================
-   Checkbox Group - FIXED
+   Checkbox Group - Enhanced
    ============================================ */
 .checkboxGroup {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
-  padding: 4px 0;
+  gap: 10px;
+  margin-bottom: 12px;
+  padding: 6px 0;
 }
 
 .checkboxGroup input[type="checkbox"] {
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
   margin: 0;
   flex-shrink: 0;
   cursor: pointer;
+  accent-color: var(--primary);
 }
 
 .checkboxGroup label {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
   color: var(--text-primary);
   margin: 0;
   cursor: pointer;
   user-select: none;
+  text-transform: none;
+  letter-spacing: normal;
 }
 
 /* ============================================
-   Products Table - Compact
+   Products Table - Professional Compact
    ============================================ */
 .productsTable {
   overflow-x: auto;
-  margin-top: 10px;
+  margin-top: 12px;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 8px;
   background: var(--surface);
   max-width: 100%;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .productsTable table {
   width: 100%;
   border-collapse: collapse;
   min-width: 1000px;
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .productsTable thead {
@@ -357,10 +394,10 @@
 }
 
 .productsTable thead th {
-  padding: 10px 6px;
+  padding: 12px 8px;
   text-align: center;
   font-weight: 600;
-  font-size: 12px;
+  font-size: 13px;
   border-right: 1px solid rgba(255, 255, 255, 0.1);
   white-space: nowrap;
   letter-spacing: 0.025em;
@@ -441,9 +478,10 @@
 }
 
 .productsTable tbody td {
-  padding: 6px;
+  padding: 8px;
   text-align: center;
-  font-size: 13px;
+  font-size: 14px;
+  font-weight: 500;
   vertical-align: middle;
 }
 
@@ -527,9 +565,10 @@
 .productsTable tbody td select {
   min-width: 50px;
   text-align: center;
-  padding: 5px 6px;
-  min-height: 32px;
-  font-size: 13px;
+  padding: 7px 8px;
+  min-height: 36px;
+  font-size: 14px;
+  font-weight: 500;
   width: 90%;
 }
 
@@ -538,14 +577,15 @@
    ============================================ */
 .productDropdown {
   width: 100%;
-  padding: 6px 8px;
+  padding: 8px 10px;
   border: 1px solid var(--primary);
-  border-radius: 3px;
-  font-size: 13px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
   background-color: var(--surface);
   cursor: pointer;
   transition: all 0.15s ease;
-  min-height: 32px;
+  min-height: 36px;
 }
 
 .productDropdown:hover {
@@ -572,14 +612,14 @@
   color: var(--primary);
   font-weight: 700;
   padding-right: 8px;
-  font-size: 11px;
+  font-size: 13px;
 }
 
 .finalTotal {
   background: var(--primary) !important;
   color: white !important;
   font-weight: 700;
-  font-size: 12px;
+  font-size: 14px;
 }
 
 .finalTotal input {
@@ -588,65 +628,66 @@
   background: transparent !important;
   border: none !important;
   text-align: center;
-  font-size: 11px !important;
+  font-size: 13px !important;
 }
 
 /* ============================================
    Total Amount Section
    ============================================ */
 .totalAmountSection {
-  margin-top: 12px;
-  padding: 10px 12px;
+  margin-top: 16px;
+  padding: 14px 16px;
   background: linear-gradient(135deg, #f0fdf4, #dcfce7);
   border: 1px solid #bbf7d0;
-  border-radius: 6px;
+  border-radius: 8px;
 }
 
 .totalAmountRow {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 2px 0;
+  padding: 4px 0;
 }
 
 .totalAmountRow span {
   font-weight: 600;
   color: var(--text-primary);
-  font-size: 12px;
+  font-size: 14px;
 }
 
 .beforeAmount {
   color: var(--secondary);
-  font-size: 13px;
+  font-size: 14px;
+  font-weight: 500;
 }
 
 .afterAmount {
   color: var(--success);
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 700;
 }
 
 /* ============================================
-   Button Styling - Compact
+   Button Styling - Professional
    ============================================ */
 .btnAdd {
   background: linear-gradient(135deg, var(--primary), var(--primary-dark));
   color: white;
   border: none;
-  border-radius: 4px;
-  padding: 6px 12px;
-  font-size: 11px;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.2s ease;
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
 }
 
 .btnAdd:hover {
   transform: translateY(-1px);
-  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.3);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
 }
 
 .btnAdd:active {
@@ -657,30 +698,31 @@
   background: transparent;
   color: var(--primary);
   border: 1px solid var(--primary);
-  border-radius: 4px;
-  padding: 4px 10px;
-  font-size: 10px;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 12px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.2s ease;
 }
 
 .toggleButton:hover {
   background: var(--primary);
   color: white;
+  transform: translateY(-1px);
 }
 
 .btnRemove {
   background-color: var(--error);
   color: white;
   border: none;
-  border-radius: 3px;
-  width: 22px;
-  height: 22px;
-  font-size: 12px;
+  border-radius: 4px;
+  width: 26px;
+  height: 26px;
+  font-size: 14px;
   line-height: 1;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.2s ease;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -697,27 +739,27 @@
 .formActions {
   display: flex;
   justify-content: flex-end;
-  gap: 10px;
-  padding-top: 16px;
+  gap: 12px;
+  padding-top: 20px;
   border-top: 1px solid var(--border-light);
-  margin-top: 20px;
+  margin-top: 24px;
 }
 
 .btnSubmit {
   background: linear-gradient(135deg, var(--success), #059669);
   color: white;
   border: none;
-  border-radius: 4px;
-  padding: 10px 24px;
-  font-size: 13px;
+  border-radius: 6px;
+  padding: 12px 28px;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.2s ease;
 }
 
 .btnSubmit:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
 }
 
 .btnSubmit:active:not(:disabled) {
@@ -736,18 +778,19 @@
   background: white;
   color: var(--text-secondary);
   border: 1px solid var(--border);
-  border-radius: 4px;
-  padding: 10px 24px;
-  font-size: 13px;
+  border-radius: 6px;
+  padding: 12px 28px;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.2s ease;
 }
 
 .btnCancel:hover {
   border-color: var(--secondary);
   background-color: #f8fafc;
   color: var(--text-primary);
+  transform: translateY(-1px);
 }
 
 /* ============================================
@@ -756,9 +799,9 @@
 .discountTable {
   width: 100%;
   border-collapse: collapse;
-  margin-top: 10px;
+  margin-top: 12px;
   border: 1px solid var(--border);
-  border-radius: 4px;
+  border-radius: 6px;
   overflow: hidden;
 }
 
@@ -769,10 +812,11 @@
 
 .discountTable th,
 .discountTable td {
-  padding: 8px 10px;
+  padding: 10px 12px;
   text-align: left;
   border: 1px solid var(--border-light);
-  font-size: 11px;
+  font-size: 13px;
+  font-weight: 500;
 }
 
 .discountTable thead {
@@ -786,10 +830,11 @@
 
 .discountTable input {
   width: 100%;
-  padding: 4px 6px;
+  padding: 6px 8px;
   border: 1px solid var(--border);
-  border-radius: 3px;
-  font-size: 11px;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 500;
 }
 
 /* ============================================
@@ -797,12 +842,12 @@
    ============================================ */
 @media (max-width: 768px) {
   .form {
-    padding: 12px;
+    padding: 16px;
   }
 
   .toggleSection {
-    padding: 12px;
-    margin-bottom: 16px;
+    padding: 16px;
+    margin-bottom: 20px;
   }
 
   .toggleCheckbox label {
@@ -810,39 +855,41 @@
   }
 
   .section {
-    padding: 10px;
-    margin-bottom: 14px;
+    padding: 14px;
+    margin-bottom: 18px;
   }
 
   .sectionTitle {
-    font-size: 14px;
-    margin-bottom: 10px;
+    font-size: 16px;
+    margin-bottom: 14px;
   }
 
   .sectionHeader {
     flex-direction: column;
     align-items: flex-start;
-    gap: 8px;
+    gap: 10px;
   }
   
   .btnAdd {
     width: 100%;
     justify-content: center;
+    padding: 10px 16px;
   }
 
   .formActions {
     flex-direction: column-reverse;
-    gap: 8px;
+    gap: 10px;
   }
 
   .btnSubmit,
   .btnCancel {
     width: 100%;
-    padding: 12px;
+    padding: 14px;
+    font-size: 15px;
   }
 
   .productsTable {
-    font-size: 10px;
+    font-size: 12px;
   }
   
   .productsTable tbody td:nth-child(1) {
@@ -851,14 +898,15 @@
   }
 
   .field label {
-    font-size: 12px;
+    font-size: 11px;
   }
 
   .field input,
   .field select,
   .field textarea {
-    font-size: 13px;
-    padding: 8px;
+    font-size: 16px;
+    padding: 12px;
+    min-height: 48px;
   }
 }
 
@@ -921,4 +969,21 @@
 
 .noWrap {
   white-space: nowrap;
+}
+
+/* ============================================
+   NEW: Field Group Spacing
+   ============================================ */
+.fieldGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.compactField {
+  margin-bottom: 0;
+}
+
+.compactField label {
+  margin-bottom: 2px;
 }
