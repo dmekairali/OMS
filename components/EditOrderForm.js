@@ -765,43 +765,51 @@ export default function EditOrderForm({ order, products, onSave, onCancel, editM
         </div>
 
         {/* Billing and Shipping Address */}
-        <div className={styles.grid2}>
-          <div className={styles.field}>
-            <label>Billing Address <span className={styles.mandatory}>*</span></label>
-            <textarea 
-              value={billingAddress} 
-              onChange={(e) => setBillingAddress(e.target.value)} 
-              required 
-              rows="3" 
-            />
-          </div>
-          
-          <div className={styles.field}>
-            <label>Shipping Address <span className={styles.mandatory}>*</span></label>
-            <div>
-              <div className={styles.checkboxGroup}>
-                <input
-                  type="checkbox"
-                  id="sameAsBilling"
-                  checked={isShippingSameAsBilling}
-                  onChange={() => {
-                    setIsShippingSameAsBilling(!isShippingSameAsBilling);
-                    if (!isShippingSameAsBilling) {
-                      setShippingAddress(billingAddress);
-                    }
-                  }}
-                />
-                <label htmlFor="sameAsBilling">Check if billing and shipping is same</label>
-              </div>
-              <textarea 
-                value={shippingAddress} 
-                onChange={(e) => setShippingAddress(e.target.value)} 
-                required 
-                rows="3" 
-              />
-            </div>
-          </div>
+<div className={styles.addressSection}>
+  <div className={styles.addressHeader}>
+    <div className={styles.addressField}>
+      <label>Billing Address <span className={styles.mandatory}>*</span></label>
+    </div>
+    <div className={styles.addressField}>
+      <div className={styles.shippingHeader}>
+        <label>Shipping Address <span className={styles.mandatory}>*</span></label>
+        <div className={styles.checkboxGroup}>
+          <input
+            type="checkbox"
+            id="sameAsBilling"
+            checked={isShippingSameAsBilling}
+            onChange={() => {
+              setIsShippingSameAsBilling(!isShippingSameAsBilling);
+              if (!isShippingSameAsBilling) {
+                setShippingAddress(billingAddress);
+              }
+            }}
+          />
+          <label htmlFor="sameAsBilling">Same as billing</label>
         </div>
+      </div>
+    </div>
+  </div>
+  
+  <div className={styles.addressContent}>
+    <div className={styles.addressField}>
+      <textarea 
+        value={billingAddress} 
+        onChange={(e) => setBillingAddress(e.target.value)} 
+        required 
+        rows="3" 
+      />
+    </div>
+    <div className={styles.addressField}>
+      <textarea 
+        value={shippingAddress} 
+        onChange={(e) => setShippingAddress(e.target.value)} 
+        required 
+        rows="3" 
+      />
+    </div>
+  </div>
+</div>
 
         <div className={styles.grid2}>
           <div className={styles.field}>
