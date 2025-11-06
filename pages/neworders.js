@@ -337,7 +337,6 @@ export default function NewOrders() {
   };
 
   // Render order history section in order detail view
- 
 const renderOrderHistory = () => {
   if (!selectedOrder) return null;
 
@@ -389,7 +388,12 @@ const renderOrderHistory = () => {
                 {/* ADDED: Dispatch Status Field */}
                 <div className={styles.historyField}>
                   <span className={styles.historyLabel}>Dispatch Status</span>
-                  <span className={styles.historyValue}>
+                  <span className={`${styles.historyValue} ${
+                    (!histOrder.dispatchStatus || histOrder.dispatchStatus.trim() === '' || 
+                     histOrder.dispatchStatus === 'Dispatch Pending') 
+                      ? styles.dispatchPending 
+                      : ''
+                  }`}>
                     {histOrder.dispatchStatus && histOrder.dispatchStatus.trim() !== '' 
                       ? histOrder.dispatchStatus 
                       : 'Dispatch Pending'
