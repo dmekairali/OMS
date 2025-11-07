@@ -1040,3 +1040,16 @@
   background-color: #fff3cd;
   font-weight: 600;
 }
+
+/* Total column values - bold */
+.productsTable tbody tr:not(.totalRow) td:last-child input {
+  font-weight: 600;
+  color: #2563eb;
+}
+
+/* Final total row - extra bold and green */
+.productsTable .totalRow .finalTotal input {
+  font-weight: 700 !important;
+  font-size: 14px !important;
+  color: #059669 !important;
+}
