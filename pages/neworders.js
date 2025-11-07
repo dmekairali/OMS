@@ -102,7 +102,7 @@ const ACTION_FIELDS = {
     { name: 'Payment Date', type: 'date', columnNumber: 51 },
     { name: 'Payment Confirmation Type', type: 'dropdown', options: PAYMENT_TYPE_OPTIONS, columnNumber: 52 },
     { name: 'Expected Date and time of the Dispatch', type: 'datetime-local', columnNumber: 53 },
-    { name: 'Enter Actual Invoice Amount of Dispatch Party', type: 'number', step: '0.01', columnNumber: 74 },
+    { name: 'Enter Actual Invoice Amount of Dispatch Party', type: 'number', step: '0.01', columnNumber: 74, defaultValue: 'invoiceAmount'  },
   ],
   'Cancel Order': [
     { name: 'Order Status', type: 'dropdown', defaultValue: 'Cancel Order', readOnly: true, required: true, options: ORDER_STATUS_OPTIONS, columnNumber: 45 },
@@ -1006,16 +1006,20 @@ const handleSaveEditOrder = async (result) => {
           />
         )}
         
-        {field.type === 'number' && (
-          <input
-            type="number"
-            name={field.name}
-            defaultValue={field.defaultValue || ''}
-            step={field.step || '1'}
-            required={field.required}
-            readOnly={field.readOnly}
-          />
-        )}
+{field.type === 'number' && (
+  <input
+    type="number"
+    name={field.name}
+    defaultValue={
+      field.defaultValue === 'invoiceAmount' && selectedOrder 
+        ? selectedOrder['Invoice Amount'] 
+        : (field.defaultValue || '')
+    }
+    step={field.step || '1'}
+    required={field.required}
+    readOnly={field.readOnly}
+  />
+)}
         
         {field.type === 'date' && (
           <input
