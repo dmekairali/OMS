@@ -77,13 +77,8 @@ const STATUS_CATEGORIES = [
 ];
 
 // Dispatch Party options
-const DISPATCH_PARTY_OPTIONS = [
-  'Kairali Ayurvedic Products-642001-Stockist-1234567890',
-  'Mumbai Warehouse-400001-Main-9876543210',
-  'Delhi Distribution-110001-Branch-8765432109',
-  'Chennai Hub-600001-Regional-7654321098',
-  'Bangalore Center-560001-Main-6543210987'
-];
+// Dispatch Party options - will be populated from SetupDataService
+let DISPATCH_PARTY_OPTIONS = [];
 
 // Payment Confirmation Type options
 const PAYMENT_TYPE_OPTIONS = [
@@ -142,6 +137,25 @@ const ACTION_FIELDS = {
   ],
 };
 
+// Process delivery parties from distributor list
+const processDeliveryParties = (distributorList) => {
+  if (!distributorList || !distributorList.rows) {
+    return [];
+  }
+  const partiesMap = new Map();
+  distributorList.rows.forEach(row => {
+    const partyName = row['Delivery Party Name'];
+    const state = row['State'];
+    
+    if (partyName && partyName.trim() !== '') {
+      if (!partiesMap.has(partyName)) {
+        partiesMap.set(partyName, state || '');
+      }
+    }
+  });
+  return Array.from(partiesMap.entries()).map(([name]) => name);
+};
+
 export default function NewOrders() {
   const router = useRouter();
   const [user, setUser] = useState(null);
@@ -170,7 +184,21 @@ export default function NewOrders() {
 
   const [clientOrderHistory, setClientOrderHistory] = useState([]);
 
- 
+ // Load dispatch parties from SetupDataService
+  useEffect(() => {
+    const loadDispatchParties = async () => {
+      try {
+        const data = await SetupDataService.loadAllData();
+        const parties = processDeliveryParties(data.distributorList);
+        DISPATCH_PARTY_OPTIONS.length = 0; // Clear array
+        DISPATCH_PARTY_OPTIONS.push(...parties); // Add new values
+      } catch (error) {
+        console.error('Error loading dispatch parties:', error);
+      }
+    };
+
+    loadDispatchParties();
+  }, []);
 
 //--------------------
 
