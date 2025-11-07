@@ -410,6 +410,7 @@ export default function EditOrderForm({ order, products, onSave, onCancel, editM
       .filter(row => row['As Per Factory- Status'] !== 'Discontinue')
       .map(row => ({
         combinedName: row['Combined Name'] || '',
+        product: row['Product'] || '', // Use this for display
         productSKU: row['SKU'] || '',
         pack: row['Pack'] || '',
         price: row['Price'] || '0',
