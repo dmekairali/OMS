@@ -364,15 +364,27 @@ const renderOrderHistory = () => {
                     {formatDate(histOrder.orderDate)}
                   </span>
                 </div>
-                <div className={styles.historyField}>
-                  <span className={styles.historyLabel}>Invoice Amount</span>
-                  <span className={`${styles.historyValue} ${styles.amount}`}>
-                    ₹{parseFloat(histOrder.invoiceAmount || 0).toLocaleString('en-IN', {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2
-                    })}
-                  </span>
-                </div>
+
+                    <div className={styles.historyField}>
+  <span className={styles.historyLabel}>Invoice Amount</span>
+  <span className={`${styles.historyValue} ${styles.amount}`}>
+    ₹{parseFloat(histOrder.invoiceAmount || 0).toLocaleString('en-IN')}
+    {histOrder.pobUrl && (
+      <>
+        {' - '}
+        <a 
+          href={histOrder.pobUrl} 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className={styles.invoiceLink}
+        >
+          View Invoice
+        </a>
+      </>
+    )}
+  </span>
+</div>
+      
                 <div className={styles.historyField}>
                   <span className={styles.historyLabel}>Order Taken By</span>
                   <span className={styles.historyValue}>
@@ -380,11 +392,14 @@ const renderOrderHistory = () => {
                   </span>
                 </div>
                 <div className={styles.historyField}>
-                  <span className={styles.historyLabel}>Dispatch Party</span>
-                  <span className={styles.historyValue}>
-                    {histOrder.dispatchPartyFrom || 'N/A'}
-                  </span>
-                </div>
+  <span className={styles.historyLabel}>Dispatch Party</span>
+  <span className={styles.historyValue}>
+    {histOrder.dispatchPartyFrom 
+      ? histOrder.dispatchPartyFrom.split('-')[0].trim() 
+      : 'N/A'
+    }
+  </span>
+</div>
                 {/* ADDED: Dispatch Status Field */}
                 <div className={styles.historyField}>
                   <span className={styles.historyLabel}>Dispatch Status</span>
@@ -401,24 +416,7 @@ const renderOrderHistory = () => {
                   </span>
                 </div>
                     
-<div className={styles.historyField}>
-  <span className={styles.historyLabel}>Invoice</span>
-  <span className={styles.historyValue}>
-    {histOrder.pobUrl ? (
-      <a 
-        href={histOrder.pobUrl} 
-        target="_blank" 
-        rel="noopener noreferrer"
-        className={styles.invoiceLink}
-      >
-        View Invoice
-      </a>
-    ) : (
-      'N/A'
-    )}
-  </span>
-</div>
-                  
+    
                     
               </div>
             </div>
