@@ -400,13 +400,25 @@ const renderOrderHistory = () => {
                     }
                   </span>
                 </div>
-
-                 <div className={styles.historyField}>
-                  <span className={styles.historyLabel}>Invoice</span>
-                  <span className={styles.historyValue}>
-                    {histOrder.pobUrl || 'N/A'}
-                  </span>
-                </div>
+                    
+<div className={styles.historyField}>
+  <span className={styles.historyLabel}>Invoice</span>
+  <span className={styles.historyValue}>
+    {histOrder.pobUrl ? (
+      <a 
+        href={histOrder.pobUrl} 
+        target="_blank" 
+        rel="noopener noreferrer"
+        className={styles.invoiceLink}
+      >
+        View Invoice
+      </a>
+    ) : (
+      'N/A'
+    )}
+  </span>
+</div>
+                  
                     
               </div>
             </div>
