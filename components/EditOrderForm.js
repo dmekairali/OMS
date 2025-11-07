@@ -946,22 +946,7 @@ export default function EditOrderForm({ order, products, onSave, onCancel, editM
             <tbody>
               {productList.map((product, index) => (
                 <tr key={index}>
-                /*
-                  <td>
-                    <select 
-                      value={product.productName}
-                      onChange={(e) => updateProduct(index, 'productName', e.target.value)}
-                      className={styles.productDropdown}
-                    >
-                      <option value="">-- Select Product --</option>
-                      {productListOptions.map((p, i) => (
-                        <option key={i} value={p.combinedName}>
-                          {p.combinedName}
-                        </option>
-                      ))}
-                    </select>
-                  </td>
-*/
+                
                    <td style={{ width: '22%', minWidth: '200px' }}>
                     <Select2Dropdown
                       options={getProductOptions()}
