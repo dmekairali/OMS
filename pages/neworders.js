@@ -5,6 +5,58 @@ import EditOrderForm from '../components/EditOrderForm';
 import SetupDataService from '../services/SetupDataService';
 
 
+
+// Add this after the imports, before DISPLAY_FIELDS
+// Payment date validation helper
+const validatePaymentDate = (dateString) => {
+  if (!dateString) return { valid: true }; // Empty is allowed
+  
+  const selectedDate = new Date(dateString);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0); // Reset time to start of day
+  selectedDate.setHours(0, 0, 0, 0);
+  
+  // Calculate differences in days
+  const diffTime = selectedDate - today;
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  
+  // Check if date is more than 7 days in the past
+  if (diffDays < -7) {
+    return { 
+      valid: false, 
+      message: 'Payment date cannot be more than 7 days in the past' 
+    };
+  }
+  
+  // Check if date is more than 45 days in the future
+  if (diffDays > 45) {
+    return { 
+      valid: false, 
+      message: 'Payment date cannot be more than 45 days in the future' 
+    };
+  }
+  
+  return { valid: true };
+};
+
+// Helper to get min and max date for date inputs
+const getPaymentDateLimits = () => {
+  const today = new Date();
+  
+  // Min date: 7 days ago
+  const minDate = new Date(today);
+  minDate.setDate(minDate.getDate() - 7);
+  
+  // Max date: 45 days from today
+  const maxDate = new Date(today);
+  maxDate.setDate(maxDate.getDate() + 45);
+  
+  return {
+    min: minDate.toISOString().split('T')[0],
+    max: maxDate.toISOString().split('T')[0]
+  };
+};
+
 // Non-editable display fields for order cards
 const DISPLAY_FIELDS = [
   { name: 'Oder ID', type: 'text' },
@@ -639,6 +691,16 @@ const handleSaveEditOrder = async (result) => {
     const columnUpdates = {};
     
     const fieldConfigs = ACTION_FIELDS[selectedStatus] || [];
+
+      // Validate payment date if present
+  const paymentDateValue = formData.get('Payment Date');
+  if (paymentDateValue) {
+    const validation = validatePaymentDate(paymentDateValue);
+    if (!validation.valid) {
+      alert(validation.message);
+      return; // Stop form submission
+    }
+  }
     
     for (let [key, value] of formData.entries()) {
       const fieldConfig = fieldConfigs.find(f => f.name === key);
@@ -1022,14 +1084,25 @@ const handleSaveEditOrder = async (result) => {
 )}
         
         {field.type === 'date' && (
-          <input
-            type="date"
-            name={field.name}
-            defaultValue={field.defaultValue || ''}
-            required={field.required}
-            readOnly={field.readOnly}
-          />
-        )}
+  <input
+    type="date"
+    name={field.name}
+    defaultValue={field.defaultValue || ''}
+    required={field.required}
+    readOnly={field.readOnly}
+    min={field.name === 'Payment Date' ? getPaymentDateLimits().min : undefined}
+    max={field.name === 'Payment Date' ? getPaymentDateLimits().max : undefined}
+    onChange={(e) => {
+      if (field.name === 'Payment Date') {
+        const validation = validatePaymentDate(e.target.value);
+        if (!validation.valid) {
+          alert(validation.message);
+          e.target.value = '';
+        }
+      }
+    }}
+  />
+)}
         
         {field.type === 'datetime-local' && (
           <input
