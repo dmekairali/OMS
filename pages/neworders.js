@@ -400,6 +400,14 @@ const renderOrderHistory = () => {
                     }
                   </span>
                 </div>
+
+                 <div className={styles.historyField}>
+                  <span className={styles.historyLabel}>Invoice</span>
+                  <span className={styles.historyValue}>
+                    {histOrder.pobUrl || 'N/A'}
+                  </span>
+                </div>
+                    
               </div>
             </div>
           ))}
