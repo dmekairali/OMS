@@ -122,13 +122,14 @@ export default function EditOrderForm({ order, products, onSave, onCancel, editM
   const [isInitialLoadComplete, setIsInitialLoadComplete] = useState(false);
   
   // Format products for Select2
-  const getProductOptions = () => {
-    return productListOptions.map(product => ({
-      value: product.combinedName,
-      label: `${product.product} | Pack: ${product.pack} | Price: ₹${product.price}`,
-      raw: product
-    }));
-  };
+ 
+const getProductOptions = () => {
+  return productListOptions.map(product => ({
+    value: product.combinedName,
+    label: `${product.product} | Pack: ${product.pack} | Price: ₹${product.price}${product.activeStatus === 'Discontinue' ? ' 🔴' : ''}`,
+    raw: product
+  }));
+};
   
   // Calculate totals whenever productList changes
   useEffect(() => {
@@ -428,7 +429,7 @@ useEffect(() => {
     }
 
     return productList.rows
-      .filter(row => row['As Per Factory- Status'] !== 'Discontinue')
+      .filter(row => row['combinedName'] !== '')
       .map(row => ({
         combinedName: row['Combined Name'] || '',
         product: row['Product'] || '', // Use this for display
@@ -436,7 +437,8 @@ useEffect(() => {
         pack: row['Pack'] || '',
         price: row['Price'] || '0',
         productCategory: row['Products Category'] || '',
-        taxRate: row['TAX RATE'] || '0'
+        taxRate: row['TAX RATE'] || '0',
+        activeStatus: row['As Per Factory- Status'] || ''
       }))
       .filter(p => p.combinedName);
   };
