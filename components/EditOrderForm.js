@@ -538,6 +538,12 @@ export default function EditOrderForm({ order, products, onSave, onCancel, editM
     
     const totalAmount = afterDisc + cgstAmount + sgstAmount + igstAmount;
     updated[index].total = totalAmount.toFixed(2);
+
+     // NEW: Calculate Split Qty
+    const orderQty = parseFloat(updated[index].orderQty) || 0;
+    const currentQty = parseFloat(updated[index].quantity) || 0;
+    const splitQty = orderQty - currentQty;
+    updated[index].splitQty = splitQty >= 0 ? splitQty.toString() : '0';
     
     setProductList(updated);
   };
@@ -578,6 +584,7 @@ export default function EditOrderForm({ order, products, onSave, onCancel, editM
           mrp: product.mrp,
           packingSize: product.packingSize,
           quantity: product.quantity,
+          orderQuantity: product.orderQty,
           discountPercent: product.discountPer,
           discountType: '%',
           discountAmount: product.discountAmt,
@@ -942,6 +949,8 @@ export default function EditOrderForm({ order, products, onSave, onCancel, editM
                 <th colSpan="2">Tax(SGST)</th>
                 <th colSpan="2">Tax(IGST)</th>
                 <th>Total</th>
+                <th>Order Qty</th>  {/* NEW */}
+                <th>Split Qty</th>  {/* NEW */}
               </tr>
             </thead>
             <tbody>
@@ -985,6 +994,27 @@ export default function EditOrderForm({ order, products, onSave, onCancel, editM
                   <td colSpan="2"><input type="text" value={product.sgst} readOnly className={styles.readonly} /></td>
                   <td colSpan="2"><input type="text" value={product.igst} readOnly className={styles.readonly} /></td>
                   <td><input type="text" value={product.total} readOnly className={styles.readonly} /></td>
+                   {/* NEW: Order Qty - readonly, shows original order quantity */}
+    <td>
+      <input 
+        type="text" 
+        value={product.orderQty} 
+        readOnly 
+        className={styles.readonly}
+        title="Original Order Quantity"
+      />
+    </td>
+    
+    {/* NEW: Split Qty - readonly, calculated automatically */}
+    <td>
+      <input 
+        type="text" 
+        value={product.splitQty} 
+        readOnly 
+        className={styles.readonly}
+        title="Split Quantity (Order Qty - Current Qty)"
+      />
+    </td>   
                 </tr>
               ))}
               {/* Total Row */}
@@ -999,6 +1029,8 @@ export default function EditOrderForm({ order, products, onSave, onCancel, editM
                 <td><input type="text" value={totals.taxAfterTotal} readOnly className={styles.readonly} /></td>
                 <td colSpan="6"></td>
                 <td className={styles.finalTotal}><input type="text" value={totals.totalAmount} readOnly className={styles.readonly} /></td>
+                <td></td>  {/* NEW: Empty cell for Order Qty column */}
+                <td></td>  {/* NEW: Empty cell for Split Qty column */}
               </tr>
             </tbody>
           </table>
