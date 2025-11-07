@@ -1,4 +1,5 @@
 // App.js or _app.js (Next.js)
+import 'select2/dist/css/select2.css';
 import { useEffect, useState } from 'react';
 import SetupDataService from '../services/SetupDataService';
 
