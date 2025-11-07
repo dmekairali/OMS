@@ -975,3 +975,55 @@
   font-size: 14px;
   resize: vertical;
 }
+
+
+/* ==========================================================================
+   FIXED COLUMN WIDTHS - PREVENT EXPANSION
+   ========================================================================== */
+.productsTable {
+  table-layout: fixed !important;
+  width: 100% !important;
+}
+
+.productsTable th,
+.productsTable td {
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+/* Specific column width fixes */
+.productsTable td:nth-child(1) {
+  width: 22% !important;
+  min-width: 200px !important;
+  max-width: 200px !important;
+  position: relative;
+}
+
+/* Select2 container in first column */
+.productsTable td:nth-child(1) .select2-container {
+  width: 100% !important;
+  min-width: 180px !important;
+  max-width: 180px !important;
+}
+
+.productsTable td:nth-child(1) .select2-selection__rendered {
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  display: block !important;
+  width: 100% !important;
+}
+
+/* Force all columns to stay fixed */
+.productsTable td:nth-child(2) { width: 6% !important; min-width: 60px !important; max-width: 60px !important; }
+.productsTable td:nth-child(3) { width: 8% !important; min-width: 80px !important; max-width: 80px !important; }
+.productsTable td:nth-child(4) { width: 5% !important; min-width: 50px !important; max-width: 50px !important; }
+.productsTable td:nth-child(5) { width: 7% !important; min-width: 70px !important; max-width: 70px !important; }
+.productsTable td:nth-child(6) { width: 7% !important; min-width: 70px !important; max-width: 70px !important; }
+.productsTable td:nth-child(7) { width: 8% !important; min-width: 80px !important; max-width: 80px !important; }
+.productsTable td:nth-child(8) { width: 8% !important; min-width: 80px !important; max-width: 80px !important; }
+.productsTable td:nth-child(9) { width: 5% !important; min-width: 60px !important; max-width: 60px !important; }
+.productsTable td:nth-child(10) { width: 5% !important; min-width: 60px !important; max-width: 60px !important; }
+.productsTable td:nth-child(11) { width: 5% !important; min-width: 60px !important; max-width: 60px !important; }
+.productsTable td:nth-child(12) { width: 6% !important; min-width: 70px !important; max-width: 70px !important; }
