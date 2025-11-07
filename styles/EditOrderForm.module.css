@@ -1027,3 +1027,16 @@
 .productsTable td:nth-child(10) { width: 5% !important; min-width: 60px !important; max-width: 60px !important; }
 .productsTable td:nth-child(11) { width: 5% !important; min-width: 60px !important; max-width: 60px !important; }
 .productsTable td:nth-child(12) { width: 6% !important; min-width: 70px !important; max-width: 70px !important; }
+
+/* Adjust table column widths for new columns */
+.productsTable thead th:nth-last-child(2),
+.productsTable thead th:nth-last-child(1) {
+  width: 5%;
+  min-width: 60px;
+}
+
+/* Highlight split qty if it's non-zero */
+.productsTable tbody td:nth-last-child(1) input[value]:not([value="0"]) {
+  background-color: #fff3cd;
+  font-weight: 600;
+}
