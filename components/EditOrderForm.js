@@ -119,7 +119,7 @@ export default function EditOrderForm({ order, products, onSave, onCancel, editM
 
   // NEW: State for showing/hiding additional fields
   const [showAdditionalFields, setShowAdditionalFields] = useState(false);
-
+  const [isInitialLoadComplete, setIsInitialLoadComplete] = useState(false);
   
   // Format products for Select2
   const getProductOptions = () => {
@@ -134,6 +134,26 @@ export default function EditOrderForm({ order, products, onSave, onCancel, editM
   useEffect(() => {
     calculateTotals();
   }, [productList]);
+
+  
+// ✅ NEW - Add this one
+useEffect(() => {
+  // Initial recalculation on load
+  if (productList.length > 0 && productListOptions.length > 0 && state && !isInitialLoadComplete) {
+    const recalculated = productList.map(product => recalculateProduct(product));
+    setProductList(recalculated);
+    setIsInitialLoadComplete(true);
+  }
+}, [productList.length, productListOptions.length, state, isInitialLoadComplete]);
+
+// ✅ NEW - Add this one
+useEffect(() => {
+  // Recalculate when party changes
+  if (isInitialLoadComplete && partyState && productList.length > 0) {
+    const recalculated = productList.map(product => recalculateProduct(product));
+    setProductList(recalculated);
+  }
+}, [partyState]);
 
   const calculateTotals = () => {
     let mrpSum = 0;
@@ -259,9 +279,8 @@ export default function EditOrderForm({ order, products, onSave, onCancel, editM
         splitQty: '0',
         productCategory: ''
       }));
-     // ✅ Recalculate all products on initial load
-     const recalculatedProducts = initialProducts.map(product => recalculateProduct(product));
-     setProductList(recalculatedProducts);
+      
+       setProductList(initialProducts);
     }
   }, [order, products]);
 
@@ -584,7 +603,7 @@ export default function EditOrderForm({ order, products, onSave, onCancel, editM
 };
 
 
-  // Helper function to recalculate product totals (without updating field value)
+ // Helper function to recalculate product totals (without updating field value)
 const recalculateProduct = (product) => {
   const qty = parseFloat(product.quantity) || 0;
   const mrp = parseFloat(product.mrp) || 0;
@@ -596,10 +615,51 @@ const recalculateProduct = (product) => {
   // Step 2: Discount Amount = Before Tax × Discount%
   const discAmt = (beforeTax * discPer) / 100;
   
-  // Step 3: Get tax rates
-  const cgstRate = parseFloat(product.cgst) || 0;
-  const sgstRate = parseFloat(product.sgst) || 0;
-  const igstRate = parseFloat(product.igst) || 0;
+  // ========================================
+  // Get tax rate from product list and recalculate CGST/SGST/IGST
+  // ========================================
+  
+  // Find the product in productListOptions to get its tax rate
+  const productDetail = productListOptions.find(p => p.combinedName === product.productName);
+  const taxRate = productDetail ? parseFloat(productDetail.taxRate || '0') : 0;
+  
+  let cgstRate = 0;
+  let sgstRate = 0;
+  let igstRate = 0;
+  
+  // Determine tax distribution based on state comparison
+  if (state && partyState && state !== '' && partyState !== '') {
+    // Both states are available - compare them
+    if (state === partyState) {
+      // Same state: Split tax between CGST and SGST
+      cgstRate = taxRate / 2;
+      sgstRate = taxRate / 2;
+      igstRate = 0;
+    } else {
+      // Different state: Use IGST only
+      cgstRate = 0;
+      sgstRate = 0;
+      igstRate = taxRate;
+    }
+  } else if (state && (!partyState || partyState === '')) {
+    // ✅ NEW: Party not selected yet - assume different state (use IGST)
+    // This is safer because it won't accidentally give wrong tax benefits
+    cgstRate = 0;
+    sgstRate = 0;
+    igstRate = taxRate;
+    
+    console.log(`⚠️ Party not selected for product ${product.productName}, using IGST (${taxRate}%)`);
+  } else if (product.cgst || product.sgst || product.igst) {
+    // Fallback: Use existing tax rates from product if available
+    cgstRate = parseFloat(product.cgst) || 0;
+    sgstRate = parseFloat(product.sgst) || 0;
+    igstRate = parseFloat(product.igst) || 0;
+  } else {
+    // Last resort: If no state info and no existing tax rates, assume IGST
+    cgstRate = 0;
+    sgstRate = 0;
+    igstRate = taxRate;
+  }
   
   // Step 4: Determine total tax rate
   const totalTaxRate = igstRate > 0 ? igstRate : (cgstRate + sgstRate);
@@ -638,6 +698,9 @@ const recalculateProduct = (product) => {
     beforeTax: beforeTax.toFixed(2),
     discountAmt: discAmt.toFixed(2),
     afterDiscount: afterDisc.toFixed(2),
+    cgst: cgstRate.toFixed(2),
+    sgst: sgstRate.toFixed(2),
+    igst: igstRate.toFixed(2),
     total: totalAmount.toFixed(2),
     splitQty: splitQty >= 0 ? splitQty.toString() : '0'
   };
