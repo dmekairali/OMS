@@ -1,7 +1,16 @@
+import dynamic from 'next/dynamic';
 import { useState, useEffect } from 'react';
 import styles from '../styles/EditOrderForm.module.css';
 import SetupDataService from '../services/SetupDataService';
 import EditOrderAPI from '../services/editOrderAPI';
+
+
+// Dynamically import Select2Dropdown (client-side only)
+const Select2Dropdown = dynamic(() => import('./Select2Dropdown'), {
+  ssr: false,
+  loading: () => <select><option>Loading...</option></select>
+});
+
 
 export default function EditOrderForm({ order, products, onSave, onCancel, editMode }) {
   // Client Information
@@ -111,6 +120,16 @@ export default function EditOrderForm({ order, products, onSave, onCancel, editM
   // NEW: State for showing/hiding additional fields
   const [showAdditionalFields, setShowAdditionalFields] = useState(false);
 
+  
+  // Format products for Select2
+  const getProductOptions = () => {
+    return productListOptions.map(product => ({
+      value: product.combinedName,
+      label: `${product.product} | Pack: ${product.pack} | Price: ₹${product.price}`,
+      raw: product
+    }));
+  };
+  
   // Calculate totals whenever productList changes
   useEffect(() => {
     calculateTotals();
@@ -912,10 +931,10 @@ export default function EditOrderForm({ order, products, onSave, onCancel, editM
               <tr>
                 <th>Select Products</th>
                 <th>MRP</th>
-                <th>Packing Size</th>
-                <th>Qty.</th>
-                <th colSpan="2">Discount %</th>
-                <th>Dis. Amt</th>
+                <th>Pack</th>
+                <th>Qty</th>
+                <th colSpan="2">Dis %</th>
+                <th>Dis.Amt</th>
                 <th>Taxable Before Dis.</th>
                 <th>Taxable After Dis.</th>
                 <th colSpan="2">Tax(CGST)</th>
@@ -927,6 +946,7 @@ export default function EditOrderForm({ order, products, onSave, onCancel, editM
             <tbody>
               {productList.map((product, index) => (
                 <tr key={index}>
+                /*
                   <td>
                     <select 
                       value={product.productName}
@@ -941,6 +961,18 @@ export default function EditOrderForm({ order, products, onSave, onCancel, editM
                       ))}
                     </select>
                   </td>
+*/
+                   <td style={{ width: '22%', minWidth: '200px' }}>
+                    <Select2Dropdown
+                      options={getProductOptions()}
+                      value={product.productName}
+                      onChange={(value) => updateProduct(index, 'productName', value)}
+                      placeholder="Select Product..."
+                      width="100%"
+                      dropdownWidth="500px"
+                    />
+                  </td>
+                        
                   <td><input type="text" value={product.mrp} readOnly className={styles.readonly} /></td>
                   <td><input type="text" value={product.packingSize} readOnly className={styles.readonly} /></td>
                   <td>
