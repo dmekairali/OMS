@@ -121,12 +121,13 @@ export default function EditOrderForm({ order, products, onSave, onCancel, editM
   const [showAdditionalFields, setShowAdditionalFields] = useState(false);
   const [isInitialLoadComplete, setIsInitialLoadComplete] = useState(false);
   
-  // Format products for Select2
+
  
+// Format products for Select2
 const getProductOptions = () => {
   return productListOptions.map(product => ({
     value: product.combinedName,
-    label: `${product.product} | Pack: ${product.pack} | Price: ₹${product.price}${product.activeStatus === 'Discontinue' ? ' 🔴' : ''}`,
+    label: `${product.product} | Pack: ${product.pack} | Price: ₹${product.price}${product.activeStatus === 'Discontinue' || product.activeStatus === 'TempDiscontinue' ? ' 🔴' : ''}`,
     raw: product
   }));
 };
@@ -429,7 +430,7 @@ useEffect(() => {
     }
 
     return productList.rows
-      .filter(row => row['combinedName'] !== '')
+      .filter(row => row['As Per Factory- Status'] !== 'Sample')
       .map(row => ({
         combinedName: row['Combined Name'] || '',
         product: row['Product'] || '', // Use this for display
