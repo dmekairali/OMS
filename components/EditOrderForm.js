@@ -259,7 +259,9 @@ export default function EditOrderForm({ order, products, onSave, onCancel, editM
         splitQty: '0',
         productCategory: ''
       }));
-      setProductList(initialProducts);
+     // ✅ Recalculate all products on initial load
+     const recalculatedProducts = initialProducts.map(product => recalculateProduct(product));
+     setProductList(recalculatedProducts);
     }
   }, [order, products]);
 
@@ -579,6 +581,66 @@ export default function EditOrderForm({ order, products, onSave, onCancel, editM
   updated[index].splitQty = splitQty >= 0 ? splitQty.toString() : '0';
   
   setProductList(updated);
+};
+
+
+  // Helper function to recalculate product totals (without updating field value)
+const recalculateProduct = (product) => {
+  const qty = parseFloat(product.quantity) || 0;
+  const mrp = parseFloat(product.mrp) || 0;
+  const discPer = parseFloat(product.discountPer) || 0;
+  
+  // Step 1: Before Tax = Qty × MRP
+  const beforeTax = qty * mrp;
+  
+  // Step 2: Discount Amount = Before Tax × Discount%
+  const discAmt = (beforeTax * discPer) / 100;
+  
+  // Step 3: Get tax rates
+  const cgstRate = parseFloat(product.cgst) || 0;
+  const sgstRate = parseFloat(product.sgst) || 0;
+  const igstRate = parseFloat(product.igst) || 0;
+  
+  // Step 4: Determine total tax rate
+  const totalTaxRate = igstRate > 0 ? igstRate : (cgstRate + sgstRate);
+  
+  // Step 5: Calculate taxable amount (tax-exclusive)
+  let afterDisc;
+  if (totalTaxRate > 0) {
+    const taxDivisor = 100 + totalTaxRate;
+    afterDisc = (beforeTax - discAmt) * (100 / taxDivisor);
+  } else {
+    afterDisc = beforeTax - discAmt;
+  }
+  
+  // Step 6: Calculate tax amounts
+  const cgstAmount = (afterDisc * cgstRate) / 100;
+  const sgstAmount = (afterDisc * sgstRate) / 100;
+  const igstAmount = (afterDisc * igstRate) / 100;
+  
+  // Step 7: Calculate Total
+  let totalAmount;
+  if (cgstRate > 0 || sgstRate > 0) {
+    totalAmount = afterDisc + cgstAmount + sgstAmount;
+  } else if (igstRate > 0) {
+    totalAmount = afterDisc + igstAmount;
+  } else {
+    totalAmount = afterDisc;
+  }
+  
+  // Step 8: Calculate Split Qty
+  const orderQty = parseFloat(product.orderQty) || 0;
+  const currentQty = parseFloat(product.quantity) || 0;
+  const splitQty = orderQty - currentQty;
+  
+  return {
+    ...product,
+    beforeTax: beforeTax.toFixed(2),
+    discountAmt: discAmt.toFixed(2),
+    afterDiscount: afterDisc.toFixed(2),
+    total: totalAmount.toFixed(2),
+    splitQty: splitQty >= 0 ? splitQty.toString() : '0'
+  };
 };
 
   const handleSubmit = async (e) => {
