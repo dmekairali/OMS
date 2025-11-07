@@ -6,7 +6,7 @@
 
 /* Mobile Menu Toggle Button */
 .menuToggle {
-  display: block;
+  display: none;
   position: fixed;
   top: 16px;
   left: 16px;
@@ -564,6 +564,9 @@
 }
 
 @media (max-width: 768px) {
+  .menuToggle {
+    display:block;
+  }
   
   .sidebar {
     transform: translateX(-100%);
