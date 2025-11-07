@@ -471,82 +471,115 @@ export default function EditOrderForm({ order, products, onSave, onCancel, editM
   };
 
   const updateProduct = (index, field, value) => {
-    const updated = [...productList];
+  const updated = [...productList];
+  
+  if (field === 'productName') {
+    const selectedProduct = productListOptions.find(p => p.combinedName === value);
     
-    if (field === 'productName') {
-      const selectedProduct = productListOptions.find(p => p.combinedName === value);
+    if (selectedProduct) {
+      updated[index].productName = selectedProduct.combinedName;
+      updated[index].sku = selectedProduct.productSKU;
+      updated[index].mrp = selectedProduct.price;
+      updated[index].packingSize = selectedProduct.pack;
+      updated[index].productCategory = selectedProduct.productCategory;
       
-      if (selectedProduct) {
-        updated[index].productName = selectedProduct.combinedName;
-        updated[index].sku = selectedProduct.productSKU;
-        updated[index].mrp = selectedProduct.price;
-        updated[index].packingSize = selectedProduct.pack;
-        updated[index].productCategory = selectedProduct.productCategory;
-        
-        const presetDiscount = getPresetDiscount(selectedProduct.productCategory);
-        updated[index].discountPer = presetDiscount;
-        
-        const taxRate = parseFloat(selectedProduct.taxRate || '0');
-        if (state && partyState && state === partyState) {
-          updated[index].cgst = (taxRate / 2).toString();
-          updated[index].sgst = (taxRate / 2).toString();
-          updated[index].igst = '0';
-        } else {
-          updated[index].cgst = '0';
-          updated[index].sgst = '0';
-          updated[index].igst = taxRate.toString();
-        }
-      }
-    } 
-    else if (field === 'discountPer') {
-      const maxDiscount = getMaxDiscount(updated[index].productCategory);
-      const enteredDiscount = parseFloat(value) || 0;
+      const presetDiscount = getPresetDiscount(selectedProduct.productCategory);
+      updated[index].discountPer = presetDiscount;
       
-      if (enteredDiscount > maxDiscount) {
-        updated[index][field] = maxDiscount.toString();
-        alert(`Maximum discount allowed for ${updated[index].productCategory} is ${maxDiscount}%`);
-      } else if (enteredDiscount < 0) {
-        updated[index][field] = '0';
+      const taxRate = parseFloat(selectedProduct.taxRate || '0');
+      if (state && partyState && state === partyState) {
+        updated[index].cgst = (taxRate / 2).toString();
+        updated[index].sgst = (taxRate / 2).toString();
+        updated[index].igst = '0';
       } else {
-        updated[index][field] = value;
+        updated[index].cgst = '0';
+        updated[index].sgst = '0';
+        updated[index].igst = taxRate.toString();
       }
     } 
-    else {
+  } 
+  else if (field === 'discountPer') {
+    const maxDiscount = getMaxDiscount(updated[index].productCategory);
+    const enteredDiscount = parseFloat(value) || 0;
+    
+    if (enteredDiscount > maxDiscount) {
+      updated[index][field] = maxDiscount.toString();
+      alert(`Maximum discount allowed for ${updated[index].productCategory} is ${maxDiscount}%`);
+    } else if (enteredDiscount < 0) {
+      updated[index][field] = '0';
+    } else {
       updated[index][field] = value;
     }
-    
-    const qty = parseFloat(updated[index].quantity) || 0;
-    const mrp = parseFloat(updated[index].mrp) || 0;
-    const discPer = parseFloat(updated[index].discountPer) || 0;
-    
-    const beforeTax = qty * mrp;
-    updated[index].beforeTax = beforeTax.toFixed(2);
-    
-    const discAmt = (beforeTax * discPer) / 100;
-    updated[index].discountAmt = discAmt.toFixed(2);
-    
-    const afterDisc = beforeTax - discAmt;
-    updated[index].afterDiscount = afterDisc.toFixed(2);
-    
-    const cgstRate = parseFloat(updated[index].cgst) || 0;
-    const sgstRate = parseFloat(updated[index].sgst) || 0;
-    const igstRate = parseFloat(updated[index].igst) || 0;
-    
-    const cgstAmount = (afterDisc * cgstRate) / 100;
-    const sgstAmount = (afterDisc * sgstRate) / 100;
-    const igstAmount = (afterDisc * igstRate) / 100;
-    
-    const totalAmount = afterDisc + cgstAmount + sgstAmount + igstAmount;
-    updated[index].total = totalAmount.toFixed(2);
-
-     // NEW: Calculate Split Qty
-    const orderQty = parseFloat(updated[index].orderQty) || 0;
-    const currentQty = parseFloat(updated[index].quantity) || 0;
-    const splitQty = orderQty - currentQty;
-    updated[index].splitQty = splitQty >= 0 ? splitQty.toString() : '0';
-    
-    setProductList(updated);
-  };
+  } 
+  else {
+    updated[index][field] = value;
+  }
+  
+  // ========================================
+  // CORRECTED CALCULATION (matching HTML)
+  // ========================================
+  
+  const qty = parseFloat(updated[index].quantity) || 0;
+  const mrp = parseFloat(updated[index].mrp) || 0;
+  const discPer = parseFloat(updated[index].discountPer) || 0;
+  
+  // Step 1: Before Tax = Qty × MRP (gross amount)
+  const beforeTax = qty * mrp;
+  updated[index].beforeTax = beforeTax.toFixed(2);
+  
+  // Step 2: Discount Amount = Before Tax × Discount%
+  const discAmt = (beforeTax * discPer) / 100;
+  updated[index].discountAmt = discAmt.toFixed(2);
+  
+  // Step 3: Get tax rates
+  const cgstRate = parseFloat(updated[index].cgst) || 0;
+  const sgstRate = parseFloat(updated[index].sgst) || 0;
+  const igstRate = parseFloat(updated[index].igst) || 0;
+  
+  // Step 4: Determine total tax rate
+  const totalTaxRate = igstRate > 0 ? igstRate : (cgstRate + sgstRate);
+  
+  // Step 5: Calculate taxable amount (AFTER discount, tax-exclusive)
+  // MRP is tax-inclusive, so we need to extract the tax-exclusive amount
+  let afterDisc;
+  if (totalTaxRate > 0) {
+    // Convert tax rate to divisor (5% -> 105, 12% -> 112, 18% -> 118)
+    const taxDivisor = 100 + totalTaxRate;
+    // Remove tax from the discounted amount
+    afterDisc = (beforeTax - discAmt) * (100 / taxDivisor);
+  } else {
+    afterDisc = beforeTax - discAmt;
+  }
+  updated[index].afterDiscount = afterDisc.toFixed(2);
+  
+  // Step 6: Calculate individual tax amounts on tax-exclusive amount
+  const cgstAmount = (afterDisc * cgstRate) / 100;
+  const sgstAmount = (afterDisc * sgstRate) / 100;
+  const igstAmount = (afterDisc * igstRate) / 100;
+  
+  // Step 7: Calculate Total = Tax-exclusive amount + All taxes
+  let totalAmount;
+  if (cgstRate > 0 || sgstRate > 0) {
+    // CGST + SGST case
+    totalAmount = afterDisc + cgstAmount + sgstAmount;
+  } else if (igstRate > 0) {
+    // IGST case
+    totalAmount = afterDisc + igstAmount;
+  } else {
+    // No tax case
+    totalAmount = afterDisc;
+  }
+  
+  updated[index].total = totalAmount.toFixed(2);
+  
+  // Step 8: Calculate Split Qty (orderQty - current quantity)
+  const orderQty = parseFloat(updated[index].orderQty) || 0;
+  const currentQty = parseFloat(updated[index].quantity) || 0;
+  const splitQty = orderQty - currentQty;
+  updated[index].splitQty = splitQty >= 0 ? splitQty.toString() : '0';
+  
+  setProductList(updated);
+};
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -949,8 +982,8 @@ export default function EditOrderForm({ order, products, onSave, onCancel, editM
                 <th colSpan="2">Tax(SGST)</th>
                 <th colSpan="2">Tax(IGST)</th>
                 <th>Total</th>
-                <th>Order Qty</th>  {/* NEW */}
-                <th>Split Qty</th>  {/* NEW */}
+               {/* NEW hidden  <th>Order Qty</th>  */}
+                {/* NEW hidden <th>Split Qty</th>  */}
               </tr>
             </thead>
             <tbody>
@@ -994,27 +1027,24 @@ export default function EditOrderForm({ order, products, onSave, onCancel, editM
                   <td colSpan="2"><input type="text" value={product.sgst} readOnly className={styles.readonly} /></td>
                   <td colSpan="2"><input type="text" value={product.igst} readOnly className={styles.readonly} /></td>
                   <td><input type="text" value={product.total} readOnly className={styles.readonly} /></td>
-                   {/* NEW: Order Qty - readonly, shows original order quantity */}
-    <td>
+                  
+  {/* NEW: Hidden fields - Order Qty and Split Qty */}
+    <td style={{ display: 'none' }}>
       <input 
-        type="text" 
-        value={product.orderQty} 
-        readOnly 
-        className={styles.readonly}
-        title="Original Order Quantity"
+        type="hidden" 
+        value={product.orderQty}
+        name={`orderQty_${index}`}
+        readOnly
       />
     </td>
-    
-    {/* NEW: Split Qty - readonly, calculated automatically */}
-    <td>
+    <td style={{ display: 'none' }}>
       <input 
-        type="text" 
-        value={product.splitQty} 
-        readOnly 
-        className={styles.readonly}
-        title="Split Quantity (Order Qty - Current Qty)"
+        type="hidden" 
+        value={product.splitQty}
+        name={`splitQty_${index}`}
+        readOnly
       />
-    </td>   
+    </td>
                 </tr>
               ))}
               {/* Total Row */}
@@ -1029,8 +1059,8 @@ export default function EditOrderForm({ order, products, onSave, onCancel, editM
                 <td><input type="text" value={totals.taxAfterTotal} readOnly className={styles.readonly} /></td>
                 <td colSpan="6"></td>
                 <td className={styles.finalTotal}><input type="text" value={totals.totalAmount} readOnly className={styles.readonly} /></td>
-                <td></td>  {/* NEW: Empty cell for Order Qty column */}
-                <td></td>  {/* NEW: Empty cell for Split Qty column */}
+                  {/* NEW: Empty cell for Order Qty column <td></td> */}
+                  {/* NEW: Empty cell for Split Qty column  <td></td>*/}
               </tr>
             </tbody>
           </table>
