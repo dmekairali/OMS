@@ -3,7 +3,7 @@
  * Handles loading order details with products and updating order status for Edit/Split actions
  */
 
-import { requireAuth } from '@/lib/auth-middleware';
+import { requireAuth } from '../../../lib/auth-middleware';
 
 export default async function handler(req, res) {
   const session = await requireAuth(req, res);

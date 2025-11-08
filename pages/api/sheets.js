@@ -4,7 +4,7 @@
  */
 
 import { google } from 'googleapis';
-import { requireAuth } from '@/lib/auth-middleware';
+import { requireAuth } from '../../lib/auth-middleware';
 
 // Initialize Google Sheets API
 function getGoogleSheetsClient() {

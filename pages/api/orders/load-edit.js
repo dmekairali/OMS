@@ -28,7 +28,7 @@
  * READONLY FIELDS: All others (auto-calculated)
  */
 
-import { requireAuth } from '@/lib/auth-middleware';
+import { requireAuth } from '../../../lib/auth-middleware';
 
 export default async function handler(req, res) {
   const session = await requireAuth(req, res);
