@@ -509,7 +509,7 @@ export default function Dispatch() {
     
     // Get client order history from pre-loaded archive data
     const history = SetupDataService.getClientOrderHistory(
-      order['Mobile'], 
+      order['Client Contact'], 
       order['Oder ID'],
       3  // Last 3 orders
     );
