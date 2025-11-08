@@ -60,15 +60,15 @@ const getPaymentDateLimits = () => {
 // Non-editable display fields for order cards
 const DISPLAY_FIELDS = [
   { name: 'Oder ID', type: 'text' },
-  { name: 'Order Status', type: 'status' },
+  { name: 'Dispatch Status', type: 'status' },
   { name: 'Name of Client', type: 'text' },
   { name: 'Client Type', type: 'text' },
-  { name: 'Mobile', type: 'text' },
+  { name: 'Client Contact', type: 'text' },
   { name: 'Order Taken By', type: 'text' },
   { name: 'Invoice Amount', type: 'currency' },
-  { name: 'Dispatch Party From*', type: 'text' },
-  { name: 'Remarks*', type: 'text' },
-  { name: 'POB URL*', type: 'url' },
+  { name: 'Delivery Party From', type: 'text' },
+  { name: 'Order Confirmed Doer Remarks', type: 'text' },
+  { name: 'PI URL', type: 'url' },
 ];
 
 // All non-editable fields for detail view
@@ -77,56 +77,217 @@ const NON_EDITABLE_FIELDS = [
   { name: 'Buyer ID', type: 'text' },
   { name: 'Oder ID', type: 'text' },
   { name: 'Name of Client', type: 'text' },
-  { name: 'Mobile', type: 'text' },
-  { name: 'Email', type: 'text' },
-  { name: 'Client Category', type: 'text' },
+  { name: 'Client Contact', type: 'text' },
   { name: 'Client Type', type: 'text' },
-  { name: 'Billing Address', type: 'text' },
-  { name: 'Shipping Address', type: 'text' },
-  { name: 'Pin code', type: 'text' },
   { name: 'Invoice Amount', type: 'currency' },
+  { name: 'PI URL', type: 'url' },
   { name: 'Order Taken By', type: 'text' },
-  { name: 'Delivery Required Date', type: 'date' },
-  { name: 'Delivery Party From', type: 'text' },
-  { name: 'Payment Terms', type: 'text' },
-  { name: 'Payment Date (to be paid)', type: 'date' },
-  { name: 'Preffered Call time', type: 'text' },
-  { name: 'Discount %', type: 'text' },
+  { name: 'Expected Date and time of the Dispatch', type: 'date' },
+  { name: 'Delivery Party Contact No', type: 'text' },
+  { name: 'Payment Confirmation Type', type: 'text' },
   { name: 'Planned', type: 'datetime' },
   { name: 'Actual', type: 'datetime' },
-  { name: 'POB No*', type: 'text' },
-  { name: 'POB URL*', type: 'url' },
-  { name: 'Doer Name', type: 'text' },
+  { name: 'Dispatch Status', type: 'status' },
+  { name: 'Tracking URL*', type: 'url' },
+  { name: 'Dispatch Through *', type: 'text' },
+  { name: 'Dispatch Remarks*', type: 'text' },
+  { name: 'Cost of Delivery (if any)', type: 'text' },
+  { name: 'Actual Delivered Date - To Client', type: 'date' },
+  { name: 'Is order in Full-Yes/No *', type: 'text' },
+  { name: 'Reason (If No)', type: 'text' },
+  { name: 'Remarks', type: 'text' },
   { name: 'CAPA Link', type: 'url' },
   { name: 'Feedback Collection Link', type: 'url' },
-  { name: 'Order Status', type: 'status' },
-  { name: 'Dispatch Party From*', type: 'text' },
-  { name: 'Remarks*', type: 'text' },
 ];
 
-// Order Status options - UPDATED with Edit Order options
+// Order Status options
 const ORDER_STATUS_OPTIONS = [
-  'Order Confirmed',
+  'Dispatch Confirmed',
   'Cancel Order',
   'False Order',
   'Hold',
-  'Stock Transfer',
   'Edit Order',
   'Edit and Split',
 ];
 
-// Status categories for filtering - UPDATED
+// Status categories for filtering
 const STATUS_CATEGORIES = [
   { value: 'All', label: 'All', icon: '📋' },
   { value: 'Pending', label: 'Pending', icon: '⏳' },
-  { value: 'Order Confirmed', label: 'Confirmed', icon: '✅' },
+  { value: 'Dispatch Confirmed', label: 'Confirmed', icon: '✅' },
   { value: 'Cancel Order', label: 'Cancelled', icon: '❌' },
   { value: 'False Order', label: 'False', icon: '⚠️' },
   { value: 'Hold', label: 'On Hold', icon: '⏸️' },
-  { value: 'Stock Transfer', label: 'Transfer', icon: '🔄' },
   { value: 'Edit Order', label: 'Edit', icon: '✏️' },
   { value: 'Edit and Split', label: 'Split', icon: '✂️' },
 ];
+
+// Dispatch tracking options
+const TRACKING_OPTIONS = [
+ 'MR',
+'Runner',
+'Own Vehicle',
+'Courier',
+'Transport',
+  'Other'
+];
+
+// Action field configurations based on Dispatch Status
+const ACTION_FIELDS = {
+  'Dispatch Confirmed': [
+    { 
+      name: 'Dispatch Status', 
+      type: 'dropdown', 
+      defaultValue: 'Dispatch Confirmed', 
+      readOnly: true, 
+      required: true, 
+      options: ORDER_STATUS_OPTIONS, 
+      columnNumber: 22 
+    },
+    { 
+      name: 'Tracking URL*', 
+      type: 'dropdown', 
+      required: true, 
+      options: TRACKING_OPTIONS, 
+      columnNumber: 23 
+    },
+    { 
+      name: 'Dispatch Through *', 
+      type: 'dropdown', 
+      required: true, 
+      options: TRACKING_OPTIONS, 
+      columnNumber: 27 
+    },
+    { 
+      name: 'Dispatch Remarks*', 
+      type: 'textarea', 
+      required: true, 
+      fullWidth: true, 
+      columnNumber: 24 
+    },
+    { 
+      name: 'Tracking information update to Client by call', 
+      type: 'checkbox', 
+      columnNumber: 25 
+    },
+    { 
+      name: 'Cost of Delivery (if any)', 
+      type: 'number', 
+      step: '0.01',
+      columnNumber: 26 
+    },
+    { 
+      name: 'Actual Delivered Date - To Client', 
+      type: 'date', 
+      columnNumber: 28 
+    },
+  ],
+  
+  'Cancel Order': [
+    { 
+      name: 'Dispatch Status', 
+      type: 'dropdown', 
+      defaultValue: 'Cancel Order', 
+      readOnly: true, 
+      required: true, 
+      options: ORDER_STATUS_OPTIONS, 
+      columnNumber: 22 
+    },
+    { 
+      name: 'Dispatch Remarks*', 
+      type: 'textarea', 
+      required: true, 
+      fullWidth: true, 
+      columnNumber: 24 
+    },
+    { 
+      name: 'Is order in Full-Yes/No *', 
+      type: 'dropdown', 
+      required: true,
+      options: ['Yes', 'No'], 
+      columnNumber: 32 
+    },
+    { 
+      name: 'Reason (If No)', 
+      type: 'textarea', 
+      fullWidth: true,
+      columnNumber: 33 
+    },
+    { 
+      name: 'Remarks', 
+      type: 'textarea', 
+      fullWidth: true,
+      columnNumber: 34 
+    },
+    { 
+      name: 'Tracking information update to Client by call', 
+      type: 'checkbox', 
+      columnNumber: 25 
+    },
+  ],
+  
+  'False Order': [
+    { 
+      name: 'Dispatch Status', 
+      type: 'dropdown', 
+      defaultValue: 'False Order', 
+      readOnly: true, 
+      required: true, 
+      options: ORDER_STATUS_OPTIONS, 
+      columnNumber: 22 
+    },
+    { 
+      name: 'Dispatch Remarks*', 
+      type: 'textarea', 
+      required: true, 
+      fullWidth: true, 
+      columnNumber: 24 
+    },
+    { 
+      name: 'Is order in Full-Yes/No *', 
+      type: 'dropdown', 
+      required: true,
+      options: ['Yes', 'No'], 
+      columnNumber: 32 
+    },
+    { 
+      name: 'Reason (If No)', 
+      type: 'textarea', 
+      fullWidth: true,
+      columnNumber: 33 
+    },
+    { 
+      name: 'Remarks', 
+      type: 'textarea', 
+      fullWidth: true,
+      columnNumber: 34 
+    },
+    { 
+      name: 'Tracking information update to Client by call', 
+      type: 'checkbox', 
+      columnNumber: 25 
+    },
+  ],
+  
+  'Hold': [
+    { 
+      name: 'Dispatch Status', 
+      type: 'dropdown', 
+      defaultValue: 'Hold', 
+      readOnly: true, 
+      required: true, 
+      options: ORDER_STATUS_OPTIONS, 
+      columnNumber: 22 
+    },
+    { 
+      name: 'Dispatch Remarks*', 
+      type: 'textarea', 
+      required: true, 
+      fullWidth: true, 
+      columnNumber: 24 
+    },
+  ],
+};
 
 // Dispatch Party options
 // Dispatch Party options - will be populated from SetupDataService
@@ -143,51 +304,7 @@ const PAYMENT_TYPE_OPTIONS = [
   'Credit'
 ];
 
-// Action field configurations based on Order Status
-const ACTION_FIELDS = {
-  'Order Confirmed': [
-    { name: 'Order Status', type: 'dropdown', defaultValue: 'Order Confirmed', readOnly: true, required: true, options: ORDER_STATUS_OPTIONS, columnNumber: 45 },
-    { name: 'Dispatch Party From*', type: 'dropdown', required: true, options: DISPATCH_PARTY_OPTIONS, columnNumber: 46 },
-    { name: 'Remarks*', type: 'textarea', required: true, fullWidth: true, columnNumber: 47 },
-    { name: 'Inform to Client by call', type: 'checkbox', columnNumber: 48 },
-    { name: 'Inform to Dispatch Party From by call', type: 'checkbox', columnNumber: 49 },
-    { name: 'Payment Date', type: 'date', columnNumber: 51 },
-    { name: 'Payment Confirmation Type', type: 'dropdown', options: PAYMENT_TYPE_OPTIONS, columnNumber: 52 },
-    { name: 'Expected Date and time of the Dispatch', type: 'datetime-local', columnNumber: 53 },
-    { name: 'Enter Actual Invoice Amount of Dispatch Party', type: 'number', step: '0.01', columnNumber: 74, defaultValue: 'invoiceAmount'  },
-  ],
-  'Cancel Order': [
-    { name: 'Order Status', type: 'dropdown', defaultValue: 'Cancel Order', readOnly: true, required: true, options: ORDER_STATUS_OPTIONS, columnNumber: 45 },
-    { name: 'Remarks*', type: 'textarea', required: true, fullWidth: true, columnNumber: 47 },
-    { name: 'Is order in full-Yes/No', type: 'dropdown', options: ['Yes', 'No'], columnNumber: 54 },
-    { name: 'Reason(If No)', type: 'textarea', fullWidth: true, columnNumber: 55 },
-    { name: 'Inform to Client by call', type: 'checkbox', columnNumber: 48 },
-    { name: 'Inform to Dispatch Party From by call', type: 'checkbox', columnNumber: 49 },
-  ],
-  'False Order': [
-    { name: 'Order Status', type: 'dropdown', defaultValue: 'False Order', readOnly: true, required: true, options: ORDER_STATUS_OPTIONS, columnNumber: 45 },
-    { name: 'Remarks*', type: 'textarea', required: true, fullWidth: true, columnNumber: 47 },
-    { name: 'Is order in full-Yes/No', type: 'dropdown', options: ['Yes', 'No'], columnNumber: 54 },
-    { name: 'Reason(If No)', type: 'textarea', fullWidth: true, columnNumber: 55 },
-    { name: 'Inform to Client by call', type: 'checkbox', columnNumber: 48 },
-    { name: 'Inform to Dispatch Party From by call', type: 'checkbox', columnNumber: 49 },
-  ],
-  'Hold': [
-    { name: 'Order Status', type: 'dropdown', defaultValue: 'Hold', readOnly: true, required: true, options: ORDER_STATUS_OPTIONS, columnNumber: 45 },
-    { name: 'Remarks*', type: 'textarea', required: true, fullWidth: true, columnNumber: 47 },
-  ],
-  'Stock Transfer': [
-    { name: 'Order Status', type: 'dropdown', defaultValue: 'Stock Transfer', readOnly: true, required: true, options: ORDER_STATUS_OPTIONS, columnNumber: 45 },
-    { name: 'Dispatch Party From*', type: 'dropdown', required: true, options: DISPATCH_PARTY_OPTIONS, columnNumber: 46 },
-    { name: 'Remarks*', type: 'textarea', required: true, fullWidth: true, columnNumber: 47 },
-    { name: 'Inform to Client by call', type: 'checkbox', columnNumber: 48 },
-    { name: 'Inform to Dispatch Party From by call', type: 'checkbox', columnNumber: 49 },
-    { name: 'Payment Date', type: 'date', columnNumber: 51 },
-    { name: 'Payment Confirmation Type', type: 'dropdown', options: PAYMENT_TYPE_OPTIONS, columnNumber: 52 },
-    { name: 'Expected Date and time of the Dispatch', type: 'datetime-local', columnNumber: 53 },
-    { name: 'Enter Actual Invoice Amount of Dispatch Party', type: 'number', step: '0.01', columnNumber: 74 },
-  ],
-};
+
 
 // Process delivery parties from distributor list
 const processDeliveryParties = (distributorList) => {
@@ -882,7 +999,7 @@ const handleSaveEditOrder = async (result) => {
 
   const getStatusBadgeColor = (status) => {
     switch(status) {
-      case 'Order Confirmed':
+      case 'Dispatch Confirmed':
         return '#10b981';
       case 'Cancel Order':
         return '#ef4444';
@@ -1206,7 +1323,7 @@ const handleSaveEditOrder = async (result) => {
   <span className={styles.navText}>New Orders</span>
 </div>
 
-// AND make Dispatch active:
+
 {user.moduleAccess?.dispatch && (
   <div className={`${styles.navItem} ${styles.active}`} onClick={closeSidebar}>
     <span className={styles.navIcon}>🚚</span>
@@ -1421,7 +1538,7 @@ const handleSaveEditOrder = async (result) => {
                         key={idx}
                         onClick={() => handleStatusSelect(status)}
                         className={`${styles.statusButton} ${
-                          status === 'Order Confirmed' || status === 'Stock Transfer' ? styles.statusSuccess :
+                          status === 'Dispatch Confirmed' || status === 'Stock Transfer' ? styles.statusSuccess :
                           status === 'Cancel Order' ? styles.statusDanger :
                           status === 'False Order' ? styles.statusWarning :
                           status === 'Hold' ? styles.statusInfo :
@@ -1429,7 +1546,7 @@ const handleSaveEditOrder = async (result) => {
                           styles.statusDisabled
                         }`}
                       >
-                        {status === 'Order Confirmed' && '✓ '}
+                        {status === 'Dispatch Confirmed' && '✓ '}
                         {status === 'Cancel Order' && '✕ '}
                         {status === 'False Order' && '⚠️ '}
                         {status === 'Hold' && '⏸ '}
@@ -1501,16 +1618,16 @@ const handleSaveEditOrder = async (result) => {
                 <div className={styles.detailCard}>
                   <h3 className={styles.cardTitle}>✏️ Update Order - {selectedStatus}</h3>
                   <div className={`${styles.infoBox} ${
-                    selectedStatus === 'Order Confirmed' || selectedStatus === 'Stock Transfer' ? styles.infoconfirm :
+                    selectedStatus === 'Dispatch Confirmed' || selectedStatus === 'Stock Transfer' ? styles.infoconfirm :
                     selectedStatus === 'Cancel Order' ? styles.infocancel :
                     selectedStatus === 'False Order' ? styles.infofalse :
                     styles.infohold
                   }`}>
                     <span className={styles.infoIcon}>
-                      {selectedStatus === 'Order Confirmed' || selectedStatus === 'Stock Transfer' ? 'ℹ️' : '⚠️'}
+                      {selectedStatus === 'Dispatch Confirmed' || selectedStatus === 'Stock Transfer' ? 'ℹ️' : '⚠️'}
                     </span>
                     <span className={styles.infoText}>
-                      {selectedStatus === 'Order Confirmed' && 'Fill in the required information to confirm this order'}
+                      {selectedStatus === 'Dispatch Confirmed' && 'Fill in the required information to confirm this order'}
                       {selectedStatus === 'Cancel Order' && 'Please provide cancellation details'}
                       {selectedStatus === 'False Order' && 'Mark this order as false/fraudulent'}
                       {selectedStatus === 'Hold' && 'Put this order on hold'}
@@ -1529,13 +1646,13 @@ const handleSaveEditOrder = async (result) => {
                       <button 
                         type="submit" 
                         className={
-                          selectedStatus === 'Order Confirmed' || selectedStatus === 'Stock Transfer' ? styles.btnSuccess :
+                          selectedStatus === 'Dispatch Confirmed' || selectedStatus === 'Stock Transfer' ? styles.btnSuccess :
                           selectedStatus === 'Cancel Order' ? styles.btnDanger :
                           selectedStatus === 'False Order' ? styles.btnWarning :
                           styles.btnInfo
                         }
                       >
-                        {selectedStatus === 'Order Confirmed' && '✓ Confirm Order'}
+                        {selectedStatus === 'Dispatch Confirmed' && '✓ Confirm Order'}
                         {selectedStatus === 'Cancel Order' && '✕ Cancel Order'}
                         {selectedStatus === 'False Order' && '⚠️ Mark as False Order'}
                         {selectedStatus === 'Hold' && '⏸ Put on Hold'}
