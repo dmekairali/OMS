@@ -208,7 +208,7 @@ const processDeliveryParties = (distributorList) => {
   return Array.from(partiesMap.entries()).map(([name]) => name);
 };
 
-export default function NewOrders() {
+export default function Dispatch() {
   const router = useRouter();
   const [user, setUser] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -271,8 +271,8 @@ export default function NewOrders() {
         return;
       }
       
-      if (!userData.moduleAccess?.newOrders) {
-        alert('You do not have access to New Orders module');
+      if (!userData.moduleAccess?.dispatch) {
+        alert('You do not have access to Dispatch module');
         router.push('/dashboard');
         return;
       }
@@ -598,7 +598,7 @@ const handleSaveEditOrder = async (result) => {
 
     console.log('🔄 Updating NewOrders sheet with:', { updates, columnUpdates });
 
-    const response = await fetch('/api/orders', {
+    const response = await fetch('/api/dispatch-delivery', {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -731,7 +731,7 @@ const handleSaveEditOrder = async (result) => {
     columnUpdates[79] = new Date().toISOString();
 
     try {
-      const response = await fetch('/api/orders', {
+      const response = await fetch('/api/dispatch-delivery', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -811,6 +811,7 @@ const handleSaveEditOrder = async (result) => {
   const navigateToModule = (module) => {
     const routes = {
       dashboard: '/dashboard',
+      neworders: '/neworders',
       dispatch: '/dispatch',
       delivery: '/delivery',
       payment: '/payment'
@@ -1199,22 +1200,24 @@ const handleSaveEditOrder = async (result) => {
               <span className={styles.navText}>Dashboard</span>
             </div>
           )}
-          
-          <div className={`${styles.navItem} ${styles.active}`} onClick={closeSidebar}>
-            <span className={styles.navIcon}>📋</span>
-            <span className={styles.navText}>New Orders</span>
-            {orders.length > 0 && (
-              <span className={styles.badge}>{orders.length}</span>
-            )}
-          </div>
-          
-          {user.moduleAccess?.dispatch && (
-            <div className={styles.navItem} onClick={() => { navigateToModule('dispatch'); closeSidebar(); }}>
-              <span className={styles.navIcon}>🚚</span>
-              <span className={styles.navText}>Dispatch</span>
-            </div>
-          )}
-          
+            
+<div className={styles.navItem} onClick={() => { navigateToModule('neworders'); closeSidebar(); }}>
+  <span className={styles.navIcon}>📋</span>
+  <span className={styles.navText}>New Orders</span>
+</div>
+
+// AND make Dispatch active:
+{user.moduleAccess?.dispatch && (
+  <div className={`${styles.navItem} ${styles.active}`} onClick={closeSidebar}>
+    <span className={styles.navIcon}>🚚</span>
+    <span className={styles.navText}>Dispatch</span>
+    {orders.length > 0 && (
+      <span className={styles.badge}>{orders.length}</span>
+    )}
+  </div>
+)}
+
+
           {user.moduleAccess?.delivery && (
             <div className={styles.navItem} onClick={() => { navigateToModule('delivery'); closeSidebar(); }}>
               <span className={styles.navIcon}>📦</span>
@@ -1246,7 +1249,7 @@ const handleSaveEditOrder = async (result) => {
       <div className={styles.mainContent}>
         <header className={styles.header}>
           <h1 className={styles.pageTitle}>
-            {showDetailView ? (showEditView ? 'Edit Order' : 'Order Details') : 'New Orders'}
+            {showDetailView ? (showEditView ? 'Edit Order' : 'Order Details') : 'Dispatch Orders'}
           </h1>
           <div className={styles.headerActions}>
             <div className={styles.searchBox}>
@@ -1298,7 +1301,7 @@ const handleSaveEditOrder = async (result) => {
 
               <div className={styles.sectionHeader}>
                 <h2>
-                  {activeFilter === 'All' ? '📋 All Orders' : `${STATUS_CATEGORIES.find(c => c.value === activeFilter)?.icon} ${activeFilter}`} ({filteredOrders.length})
+                  {activeFilter === 'All' ? '🚚 All Dispatch Orders' : `${STATUS_CATEGORIES.find(c => c.value === activeFilter)?.icon} ${activeFilter}`} ({filteredOrders.length})
                 </h2>
                 <div className={styles.headerRight}>
                   {lastUpdated && (
