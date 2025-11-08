@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
+import { useSession, signOut } from 'next-auth/react';
 import styles from '../styles/Dispatch.module.css';
 import EditOrderForm from '../components/EditOrderForm';
 import SetupDataService from '../services/SetupDataService';
@@ -326,8 +327,8 @@ const processDeliveryParties = (distributorList) => {
 };
 
 export default function Dispatch() {
+  const { data: session, status } = useSession();
   const router = useRouter();
-  const [user, setUser] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [orders, setOrders] = useState([]);
   const [filteredOrders, setFilteredOrders] = useState([]);
@@ -372,46 +373,21 @@ export default function Dispatch() {
 //--------------------
 
   useEffect(() => {
-    const userSession = localStorage.getItem('userSession');
-    if (!userSession) {
+    if (status === 'unauthenticated') {
       router.push('/login');
-      return;
     }
-
-    try {
-      const userData = JSON.parse(userSession);
-      
-      if (!userData.moduleAccess) {
-        console.log('Invalid session detected, clearing...');
-        localStorage.removeItem('userSession');
-        router.push('/login');
-        return;
-      }
-      
-      if (!userData.moduleAccess?.dispatch) {
-        alert('You do not have access to Dispatch module');
-        router.push('/dashboard');
-        return;
-      }
-
-      setUser(userData);
+    if (status === 'authenticated') {
       loadOrders(true);
-      
       pollingIntervalRef.current = setInterval(() => {
         loadOrders(false);
       }, 300000);
-    } catch (error) {
-      console.error('Error parsing user session:', error);
-      localStorage.removeItem('userSession');
-      router.push('/login');
     }
-
     return () => {
       if (pollingIntervalRef.current) {
         clearInterval(pollingIntervalRef.current);
       }
     };
-  }, [router]);
+  }, [status, router]);
 
   const loadOrders = async (showLoading = true) => {
     try {
@@ -701,7 +677,7 @@ const handleSaveEditOrder = async (result) => {
     const updates = {
       'Dispatch Status': newOrderStatus,
       'Dispatch Remarks*': editRemark,
-      'Last Edited By': user.username,
+      'Last Edited By': session.user.name,
       'Last Edited At': new Date().toISOString(),
        'Actual': new Date().toISOString()  // 🔥 Set Actual field on client side
     };
@@ -709,7 +685,7 @@ const handleSaveEditOrder = async (result) => {
     const columnUpdates = {
       22: newOrderStatus,
       25: editRemark,
-      65: user.username,
+      65: session.user.name,
       66: new Date().toISOString()
     };
 
@@ -834,9 +810,9 @@ const handleSaveEditOrder = async (result) => {
       }
     }
 
-    updates['Last Edited By'] = user.username;
+    updates['Last Edited By'] = session.user.name;
     updates['Last Edited At'] = new Date().toISOString();
-    columnUpdates[65] = user.username;
+    columnUpdates[65] = session.user.name;
     columnUpdates[66] = new Date().toISOString();
 
     try {
@@ -913,8 +889,7 @@ const handleSaveEditOrder = async (result) => {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('userSession');
-    router.push('/login');
+    signOut({ callbackUrl: '/login' });
   };
 
   const navigateToModule = (module) => {
@@ -1265,7 +1240,7 @@ const handleSaveEditOrder = async (result) => {
 
   
 
-  if (!user || loading) {
+  if (status === 'loading' || !session) {
     return (
       <div className={styles.loadingContainer}>
         <div className="spinner"></div>
@@ -1303,12 +1278,10 @@ const handleSaveEditOrder = async (result) => {
         </div>
 
         <nav className={styles.navMenu}>
-          {user.moduleAccess?.dashboard && (
-            <div className={styles.navItem} onClick={() => { navigateToModule('dashboard'); closeSidebar(); }}>
-              <span className={styles.navIcon}>📊</span>
-              <span className={styles.navText}>Dashboard</span>
-            </div>
-          )}
+          <div className={styles.navItem} onClick={() => { navigateToModule('dashboard'); closeSidebar(); }}>
+            <span className={styles.navIcon}>📊</span>
+            <span className={styles.navText}>Dashboard</span>
+          </div>
             
 <div className={styles.navItem} onClick={() => { navigateToModule('neworders'); closeSidebar(); }}>
   <span className={styles.navIcon}>📋</span>
@@ -1316,7 +1289,6 @@ const handleSaveEditOrder = async (result) => {
 </div>
 
 
-{user.moduleAccess?.dispatch && (
   <div className={`${styles.navItem} ${styles.active}`} onClick={closeSidebar}>
     <span className={styles.navIcon}>🚚</span>
     <span className={styles.navText}>Dispatch</span>
@@ -1324,22 +1296,17 @@ const handleSaveEditOrder = async (result) => {
       <span className={styles.badge}>{orders.length}</span>
     )}
   </div>
-)}
 
 
-          {user.moduleAccess?.delivery && (
-            <div className={styles.navItem} onClick={() => { navigateToModule('delivery'); closeSidebar(); }}>
-              <span className={styles.navIcon}>📦</span>
-              <span className={styles.navText}>Delivery</span>
-            </div>
-          )}
+          <div className={styles.navItem} onClick={() => { navigateToModule('delivery'); closeSidebar(); }}>
+            <span className={styles.navIcon}>📦</span>
+            <span className={styles.navText}>Delivery</span>
+          </div>
           
-          {user.moduleAccess?.payment && (
-            <div className={styles.navItem} onClick={() => { navigateToModule('payment'); closeSidebar(); }}>
-              <span className={styles.navIcon}>💰</span>
-              <span className={styles.navText}>Payment</span>
-            </div>
-          )}
+          <div className={styles.navItem} onClick={() => { navigateToModule('payment'); closeSidebar(); }}>
+            <span className={styles.navIcon}>💰</span>
+            <span className={styles.navText}>Payment</span>
+          </div>
 
             <div className={styles.navItem} onClick={() => router.push('/partnership-terms')}>
   <span className={styles.navIcon}>🤝</span>
@@ -1376,10 +1343,9 @@ const handleSaveEditOrder = async (result) => {
               <span className={styles.notificationDot}></span>
             </button>
             <div className={styles.userProfile}>
-              <div className={styles.userAvatar}>{user.username.charAt(0).toUpperCase()}</div>
+              <div className={styles.userAvatar}>{session.user.name.charAt(0).toUpperCase()}</div>
               <div className={styles.userInfo}>
-                <div className={styles.userName}>{user.username}</div>
-                <div className={styles.userRole}>{user.role}</div>
+                <div className={styles.userName}>{session.user.name}</div>
               </div>
             </div>
             <button onClick={handleLogout} className={styles.logoutBtn}>Logout</button>

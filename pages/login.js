@@ -1,58 +1,27 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/router';
+import { signIn } from 'next-auth/react';
 import styles from '../styles/Login.module.css';
 
 export default function Login() {
   const router = useRouter();
-  const [formData, setFormData] = useState({
-    username: '',
-    password: '',
-  });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    const userSession = localStorage.getItem('userSession');
-    if (userSession) {
-      router.push('/dashboard');
-    }
-  }, [router]);
-
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
-    setError('');
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleGoogleSignIn = async () => {
     setLoading(true);
     setError('');
 
-    try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
+    const result = await signIn('google', {
+      redirect: false,
+      callbackUrl: '/dashboard',
+    });
 
-      const data = await response.json();
-
-      if (response.ok) {
-        localStorage.setItem('userSession', JSON.stringify(data.user));
-        router.push('/dashboard');
-      } else {
-        setError(data.error || 'Login failed. Please check your credentials.');
-      }
-    } catch (err) {
-      setError('An error occurred. Please try again.');
-      console.error('Login error:', err);
-    } finally {
+    if (result.error) {
+      setError(result.error);
       setLoading(false);
+    } else if (result.url) {
+      router.push(result.url);
     }
   };
 
@@ -67,61 +36,29 @@ export default function Login() {
         <h2 className={styles.title}>Sign In</h2>
         <p className={styles.subtitle}>Enter your credentials to access the system</p>
 
-        <form onSubmit={handleSubmit} className={styles.form}>
-          <div className={styles.formGroup}>
-            <label htmlFor="username">Username</label>
-            <input
-              type="text"
-              id="username"
-              name="username"
-              value={formData.username}
-              onChange={handleChange}
-              placeholder="Enter your username"
-              required
-              autoFocus
-              disabled={loading}
-            />
+        {error && (
+          <div className={styles.error}>
+            <span className={styles.errorIcon}>⚠️</span>
+            {error}
           </div>
+        )}
 
-          <div className={styles.formGroup}>
-            <label htmlFor="password">Password</label>
-            <input
-              type="password"
-              id="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              placeholder="Enter your password"
-              required
-              disabled={loading}
-            />
-          </div>
-
-          {error && (
-            <div className={styles.error}>
-              <span className={styles.errorIcon}>⚠️</span>
-              {error}
-            </div>
-          )}
-
-          <button 
-            type="submit" 
-            className={styles.submitButton}
-            disabled={loading}
-          >
-            {loading ? 'Signing in...' : 'Sign In'}
-          </button>
-        </form>
+        <button
+          onClick={handleGoogleSignIn}
+          className={styles.submitButton}
+          disabled={loading}
+        >
+          {loading ? 'Signing in...' : 'Sign in with Google'}
+        </button>
 
         <div className={styles.footer}>
-  <p>Order Management System v1.0</p>
-  <p style={{ marginTop: '8px', fontSize: '11px' }}>© 2025 Kairali Products</p>
-  <div className={styles.watermark}>
-    <span>Design & Developed by</span>
-    <strong>Ambuj</strong>
-  </div>
-</div>
-            
+          <p>Order Management System v1.0</p>
+          <p style={{ marginTop: '8px', fontSize: '11px' }}>© 2025 Kairali Products</p>
+          <div className={styles.watermark}>
+            <span>Design & Developed by</span>
+            <strong>Ambuj</strong>
+          </div>
+        </div>
       </div>
     </div>
   );

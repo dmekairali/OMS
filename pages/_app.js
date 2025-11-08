@@ -2,8 +2,9 @@
 import 'select2/dist/css/select2.css';
 import { useEffect, useState } from 'react';
 import SetupDataService from '../services/SetupDataService';
+import { SessionProvider } from 'next-auth/react';
 
-function MyApp({ Component, pageProps }) {
+function MyApp({ Component, pageProps: { session, ...pageProps } }) {
   const [dataLoaded, setDataLoaded] = useState(false);
 
   useEffect(() => {
@@ -36,7 +37,11 @@ function MyApp({ Component, pageProps }) {
     );
   }
 
-  return <Component {...pageProps} />;
+  return (
+    <SessionProvider session={session}>
+      <Component {...pageProps} />
+    </SessionProvider>
+  );
 }
 
 export default MyApp;
