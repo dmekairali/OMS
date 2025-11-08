@@ -699,18 +699,18 @@ const handleSaveEditOrder = async (result) => {
     
     // Prepare updates for NewOrders Google Sheet
     const updates = {
-      'Order Status': newOrderStatus,
-      'Remarks*': editRemark,
+      'Dispatch Status': newOrderStatus,
+      'Dispatch Remarks*': editRemark,
       'Last Edited By': user.username,
       'Last Edited At': new Date().toISOString(),
        'Actual': new Date().toISOString()  // 🔥 Set Actual field on client side
     };
 
     const columnUpdates = {
-      45: newOrderStatus,
-      47: editRemark,
-      78: user.username,
-      79: new Date().toISOString()
+      22: newOrderStatus,
+      25: editRemark,
+      65: user.username,
+      66: new Date().toISOString()
     };
 
     console.log('🔄 Updating NewOrders sheet with:', { updates, columnUpdates });
@@ -809,15 +809,7 @@ const handleSaveEditOrder = async (result) => {
     
     const fieldConfigs = ACTION_FIELDS[selectedStatus] || [];
 
-      // Validate payment date if present
-  const paymentDateValue = formData.get('Payment Date');
-  if (paymentDateValue) {
-    const validation = validatePaymentDate(paymentDateValue);
-    if (!validation.valid) {
-      alert(validation.message);
-      return; // Stop form submission
-    }
-  }
+    
     
     for (let [key, value] of formData.entries()) {
       const fieldConfig = fieldConfigs.find(f => f.name === key);
@@ -833,10 +825,10 @@ const handleSaveEditOrder = async (result) => {
       }
     }
     
-    const orderStatusField = fieldConfigs.find(f => f.name === 'Order Status');
+    const orderStatusField = fieldConfigs.find(f => f.name === 'Dispatch Status');
     if (orderStatusField) {
       const orderStatusValue = orderStatusField.defaultValue || selectedStatus;
-      updates['Order Status'] = orderStatusValue;
+      updates['Dispatch Status'] = orderStatusValue;
       if (orderStatusField.columnNumber) {
         columnUpdates[orderStatusField.columnNumber] = orderStatusValue;
       }
@@ -844,8 +836,8 @@ const handleSaveEditOrder = async (result) => {
 
     updates['Last Edited By'] = user.username;
     updates['Last Edited At'] = new Date().toISOString();
-    columnUpdates[78] = user.username;
-    columnUpdates[79] = new Date().toISOString();
+    columnUpdates[65] = user.username;
+    columnUpdates[66] = new Date().toISOString();
 
     try {
       const response = await fetch('/api/dispatch-delivery', {
@@ -871,7 +863,7 @@ const handleSaveEditOrder = async (result) => {
         
         setOrders(updatedOrders);
         
-        const newStatus = updates['Order Status'];
+        const newStatus = updates['Dispatch Status'];
         let targetFilter = 'All';
         
         if (newStatus && newStatus.trim() !== '') {
@@ -1155,10 +1147,10 @@ const handleSaveEditOrder = async (result) => {
         counts[cat.value] = orders.length;
       } else if (cat.value === 'Pending') {
         counts[cat.value] = orders.filter(o => 
-          !o['Order Status'] || o['Order Status'].trim() === ''
+          !o['Dispatch Status'] || o['Dispatch Status'].trim() === ''
         ).length;
       } else {
-        counts[cat.value] = orders.filter(o => o['Order Status'] === cat.value).length;
+        counts[cat.value] = orders.filter(o => o['Dispatch Status'] === cat.value).length;
       }
     });
     return counts;
