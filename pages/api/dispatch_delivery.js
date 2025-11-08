@@ -6,8 +6,8 @@
  * IMPORTANT: NewOrders sheet has:
  * - Header row at row 8
  * - Data starts at row 9
- * - 84 columns total (A to CF)
- * - Order Status in column 45 (AS)
+ * -
+ * - Order Status in column V
  * 
  * OPTIMIZED: Now uses direct column numbers instead of header lookup
  */
@@ -24,7 +24,7 @@ export default async function handler(req, res) {
 
   try {
     // Get ORDERSHEET spreadsheet ID from environment (contains NewOrders)
-    const orderSheetId = process.env.GOOGLE_SHEETS_SPREADSHEET_ID_ORDERSHEET;
+    const orderSheetId = process.env.GOOGLE_SHEETS_SPREADSHEET_ID_DISPATCH_DELIVERY;
     
     if (!orderSheetId) {
       return res.status(500).json({ error: 'Order spreadsheet configuration missing' });
@@ -46,11 +46,11 @@ export default async function handler(req, res) {
     if (req.method === 'GET') {
       const { orderId } = req.query;
 
-      // NewOrders has header at row 8, data starts at row 9
-      // 84 columns total (A to CF)
+      // Dispatch Status has header at row 8, data starts at row 9
+     
       const sheetsResponse = await sheets.spreadsheets.values.get({
         spreadsheetId: orderSheetId,
-        range: 'NewOrders!A8:CF1000', // Header at row 8, read up to row 1000
+        range: 'Dispatch Status!A8:BF', // Header at row 8
       });
 
       const ordersData = sheetsResponse.data.values;
@@ -111,7 +111,7 @@ export default async function handler(req, res) {
       // Append to sheet (will add after last row with data)
       const result = await sheets.spreadsheets.values.append({
         spreadsheetId: orderSheetId,
-        range: 'NewOrders!A9', // Start appending from row 9 (data row)
+        range: 'Dispatch Status!A9', // Start appending from row 9 (data row)
         valueInputOption: 'USER_ENTERED',
         requestBody: {
           values: [orderData]
@@ -144,7 +144,7 @@ export default async function handler(req, res) {
           const colLetter = columnIndexToLetter(parseInt(columnNumber) - 1); // -1 because columns are 1-based
           console.log(`Column ${columnNumber} -> Letter ${colLetter} -> Value: ${columnUpdates[columnNumber]}`);
           updateData.push({
-            range: `NewOrders!${colLetter}${rowIndex}`,
+            range: `Dispatch Status!${colLetter}${rowIndex}`,
             values: [[columnUpdates[columnNumber]]]
           });
         });
@@ -179,7 +179,7 @@ export default async function handler(req, res) {
         // Get headers from row 8
         const headersResponse = await sheets.spreadsheets.values.get({
           spreadsheetId: orderSheetId,
-          range: 'NewOrders!A8:CF8',
+          range: 'Dispatch Status!A8:BF8',
         });
 
         const headers = headersResponse.data.values[0];
@@ -192,7 +192,7 @@ export default async function handler(req, res) {
             // Convert column index to letter (0=A, 1=B, etc.)
             const colLetter = columnIndexToLetter(colIndex);
             updateData.push({
-              range: `NewOrders!${colLetter}${rowIndex}`,
+              range: `Dispatch Status!${colLetter}${rowIndex}`,
               values: [[updates[fieldName]]]
             });
           }
@@ -232,7 +232,7 @@ export default async function handler(req, res) {
       // Get the column index for "Order Status" (column 45 = AS)
       const result = await sheets.spreadsheets.values.update({
         spreadsheetId: orderSheetId,
-        range: `NewOrders!AS${rowIndex}`, // Order Status column
+        range: `DispatDchMain!V${rowIndex}`, // Dispatch Status column
         valueInputOption: 'USER_ENTERED',
         requestBody: {
           values: [['Cancelled']]
