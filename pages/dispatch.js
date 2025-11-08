@@ -377,6 +377,11 @@ export default function Dispatch() {
       router.push('/login');
     }
     if (status === 'authenticated') {
+      if (!session.user.moduleAccess?.dispatch) {
+        alert('You do not have access to Dispatch module');
+        router.push('/dashboard');
+        return;
+      }
       loadOrders(true);
       pollingIntervalRef.current = setInterval(() => {
         loadOrders(false);
@@ -387,7 +392,7 @@ export default function Dispatch() {
         clearInterval(pollingIntervalRef.current);
       }
     };
-  }, [status, router]);
+  }, [status, router, session]);
 
   const loadOrders = async (showLoading = true) => {
     try {

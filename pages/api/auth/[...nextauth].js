@@ -28,15 +28,27 @@ export const authOptions = {
         try {
           const response = await sheets.spreadsheets.values.get({
             spreadsheetId: process.env.GOOGLE_SHEETS_SPREADSHEET_ID_SETUPSHEET,
-            range: 'Employee List!A:C',
+            range: 'Users',
           });
 
           const rows = response.data.values;
           if (rows) {
-            const user = rows.find(row => row[0] === credentials.username);
+            const header = rows[0];
+            const usernameIndex = header.indexOf('Username');
+            const passwordIndex = header.indexOf('Password Hash');
+            const roleIndex = header.indexOf('Role');
+            const moduleAccessIndex = header.indexOf('Module Access');
+            const activeIndex = header.indexOf('Active');
 
-            if (user && user[1] === credentials.password) {
-              return { id: user[0], name: user[0], role: user[2] };
+            const userRow = rows.slice(1).find(row => row[usernameIndex] === credentials.username);
+
+            if (userRow && userRow[passwordIndex] === credentials.password && userRow[activeIndex] === 'TRUE') {
+              return {
+                id: userRow[0],
+                name: userRow[usernameIndex],
+                role: userRow[roleIndex],
+                moduleAccess: JSON.parse(userRow[moduleAccessIndex])
+              };
             }
           }
           return null;
@@ -55,11 +67,13 @@ export const authOptions = {
     async jwt({ token, user }) {
       if (user) {
         token.role = user.role;
+        token.moduleAccess = user.moduleAccess;
       }
       return token;
     },
     async session({ session, token }) {
       session.user.role = token.role;
+      session.user.moduleAccess = token.moduleAccess;
       return session;
     }
   },

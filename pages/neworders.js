@@ -260,6 +260,11 @@ export default function NewOrders() {
       router.push('/login');
     }
     if (status === 'authenticated') {
+      if (!session.user.moduleAccess?.newOrders) {
+        alert('You do not have access to New Orders module');
+        router.push('/dashboard');
+        return;
+      }
       loadOrders(true);
       pollingIntervalRef.current = setInterval(() => {
         loadOrders(false);
@@ -270,7 +275,7 @@ export default function NewOrders() {
         clearInterval(pollingIntervalRef.current);
       }
     };
-  }, [status, router]);
+  }, [status, router, session]);
 
   const loadOrders = async (showLoading = true) => {
     try {
