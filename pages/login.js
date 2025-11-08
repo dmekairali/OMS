@@ -5,15 +5,30 @@ import styles from '../styles/Login.module.css';
 
 export default function Login() {
   const router = useRouter();
+  const [formData, setFormData] = useState({
+    username: '',
+    password: '',
+  });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleGoogleSignIn = async () => {
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
+    setError('');
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     setLoading(true);
     setError('');
 
-    const result = await signIn('google', {
+    const result = await signIn('credentials', {
       redirect: false,
+      username: formData.username,
+      password: formData.password,
       callbackUrl: '/dashboard',
     });
 
@@ -36,20 +51,51 @@ export default function Login() {
         <h2 className={styles.title}>Sign In</h2>
         <p className={styles.subtitle}>Enter your credentials to access the system</p>
 
-        {error && (
-          <div className={styles.error}>
-            <span className={styles.errorIcon}>⚠️</span>
-            {error}
+        <form onSubmit={handleSubmit} className={styles.form}>
+          <div className={styles.formGroup}>
+            <label htmlFor="username">Username</label>
+            <input
+              type="text"
+              id="username"
+              name="username"
+              value={formData.username}
+              onChange={handleChange}
+              placeholder="Enter your username"
+              required
+              autoFocus
+              disabled={loading}
+            />
           </div>
-        )}
 
-        <button
-          onClick={handleGoogleSignIn}
-          className={styles.submitButton}
-          disabled={loading}
-        >
-          {loading ? 'Signing in...' : 'Sign in with Google'}
-        </button>
+          <div className={styles.formGroup}>
+            <label htmlFor="password">Password</label>
+            <input
+              type="password"
+              id="password"
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
+              placeholder="Enter your password"
+              required
+              disabled={loading}
+            />
+          </div>
+
+          {error && (
+            <div className={styles.error}>
+              <span className={styles.errorIcon}>⚠️</span>
+              {error}
+            </div>
+          )}
+
+          <button
+            type="submit"
+            className={styles.submitButton}
+            disabled={loading}
+          >
+            {loading ? 'Signing in...' : 'Sign In'}
+          </button>
+        </form>
 
         <div className={styles.footer}>
           <p>Order Management System v1.0</p>
