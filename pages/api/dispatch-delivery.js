@@ -50,7 +50,7 @@ export default async function handler(req, res) {
      
       const sheetsResponse = await sheets.spreadsheets.values.get({
         spreadsheetId: orderSheetId,
-        range: 'Dispatch Status!A8:BF', // Header at row 8
+        range: 'DispatDchMain!A8:BF', // Header at row 8
       });
 
       const ordersData = sheetsResponse.data.values;
@@ -111,7 +111,7 @@ export default async function handler(req, res) {
       // Append to sheet (will add after last row with data)
       const result = await sheets.spreadsheets.values.append({
         spreadsheetId: orderSheetId,
-        range: 'Dispatch Status!A9', // Start appending from row 9 (data row)
+        range: 'DispatDchMain!A9', // Start appending from row 9 (data row)
         valueInputOption: 'USER_ENTERED',
         requestBody: {
           values: [orderData]
@@ -179,7 +179,7 @@ export default async function handler(req, res) {
         // Get headers from row 8
         const headersResponse = await sheets.spreadsheets.values.get({
           spreadsheetId: orderSheetId,
-          range: 'Dispatch Status!A8:BF8',
+          range: 'DispatDchMain!A8:BF8',
         });
 
         const headers = headersResponse.data.values[0];
@@ -192,7 +192,7 @@ export default async function handler(req, res) {
             // Convert column index to letter (0=A, 1=B, etc.)
             const colLetter = columnIndexToLetter(colIndex);
             updateData.push({
-              range: `Dispatch Status!${colLetter}${rowIndex}`,
+              range: `DispatDchMain!${colLetter}${rowIndex}`,
               values: [[updates[fieldName]]]
             });
           }
