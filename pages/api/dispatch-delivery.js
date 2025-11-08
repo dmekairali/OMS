@@ -46,7 +46,7 @@ export default async function handler(req, res) {
     if (req.method === 'GET') {
       const { orderId } = req.query;
 
-      // Dispatch Status has header at row 8, data starts at row 9
+      // DispatDchMain has header at row 8, data starts at row 9
      
       const sheetsResponse = await sheets.spreadsheets.values.get({
         spreadsheetId: orderSheetId,
@@ -144,7 +144,7 @@ export default async function handler(req, res) {
           const colLetter = columnIndexToLetter(parseInt(columnNumber) - 1); // -1 because columns are 1-based
           console.log(`Column ${columnNumber} -> Letter ${colLetter} -> Value: ${columnUpdates[columnNumber]}`);
           updateData.push({
-            range: `Dispatch Status!${colLetter}${rowIndex}`,
+            range: `DispatDchMain!${colLetter}${rowIndex}`,
             values: [[columnUpdates[columnNumber]]]
           });
         });
@@ -232,7 +232,7 @@ export default async function handler(req, res) {
       // Get the column index for "Order Status" (column 45 = AS)
       const result = await sheets.spreadsheets.values.update({
         spreadsheetId: orderSheetId,
-        range: `DispatDchMain!V${rowIndex}`, // Dispatch Status column
+        range: `DispatDchMain!V${rowIndex}`, // DispatDchMain column
         valueInputOption: 'USER_ENTERED',
         requestBody: {
           values: [['Cancelled']]
