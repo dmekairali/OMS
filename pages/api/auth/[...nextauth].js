@@ -12,8 +12,11 @@ export const authOptions = {
       },
       async authorize(credentials, req) {
         if (!credentials) {
+          console.log("No credentials provided");
           return null;
         }
+
+        console.log("Attempting to authorize user:", credentials.username);
 
         const auth = new google.auth.GoogleAuth({
           credentials: {
@@ -42,13 +45,23 @@ export const authOptions = {
 
             const userRow = rows.slice(1).find(row => row[usernameIndex] === credentials.username);
 
-            if (userRow && userRow[passwordIndex] === credentials.password && userRow[activeIndex] === 'TRUE') {
-              return {
-                id: userRow[0],
-                name: userRow[usernameIndex],
-                role: userRow[roleIndex],
-                moduleAccess: JSON.parse(userRow[moduleAccessIndex])
-              };
+            if (userRow) {
+              console.log("User found in sheet:", userRow[usernameIndex]);
+              const isActive = userRow[activeIndex] && userRow[activeIndex].toUpperCase() === 'TRUE';
+
+              if (userRow[passwordIndex] === credentials.password && isActive) {
+                console.log("User authenticated successfully");
+                return {
+                  id: userRow[0],
+                  name: userRow[usernameIndex],
+                  role: userRow[roleIndex],
+                  moduleAccess: JSON.parse(userRow[moduleAccessIndex])
+                };
+              } else {
+                console.log("Password or active status check failed");
+              }
+            } else {
+              console.log("User not found in sheet");
             }
           }
           return null;
