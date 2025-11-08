@@ -7,7 +7,11 @@
  * SAVE THIS FILE AS: pages/api/orders/products.js
  */
 
+import { requireAuth } from '@/lib/auth-middleware';
+
 export default async function handler(req, res) {
+  const session = await requireAuth(req, res);
+  if (!session) return;
   // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
