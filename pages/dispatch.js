@@ -464,10 +464,10 @@ export default function Dispatch() {
   if (statusFilter !== 'All') {
     if (statusFilter === 'Pending') {
       filtered = filtered.filter(order => 
-        !order['Order Status'] || order['Order Status'].trim() === ''
+        !order['Dispatch Status'] || order['Dispatch Status'].trim() === ''
       );
     } else {
-      filtered = filtered.filter(order => order['Order Status'] === statusFilter);
+      filtered = filtered.filter(order => order['Dispatch Status'] === statusFilter);
     }
   }
 
