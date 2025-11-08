@@ -25,18 +25,23 @@ export default function Login() {
     setLoading(true);
     setError('');
 
-    const result = await signIn('credentials', {
-      redirect: false,
-      username: formData.username,
-      password: formData.password,
-      callbackUrl: '/dashboard',
-    });
+    try {
+      const result = await signIn('credentials', {
+        redirect: false,
+        username: formData.username,
+        password: formData.password,
+        callbackUrl: '/dashboard',
+      });
 
-    if (result.error) {
-      setError(result.error);
+      if (result.ok) {
+        router.push(result.url);
+      } else {
+        setError(result.error || 'Login failed. Please check your credentials.');
+        setLoading(false);
+      }
+    } catch (err) {
+      setError('An error occurred. Please try again.');
       setLoading(false);
-    } else if (result.url) {
-      router.push(result.url);
     }
   };
 
