@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/router';
+import { signIn } from 'next-auth/react';
 import styles from '../styles/Login.module.css';
 
 export default function Login() {
@@ -10,13 +11,6 @@ export default function Login() {
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    const userSession = localStorage.getItem('userSession');
-    if (userSession) {
-      router.push('/dashboard');
-    }
-  }, [router]);
 
   const handleChange = (e) => {
     setFormData({
@@ -32,26 +26,21 @@ export default function Login() {
     setError('');
 
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
+      const result = await signIn('credentials', {
+        redirect: false,
+        username: formData.username,
+        password: formData.password,
+        callbackUrl: '/dashboard',
       });
 
-      const data = await response.json();
-
-      if (response.ok) {
-        localStorage.setItem('userSession', JSON.stringify(data.user));
-        router.push('/dashboard');
+      if (result.ok) {
+        router.push(result.url);
       } else {
-        setError(data.error || 'Login failed. Please check your credentials.');
+        setError(result.error || 'Login failed. Please check your credentials.');
+        setLoading(false);
       }
     } catch (err) {
       setError('An error occurred. Please try again.');
-      console.error('Login error:', err);
-    } finally {
       setLoading(false);
     }
   };
@@ -104,8 +93,8 @@ export default function Login() {
             </div>
           )}
 
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             className={styles.submitButton}
             disabled={loading}
           >
@@ -114,14 +103,13 @@ export default function Login() {
         </form>
 
         <div className={styles.footer}>
-  <p>Order Management System v1.0</p>
-  <p style={{ marginTop: '8px', fontSize: '11px' }}>© 2025 Kairali Products</p>
-  <div className={styles.watermark}>
-    <span>Design & Developed by</span>
-    <strong>Ambuj</strong>
-  </div>
-</div>
-            
+          <p>Order Management System v1.0</p>
+          <p style={{ marginTop: '8px', fontSize: '11px' }}>© 2025 Kairali Products</p>
+          <div className={styles.watermark}>
+            <span>Design & Developed by</span>
+            <strong>Ambuj</strong>
+          </div>
+        </div>
       </div>
     </div>
   );

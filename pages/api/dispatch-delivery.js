@@ -12,7 +12,11 @@
  * OPTIMIZED: Now uses direct column numbers instead of header lookup
  */
 
+import { requireAuth } from '../../lib/auth-middleware';
+
 export default async function handler(req, res) {
+  const session = await requireAuth(req, res);
+  if (!session) return;
   // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
