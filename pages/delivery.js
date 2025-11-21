@@ -286,30 +286,87 @@ export default function Delivery() {
   if (showDetailView && selectedOrder) {
     return (
       <div className={styles.pageContainer}>
-        {/* Inline Sidebar */}
+        {/* Sidebar */}
         <aside className={styles.sidebar}>
           <div className={styles.logoSection}>
-            <img src="/kairali-logo.png" alt="Kairali" className={styles.logoImage} />
+            <img 
+              src="/kairali-logo.png" 
+              alt="Kairali Products" 
+              className={styles.logoImage}
+            />
           </div>
+
+          <div className={styles.appName}>
+            <span className={styles.appIcon}>📦</span>
+            <span className={styles.appText}>OrderFlow</span>
+          </div>
+
           <nav className={styles.navMenu}>
-            <div className={styles.navItem} onClick={() => router.push('/dashboard')}>
-              <span className={styles.navIcon}>📊</span>
-              <span className={styles.navText}>Dashboard</span>
-            </div>
-            <div className={`${styles.navItem} ${styles.active}`}>
-              <span className={styles.navIcon}>🚚</span>
-              <span className={styles.navText}>Delivery</span>
+            {user.moduleAccess?.dashboard && (
+              <div className={styles.navItem} onClick={() => router.push('/dashboard')}>
+                <span className={styles.navIcon}>📊</span>
+                <span className={styles.navText}>Dashboard</span>
+              </div>
+            )}
+
+            {user.moduleAccess?.newOrders && (
+              <div className={styles.navItem} onClick={() => router.push('/neworders')}>
+                <span className={styles.navIcon}>📋</span>
+                <span className={styles.navText}>New Orders</span>
+              </div>
+            )}
+
+            {user.moduleAccess?.dispatch && (
+              <div className={styles.navItem} onClick={() => router.push('/dispatch')}>
+                <span className={styles.navIcon}>🚚</span>
+                <span className={styles.navText}>Dispatch</span>
+              </div>
+            )}
+
+            {user.moduleAccess?.delivery && (
+              <div className={`${styles.navItem} ${styles.active}`}>
+                <span className={styles.navIcon}>📦</span>
+                <span className={styles.navText}>Delivery</span>
+              </div>
+            )}
+
+            {user.moduleAccess?.payment && (
+              <div className={styles.navItem} onClick={() => router.push('/payment')}>
+                <span className={styles.navIcon}>💰</span>
+                <span className={styles.navText}>Payment</span>
+              </div>
+            )}
+
+            <div className={styles.navItem} onClick={() => router.push('/partnership-terms')}>
+              <span className={styles.navIcon}>🤝</span>
+              <span className={styles.navText}>Partnership & Terms</span>
             </div>
           </nav>
+
+          <div className={styles.sidebarFooter}>
+            <div className={styles.sidebarWatermark}>
+              <span>Design & Developed by</span>
+              <strong>Ambuj</strong>
+            </div>
+          </div>
         </aside>
 
         {/* Main Content */}
         <div className={styles.mainContent}>
-          {/* Inline Header */}
+          {/* Header */}
           <header className={styles.header}>
-            <h1>🚚 Delivery Confirmation</h1>
-            <div className={styles.headerRight}>
-              <span>{user?.name || 'User'}</span>
+            <h1 className={styles.pageTitle}>🚚 Delivery Confirmation</h1>
+            <div className={styles.headerActions}>
+              <input 
+                type="text"
+                placeholder="Search orders..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className={styles.searchBox}
+              />
+              <div className={styles.userInfo}>
+                <span className={styles.userName}>{user?.name || 'User'}</span>
+              </div>
             </div>
           </header>
 
@@ -472,37 +529,90 @@ export default function Delivery() {
   // List View
   return (
     <div className={styles.pageContainer}>
-      {/* Inline Sidebar */}
+      {/* Sidebar */}
       <aside className={styles.sidebar}>
         <div className={styles.logoSection}>
-          <img src="/kairali-logo.png" alt="Kairali" className={styles.logoImage} />
+          <img 
+            src="/kairali-logo.png" 
+            alt="Kairali Products" 
+            className={styles.logoImage}
+          />
         </div>
+
+        <div className={styles.appName}>
+          <span className={styles.appIcon}>📦</span>
+          <span className={styles.appText}>OrderFlow</span>
+        </div>
+
         <nav className={styles.navMenu}>
-          <div className={styles.navItem} onClick={() => router.push('/dashboard')}>
-            <span className={styles.navIcon}>📊</span>
-            <span className={styles.navText}>Dashboard</span>
-          </div>
-          <div className={`${styles.navItem} ${styles.active}`}>
-            <span className={styles.navIcon}>🚚</span>
-            <span className={styles.navText}>Delivery</span>
+          {user.moduleAccess?.dashboard && (
+            <div className={styles.navItem} onClick={() => router.push('/dashboard')}>
+              <span className={styles.navIcon}>📊</span>
+              <span className={styles.navText}>Dashboard</span>
+            </div>
+          )}
+
+          {user.moduleAccess?.newOrders && (
+            <div className={styles.navItem} onClick={() => router.push('/neworders')}>
+              <span className={styles.navIcon}>📋</span>
+              <span className={styles.navText}>New Orders</span>
+            </div>
+          )}
+
+          {user.moduleAccess?.dispatch && (
+            <div className={styles.navItem} onClick={() => router.push('/dispatch')}>
+              <span className={styles.navIcon}>🚚</span>
+              <span className={styles.navText}>Dispatch</span>
+            </div>
+          )}
+
+          {user.moduleAccess?.delivery && (
+            <div className={`${styles.navItem} ${styles.active}`}>
+              <span className={styles.navIcon}>📦</span>
+              <span className={styles.navText}>Delivery</span>
+              {orders.length > 0 && (
+                <span className={styles.badge}>{orders.length}</span>
+              )}
+            </div>
+          )}
+
+          {user.moduleAccess?.payment && (
+            <div className={styles.navItem} onClick={() => router.push('/payment')}>
+              <span className={styles.navIcon}>💰</span>
+              <span className={styles.navText}>Payment</span>
+            </div>
+          )}
+
+          <div className={styles.navItem} onClick={() => router.push('/partnership-terms')}>
+            <span className={styles.navIcon}>🤝</span>
+            <span className={styles.navText}>Partnership & Terms</span>
           </div>
         </nav>
+
+        <div className={styles.sidebarFooter}>
+          <div className={styles.sidebarWatermark}>
+            <span>Design & Developed by</span>
+            <strong>Ambuj</strong>
+          </div>
+        </div>
       </aside>
 
       {/* Main Content */}
       <div className={styles.mainContent}>
-        {/* Inline Header */}
+        {/* Header */}
         <header className={styles.header}>
-          <h1>🚚 Delivery Confirmation</h1>
-          <div className={styles.headerRight}>
+          <h1 className={styles.pageTitle}>🚚 Delivery Confirmation</h1>
+          <div className={styles.headerActions}>
             <input 
               type="text"
               placeholder="Search orders..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className={styles.searchInput}
+              className={styles.searchBox}
             />
-            <span>{user?.name || 'User'}</span>
+            <div className={styles.userInfo}>
+              <span className={styles.userName}>{user?.name || 'User'}</span>
+            </div>
           </div>
         </header>
 
