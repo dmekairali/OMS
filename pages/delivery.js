@@ -1,9 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
-import Sidebar from '../components/Sidebar';
-import Header from '../components/Header';
 import styles from '../styles/NewOrders.module.css';
-import SetupDataService from '../services/SetupDataService';
 
 export default function Delivery() {
   const router = useRouter();
@@ -183,7 +180,6 @@ export default function Delivery() {
     console.log('📋 Order selected:', order['Order ID']);
     setSelectedOrder(order);
     setShowDetailView(true);
-    setShowEditView(false);
   };
 
   // Handle back to list
@@ -289,18 +285,34 @@ export default function Delivery() {
   // Detail View
   if (showDetailView && selectedOrder) {
     return (
-      <div className={styles.container}>
-        <Sidebar 
-          activePage="delivery"
-          isOpen={sidebarOpen}
-          onToggle={() => setSidebarOpen(!sidebarOpen)}
-        />
+      <div className={styles.pageContainer}>
+        {/* Inline Sidebar */}
+        <aside className={styles.sidebar}>
+          <div className={styles.logoSection}>
+            <img src="/kairali-logo.png" alt="Kairali" className={styles.logoImage} />
+          </div>
+          <nav className={styles.navMenu}>
+            <div className={styles.navItem} onClick={() => router.push('/dashboard')}>
+              <span className={styles.navIcon}>📊</span>
+              <span className={styles.navText}>Dashboard</span>
+            </div>
+            <div className={`${styles.navItem} ${styles.active}`}>
+              <span className={styles.navIcon}>🚚</span>
+              <span className={styles.navText}>Delivery</span>
+            </div>
+          </nav>
+        </aside>
+
+        {/* Main Content */}
         <div className={styles.mainContent}>
-          <Header 
-            user={user}
-            onSearch={setSearchTerm}
-            searchValue={searchTerm}
-          />
+          {/* Inline Header */}
+          <header className={styles.header}>
+            <h1>🚚 Delivery Confirmation</h1>
+            <div className={styles.headerRight}>
+              <span>{user?.name || 'User'}</span>
+            </div>
+          </header>
+
           <div className={styles.content}>
             <button className={styles.backButton} onClick={handleBackToList}>
               ← Back to Delivery Orders
@@ -459,18 +471,41 @@ export default function Delivery() {
 
   // List View
   return (
-    <div className={styles.container}>
-      <Sidebar 
-        activePage="delivery"
-        isOpen={sidebarOpen}
-        onToggle={() => setSidebarOpen(!sidebarOpen)}
-      />
+    <div className={styles.pageContainer}>
+      {/* Inline Sidebar */}
+      <aside className={styles.sidebar}>
+        <div className={styles.logoSection}>
+          <img src="/kairali-logo.png" alt="Kairali" className={styles.logoImage} />
+        </div>
+        <nav className={styles.navMenu}>
+          <div className={styles.navItem} onClick={() => router.push('/dashboard')}>
+            <span className={styles.navIcon}>📊</span>
+            <span className={styles.navText}>Dashboard</span>
+          </div>
+          <div className={`${styles.navItem} ${styles.active}`}>
+            <span className={styles.navIcon}>🚚</span>
+            <span className={styles.navText}>Delivery</span>
+          </div>
+        </nav>
+      </aside>
+
+      {/* Main Content */}
       <div className={styles.mainContent}>
-        <Header 
-          user={user}
-          onSearch={setSearchTerm}
-          searchValue={searchTerm}
-        />
+        {/* Inline Header */}
+        <header className={styles.header}>
+          <h1>🚚 Delivery Confirmation</h1>
+          <div className={styles.headerRight}>
+            <input 
+              type="text"
+              placeholder="Search orders..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className={styles.searchInput}
+            />
+            <span>{user?.name || 'User'}</span>
+          </div>
+        </header>
+
         <div className={styles.content}>
           <div className={styles.pageHeader}>
             <div>
