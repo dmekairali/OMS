@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
-import styles from '../styles/NewOrders.module.css';
+import styles from '../styles/Delivery.module.css';
 
 export default function Delivery() {
   const router = useRouter();
