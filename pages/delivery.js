@@ -83,17 +83,14 @@ export default function Delivery() {
       console.log('✅ API Response:', data);
       
       if (data.success && Array.isArray(data.orders)) {
-        // Filter for Delivery: Planned-3 is not null/blank AND Actual-3 is null/blank
+        // Filter for Delivery: ONLY where Planned-3 (column AT) is not blank
         const deliveryOrders = data.orders.filter(order => {
           const planned3 = order['Planned-3'];
-          const actual3 = order['Actual-3'];
           
-          // Planned-3 should have value
+          // Planned-3 should have value (not blank/null/empty)
           const hasPlanned = planned3 && planned3.toString().trim() !== '';
-          // Actual-3 should be empty
-          const noActual = !actual3 || actual3.toString().trim() === '';
           
-          return hasPlanned && noActual;
+          return hasPlanned;
         });
         
         console.log('📦 Delivery Orders filtered:', deliveryOrders.length, 'out of', data.orders.length);
