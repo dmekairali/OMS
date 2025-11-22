@@ -26,19 +26,21 @@ const NON_EDITABLE_FIELDS = [
   { name: 'Is order in Full - Yes/No -Client', type: 'text' },
   { name: 'Reason (If No) -Client', type: 'text' },
   { name: 'Status *', type: 'text' },
-  { name: 'Inline_Chalan Attachment', type: 'text' },
-  { name: 'LinkInline_Chalan Value', type: 'url' },
+  { name: 'Chalan Attachment Link', type: 'url' },
+  { name: 'Chalan Value', type: 'currency' },
+
+  	
 ];
 
 // DISPLAY_FIELDS for order cards
 const DISPLAY_FIELDS = [
   { name: 'Oder ID', type: 'text' },
-  { name: 'Status *', type: 'status' },
   { name: 'Name of Client', type: 'text' },
   { name: 'Client Type', type: 'text' },
+  { name: 'Chalan Attachment Link', type: 'url' },
   { name: 'Delivery Party From', type: 'text' },
   { name: 'Planned-3', type: 'datetime' },
-  { name: 'Actual-3', type: 'datetime' },
+  { name: 'Chalan Value', type: 'currency' },
 ];
 
 // Status categories for filtering - Delivery specific
